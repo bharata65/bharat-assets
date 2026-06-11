@@ -1,145 +1,140 @@
 // ==========================================================================
-// BHARAT DIGITAL ASSETS - MASTER LEDGER CONTROL & AUDIT BOARD v5.0 (ENGLISH)
+// BHARAT DIGITAL ASSETS - ENTERPRISE MASTER LEDGER CONTROL HUB v5.5
 // ==========================================================================
 
 const AdminView = {
     render: function() {
         return `
-            <div id="view-admin" class="view-panel p-5 space-y-6 min-h-screen bg-slate-100 flex flex-col pb-16" style="display: none; width: 100%;">
+            <div id="view-admin" class="view-panel p-5 space-y-5 min-h-screen bg-slate-100 flex flex-col pb-16 overflow-y-auto" style="display: none; width: 100%;">
                 
-                <div class="flex justify-between items-center border-b border-slate-200 pb-4">
+                <div class="flex justify-between items-center border-b border-slate-200 pb-3">
                     <div>
-                        <h2 class="text-xl font-black text-slate-900 tracking-tight">Master Ledger Desk</h2>
-                        <p class="text-[10px] text-slate-500 font-bold font-mono uppercase tracking-wider">Enterprise Centralized Control Desk</p>
+                        <h2 class="text-xl font-black text-slate-900 tracking-tight">Master Admin Control</h2>
+                        <p class="text-[9px] text-slate-500 font-bold font-mono uppercase tracking-wider">Unified Operational Risk Hub</p>
                     </div>
-                    <button onclick="window.location.reload()" class="text-xs font-black bg-white border border-slate-300 text-red-600 px-3.5 py-2 rounded-xl shadow-xs active:bg-red-50 transition duration-150">
-                        <i class="fa-solid fa-power-off mr-1"></i> Terminate Connection
-                    </button>
+                    <button onclick="window.location.reload()" class="text-xs font-black bg-white border border-slate-300 text-red-600 px-3 py-1.5 rounded-xl active:bg-red-50">Exit Shell</button>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="bg-slate-950 text-white p-4 rounded-2xl shadow-md relative overflow-hidden">
-                        <p class="text-[9px] text-slate-400 uppercase font-black tracking-wider">Total Registered Entities</p>
-                        <p id="admin-total-users-count" class="text-2xl font-black text-emerald-400 font-mono mt-1">0</p>
-                    </div>
-                    <div class="bg-blue-950 text-white p-4 rounded-2xl shadow-md relative overflow-hidden">
-                        <p class="text-[9px] text-blue-300 uppercase font-black tracking-wider">Awaiting Verification</p>
-                        <p id="admin-pending-users-count" class="text-2xl font-black text-amber-400 font-mono mt-1">0 Nodes</p>
-                    </div>
-                </div>
-
-                <div class="space-y-3 flex-1 overflow-y-auto">
-                    <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <i class="fa-solid fa-server"></i> Live Asset Node Pipeline
-                    </h3>
-                    
-                    <div id="admin-user-list-wrapper" class="space-y-4">
-                        <div class="text-center p-8 bg-white rounded-2xl border text-xs text-slate-400 font-medium">
-                            <i class="fa-solid fa-circle-notch animate-spin mr-2"></i> Fetching global secure network data...
+                <div class="space-y-3 flex-1">
+                    <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-folder-tree"></i> Central Member Auditing Ledger Pipeline</h3>
+                    <div id="admin-master-super-wrapper" class="space-y-4">
                         </div>
-                    </div>
                 </div>
             </div>
         `;
     }
 };
 
-// ==========================================================================
-// REAL-TIME SYNCHRONIZATION & INSTITUTIONAL SETTLEMENT LEDGERS
-// ==========================================================================
 window.syncAdminMasterLedger = function() {
-    const listWrapper = document.getElementById('admin-user-list-wrapper');
-    const totalCountEl = document.getElementById('admin-total-users-count');
-    const pendingCountEl = document.getElementById('admin-pending-users-count');
-    
-    if (!listWrapper) return;
+    const mainWrapper = document.getElementById('admin-master-super-wrapper');
+    if (!mainWrapper) return;
 
-    db.collection("users").onSnapshot((snapshot) => {
-        listWrapper.innerHTML = "";
-        let totalCount = 0;
-        let pendingCount = 0;
-
-        if (snapshot.empty) {
-            listWrapper.innerHTML = `<div class="text-center p-6 bg-white rounded-2xl border text-xs font-bold text-slate-400">No active user records found in the security cluster.</div>`;
-            if(totalCountEl) totalCountEl.innerText = "0";
-            if(pendingCountEl) pendingCountEl.innerText = "0";
-            return;
-        }
-
-        snapshot.forEach((doc) => {
-            const user = doc.data();
-            totalCount++;
-            if (!user.isPaid) { pendingCount++; }
-
-            // Extract Settlement Vector Objects safely
-            const bank = user.bankDetails || {};
-
-            const nodeRow = document.createElement('div');
-            nodeRow.className = "bg-white p-4 rounded-3xl border border-slate-200/80 shadow-xs space-y-3 animate-fade-in";
+    // Active pipeline cross-reference link to read users and chat disputes simultaneously
+    db.collection("users").onSnapshot((userSnap) => {
+        db.collection("chat_disputes").get().then((chatSnap) => {
             
-            nodeRow.innerHTML = `
-                <div class="flex justify-between items-start border-b border-slate-100 pb-2.5">
-                    <div>
-                        <h4 class="font-black text-xs text-slate-900 uppercase tracking-tight">${user.name}</h4>
-                        <p class="text-[10px] text-slate-500 font-mono font-bold mt-0.5"><i class="fa-solid fa-phone text-[8px] text-slate-400 mr-0.5"></i> ${user.phone} | <span class="text-slate-400">${user.email}</span></p>
-                    </div>
-                    <span class="text-[9px] font-black font-mono px-2.5 py-0.5 rounded-md ${user.isPaid ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}">
-                        ${user.isPaid ? 'VERIFIED' : 'PENDING'}
-                    </span>
-                </div>
-                
-                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-2 text-[10px]">
-                    <div class="text-[9px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                        <i class="fa-solid fa-building-columns text-[8px]"></i> Account Settlement Parameters
-                    </div>
-                    <div class="grid grid-cols-2 gap-y-2 gap-x-4 text-slate-700">
-                        <p><span class="text-slate-400 block text-[8px] uppercase font-bold">Bank Name</span> <span class="font-bold text-slate-900">${bank.bankName || 'Not Linked'}</span></p>
-                        <p><span class="text-slate-400 block text-[8px] uppercase font-bold">Account Holder</span> <span class="font-semibold">${bank.holderName || 'N/A'}</span></p>
-                        <p><span class="text-slate-400 block text-[8px] uppercase font-bold">Account Number</span> <span class="font-mono font-bold text-slate-900 tracking-wide">${bank.accountNumber || 'N/A'}</span></p>
-                        <p><span class="text-slate-400 block text-[8px] uppercase font-bold">IFSC Code</span> <span class="font-mono font-bold text-blue-900">${bank.ifscCode || 'N/A'}</span></p>
-                    </div>
-                    
-                    <div class="pt-1.5 mt-1 border-t border-slate-200/50 flex items-center justify-between text-[9px] font-bold">
-                        <span class="text-slate-400 uppercase">Verification Deposit Status:</span>
-                        <span class="${bank.microDepositDispatched ? 'text-emerald-600' : 'text-slate-400'} flex items-center gap-1">
-                            <i class="fa-solid fa-circle-check"></i> ₹1.00 IMPS Dispatched
+            let chatMap = {};
+            chatSnap.forEach(cDoc => {
+                let cData = cDoc.data();
+                if(!chatMap[cData.phone]) chatMap[cData.phone] = [];
+                chatMap[cData.phone].push(cData.query);
+            });
+
+            mainWrapper.innerHTML = "";
+            if (userSnap.empty) {
+                mainWrapper.innerHTML = `<div class="text-center p-6 bg-white rounded-2xl border text-xs text-slate-400 font-bold">No registered entity blocks mapped.</div>`;
+                return;
+            }
+
+            userSnap.forEach((uDoc) => {
+                const user = uDoc.data();
+                const bank = user.bankDetails || {};
+                const chatHistoryList = chatMap[user.phone] || [];
+                const shareCountVal = user.sharesCount || 1;
+
+                const cardNode = document.createElement('div');
+                cardNode.className = "bg-white border border-slate-200 rounded-[2rem] p-5 shadow-xs space-y-4 animate-fade-in";
+
+                cardNode.innerHTML = `
+                    <div class="flex justify-between items-start border-b border-slate-100 pb-3">
+                        <div>
+                            <h4 class="font-black text-sm text-slate-900 tracking-tight uppercase">${user.name}</h4>
+                            <p class="text-[10px] font-mono text-slate-500 font-bold mt-0.5">${user.phone} | ${user.email}</p>
+                            <span class="inline-block text-[9px] bg-blue-50 text-blue-900 border border-blue-100 px-2 mt-1 rounded font-bold">Allocated Units: ${shareCountVal} (₹${shareCountVal * 200})</span>
+                        </div>
+                        <span class="text-[9px] font-black font-mono px-2 py-0.5 rounded-md ${user.isPaid ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}">
+                            ${user.isPaid ? 'APPROVED' : 'AWAITING AUDIT'}
                         </span>
                     </div>
-                </div>
 
-                ${!user.isPaid ? `
-                    <div class="pt-1">
-                        <button onclick="approveUserPaymentFromAdmin('${user.phone}')" class="w-full py-2.5 bg-slate-950 text-white font-black rounded-xl text-[10px] uppercase tracking-wider shadow-md active:scale-[0.98] transition">
-                            Verify Ledger Node & Unlock Documents
-                        </button>
+                    <div class="bg-slate-50 p-3 rounded-2xl border text-[10px] space-y-1.5">
+                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider"><i class="fa-solid fa-wallet"></i> Registered Bank Account</p>
+                        <div class="grid grid-cols-2 gap-x-2 gap-y-1 text-slate-700">
+                            <p><span class="text-slate-400 text-[8px] block uppercase">Bank Node:</span><strong class="text-slate-900">${bank.bankName || 'N/A'}</strong></p>
+                            <p><span class="text-slate-400 text-[8px] block uppercase">IFSC Code:</span><strong class="font-mono text-blue-900">${bank.ifscCode || 'N/A'}</strong></p>
+                            <p><span class="text-slate-400 text-[8px] block uppercase">Account No:</span><strong class="font-mono text-slate-900">${bank.accountNumber || 'N/A'}</strong></p>
+                            <p><span class="text-slate-400 text-[8px] block uppercase">IMPS Status:</span><strong class="text-emerald-600">₹1.00 Dispatched</strong></p>
+                        </div>
                     </div>
-                ` : `
-                    <div class="bg-emerald-50 text-emerald-700 text-center py-2 rounded-xl text-[9px] font-bold border border-emerald-100 uppercase tracking-wider">
-                        <i class="fa-solid fa-lock-open mr-0.5"></i> Certificate & Portfolio Dispatched
+
+                    <div class="bg-blue-50/40 border border-blue-100/60 p-3 rounded-2xl text-[10px] space-y-1">
+                        <p class="text-[8px] font-black text-blue-900 uppercase tracking-wider"><i class="fa-solid fa-headset"></i> Support Helpdesk Dispute Log</p>
+                        ${chatHistoryList.length === 0 ? 
+                            `<p class="text-slate-400 italic">No chat assistant interaction logs recorded.</p>` : 
+                            `<ul class="list-disc list-inside text-slate-700 space-y-0.5 font-medium">${chatHistoryList.map(q => `<li class="truncate">${q}</li>`).join('')}</ul>`
+                        }
                     </div>
-                `}
-            `;
-            listWrapper.appendChild(nodeRow);
+
+                    ${user.signatureUrl ? `
+                        <div class="space-y-1">
+                            <span class="text-[8px] font-black text-slate-400 uppercase tracking-wider block">Cryptographic Signature String:</span>
+                            <img src="${user.signatureUrl}" class="h-10 bg-slate-50 border border-dashed rounded-xl px-2 py-1 object-contain">
+                        </div>
+                    ` : ''}
+
+                    <div class="pt-2 flex flex-col gap-2 border-t border-slate-100">
+                        ${!user.isPaid ? `
+                            <button onclick="approveUserPaymentFromAdmin('${user.phone}')" class="w-full py-2.5 bg-slate-900 text-white font-black rounded-xl text-[10px] uppercase tracking-wider active:scale-[0.98] transition">
+                                Approve Asset Block & Issue Documents
+                            </button>
+                        ` : `
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="triggerAdminExternalPDFDownload('${user.phone}', 'agreement')" class="py-2 bg-slate-100 text-slate-700 font-bold border border-slate-200 rounded-xl text-[10px] uppercase flex items-center justify-center gap-1"><i class="fa-solid fa-download"></i> Agreement</button>
+                                <button onclick="triggerAdminExternalPDFDownload('${user.phone}', 'certificate')" class="py-2 bg-slate-100 text-slate-700 font-bold border border-slate-200 rounded-xl text-[10px] uppercase flex items-center justify-center gap-1"><i class="fa-solid fa-download"></i> Certificate</button>
+                            </div>
+                        `}
+                    </div>
+                `;
+                mainWrapper.appendChild(cardNode);
+            });
         });
-
-        if(totalCountEl) totalCountEl.innerText = totalCount;
-        if(pendingCountEl) pendingCountEl.innerText = pendingCount + " Nodes";
-    }, (error) => {
-        listWrapper.innerHTML = `<div class="text-center p-4 bg-red-50 border border-red-100 rounded-xl text-xs text-red-600 font-bold">Database Handshake Error: ${error.message}</div>`;
     });
 };
 
-// Admin Control Authorization Callback
-window.approveUserPaymentFromAdmin = function(userPhone) {
-    if (!userPhone) return;
-    
-    db.collection("users").doc(userPhone).update({
-        isPaid: true
-    }).then(() => {
-        alert("Success: Ledger node authorized. User documents successfully generated.");
-    }).catch(err => {
-        alert("Operation Error: Failed to commit status update. " + err.message);
+// Admin Central Override For Dispatched Status Releases
+window.approveUserPaymentFromAdmin = function(phoneNum) {
+    db.collection("users").doc(phoneNum).update({ isPaid: true }).then(() => {
+        alert("Node clearance success: Asset blocks verified and pushed to client vault.");
     });
 };
 
-console.log("BDA Views Hub: Admin panel module compiled successfully with settlement metrics.");
+// Master Admin Isolated PDF Generation Engine Callbacks
+window.triggerAdminExternalPDFDownload = function(phoneNum, documentType) {
+    db.collection("users").doc(phoneNum).get().then(doc => {
+        if(!doc.exists) return;
+        const u = doc.data();
+        const { jsPDF } = window.jspdf; const pdf = new jsPDF('p', 'mm', 'a4');
+        
+        if(documentType === 'agreement') {
+            pdf.text(`Executed Agreement - Name: ${u.name.toUpperCase()} | Node: ${u.phone}`, 15, 20);
+            if(u.signatureUrl) pdf.addImage(u.signatureUrl, 'PNG', 15, 30, 40, 15);
+            pdf.save(`Admin_Agreement_${u.phone}.pdf`);
+        } else {
+            // High-definition certificate format fallback layout compiler
+            pdf.setFillColor(15, 23, 42); pdf.rect(0, 0, 210, 297, 'F');
+            pdf.setTextColor(251, 191, 36); pdf.setFontSize(22); pdf.text("CERTIFICATE OF ASSET DEPOSIT", 105, 40, {align:"center"});
+            pdf.setTextColor(255, 255, 255); pdf.setFontSize(16); pdf.text(u.name.toUpperCase(), 105, 80, {align:"center"});
+            pdf.save(`Admin_Certificate_${u.phone}.pdf`);
+        }
+    });
+};
