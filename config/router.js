@@ -1,5 +1,5 @@
 // ==========================================================================
-// BHARAT DIGITAL ASSETS - MASTER PERSISTENT ROUTING ENGINE v6.0 (ENGLISH)
+// BHARAT DIGITAL ASSETS - MASTER PERSISTENT CORE FRAMEWORK ENGINE v6.5
 // ==========================================================================
 
 window.currentUserMobile = "";
@@ -20,7 +20,11 @@ window.addEventListener('load', () => {
         navContainer.innerHTML = NavigationComponent.render();
     }
 
-    // SESSION RETRIEVAL CORE: Check if user is already logged in securely
+    // Force hide navigation dock layout strictly on load trigger
+    const dock = document.getElementById('app-nav-dock');
+    if (dock) dock.style.setProperty('display', 'none', 'important');
+
+    // CHECK PERSISTENT USER DATA MATRIX LOCK
     const savedMobile = localStorage.getItem('bda_active_mobile');
     if (savedMobile) {
         window.currentUserMobile = savedMobile;
@@ -28,35 +32,70 @@ window.addEventListener('load', () => {
             if (doc.exists) {
                 window.globalUserDataObj = doc.data();
                 exposeGlobalChatbotTrigger(false);
-                switchView('home'); // Directly route to dashboard, bypass register
+                switchView('home');
             } else {
                 localStorage.removeItem('bda_active_mobile');
                 switchView('register');
+                exposeGlobalChatbotTrigger(true);
             }
-            hideSplash();
-        }).catch(() => { switchView('register'); hideSplash(); });
+            hideAppLoaderSplash();
+        }).catch(() => { switchView('register'); exposeGlobalChatbotTrigger(true); hideAppLoaderSplash(); });
     } else {
         switchView('register');
-        hideSplash();
+        exposeGlobalChatbotTrigger(true);
+        hideAppLoaderSplash();
     }
 });
 
-function hideSplash() {
+function hideAppLoaderSplash() {
     const splash = document.getElementById('app-splash-screen');
     if (splash) { splash.style.opacity = "0"; setTimeout(() => { splash.style.display = "none"; }, 300); }
 }
 
+// Fixed Global Alert Popup Management Engine
+window.triggerAlert = function(title, message, statusType) {
+    const box = document.getElementById('custom-alert-box');
+    const wrapper = document.getElementById('alert-icon-wrapper');
+    const tEl = document.getElementById('alert-title-text');
+    const mEl = document.getElementById('alert-msg-text');
+    
+    if (!box || !wrapper || !tEl || !mEl) return;
+    tEl.innerText = title; mEl.innerText = message;
+    
+    if (statusType === 'success') {
+        wrapper.className = "w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-xl shadow-inner";
+        wrapper.innerHTML = `<i class="fa-solid fa-circle-check"></i>`;
+    } else {
+        wrapper.className = "w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto text-xl shadow-inner";
+        wrapper.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i>`;
+    }
+    box.style.setProperty('display', 'flex', 'important');
+    box.classList.remove('hidden');
+};
+
+window.closeCustomAlert = function() {
+    const box = document.getElementById('custom-alert-box');
+    if (box) {
+        box.classList.add('hidden');
+        box.style.setProperty('display', 'none', 'important');
+    }
+};
+
+// Strict Display Engine View Matrix Mapping
 window.switchView = function(viewId) {
-    document.querySelectorAll('.view-panel').forEach(p => { p.style.display = "none"; p.classList.remove('active'); });
+    document.querySelectorAll('.view-panel').forEach(p => {
+        p.style.setProperty('display', 'none', 'important');
+        p.classList.remove('active');
+    });
     
     const target = document.getElementById(`view-${viewId}`);
     if (target) {
-        target.style.display = "flex";
+        target.style.setProperty('display', 'flex', 'important');
         target.classList.add('active');
         window.scrollTo(0, 0);
     }
     
-    // Bottom Dock Visibility Mapping Rules
+    // Bottom Dock Visibility Mapping Layer
     const dock = document.getElementById('app-nav-dock');
     if (dock) {
         if (viewId === 'home' || viewId === 'shares' || viewId === 'account') {
@@ -78,26 +117,12 @@ window.switchView = function(viewId) {
     if (viewId === 'admin' && typeof syncAdminMasterLedger === 'function') syncAdminMasterLedger();
 };
 
-window.triggerAlert = function(title, message, statusType) {
-    const box = document.getElementById('custom-alert-box');
-    const wrapper = document.getElementById('alert-icon-wrapper');
-    const tEl = document.getElementById('alert-title-text');
-    const mEl = document.getElementById('alert-msg-text');
-    if (!box || !wrapper || !tEl || !mEl) return;
-    tEl.innerText = title; mEl.innerText = message;
-    wrapper.className = statusType === 'success' ? "w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-xl shadow-inner" : "w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto text-xl shadow-inner";
-    wrapper.innerHTML = statusType === 'success' ? `<i class="fa-solid fa-circle-check"></i>` : `<i class="fa-solid fa-triangle-exclamation"></i>`;
-    box.style.display = "flex"; box.classList.remove('hidden');
-};
-
-window.closeCustomAlert = function() { document.getElementById('custom-alert-box').classList.add('hidden'); };
-
 function exposeGlobalChatbotTrigger(shouldShow) {
     let btn = document.getElementById('global-onboarding-chat-trigger');
     if (!btn && shouldShow) {
         btn = document.createElement('button'); btn.id = 'global-onboarding-chat-trigger';
-        btn.className = "fixed bottom-4 right-4 w-12 h-12 bg-slate-950 text-white rounded-2xl flex items-center justify-center shadow-2xl z-[45] border border-slate-800 active:scale-95 transition-all";
-        btn.innerHTML = `<i class="fa-solid fa-headset text-base"></i>`;
+        btn.className = "fixed bottom-6 right-6 w-12 h-12 bg-slate-950 text-white rounded-2xl flex items-center justify-center shadow-2xl z-[48] border border-slate-800 active:scale-95 transition-all";
+        btn.innerHTML = `<i class="fa-solid fa-headset text-base"></i><span class="w-2 h-2 bg-emerald-500 rounded-full absolute top-1 right-1 animate-pulse"></span>`;
         btn.onclick = () => { if (typeof openChatbot === 'function') openChatbot(); };
         document.body.appendChild(btn);
     }
@@ -119,7 +144,7 @@ window.handleAdvancedRegistration = function() {
     window.currentUserMobile = phone;
     db.collection("users").doc(window.currentUserMobile).get().then((doc) => {
         if (doc.exists) {
-            triggerAlert("Account Exists", "This node vector is already registered. Routing to Login Panel.", "error");
+            triggerAlert("Account Exists", "This mobile line is already registered. Routing to Login.", "error");
             switchView('login');
         } else {
             window.globalUserDataObj = { name, phone, email, pin, isPaid: false, bankLinked: false, sharesCount: 1, utrCode: "", registrationDate: new Date().toISOString().split('T')[0] };
@@ -141,7 +166,7 @@ window.handleDirectLogin = function() {
     db.collection("users").doc(window.currentUserMobile).get().then((doc) => {
         if (doc.exists && doc.data().pin === pin) {
             window.globalUserDataObj = doc.data();
-            localStorage.setItem('bda_active_mobile', phone); // Commit session persistence key
+            localStorage.setItem('bda_active_mobile', phone);
             exposeGlobalChatbotTrigger(false);
             switchView('home');
         } else { triggerAlert("Security Error", "Invalid authentication credentials mapped.", "error"); }
