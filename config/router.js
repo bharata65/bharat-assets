@@ -1,19 +1,16 @@
 // ==========================================================================
-// BHARAT DIGITAL ASSETS - UNIVERSAL GLOBAL ROUTER & ROUTE ENGINE v4.5
+// BHARAT DIGITAL ASSETS - ENTERPRISE ROUTER & DISPATCH ENGINE v5.0 (ENGLISH)
 // ==========================================================================
 
-// जागतिक स्तरावर युझर डेटा आणि मोबाईल स्टेट डिफाईन करणे
 window.currentUserMobile = "";
 window.globalUserDataObj = null;
 
-// १. सर्व फाइल्स लोड झाल्यावर सिस्टीम सुरू करण्याचे इंजिन
 window.addEventListener('load', () => {
-    console.log("BDA Router Handshake: DOM and Assets fully mapped.");
+    console.log("BDA Core Pipeline: Initializing Master Handshake.");
     
     const container = document.getElementById('view-target-container');
     const navContainer = document.getElementById('nav-target-container');
     
-    // सुरक्षित इन्जेक्शन पाईपलाईन - कोणतीही फाईल मिसिंग असल्यास क्रॅश रोखणे
     if (container) {
         let compiledHTML = "";
         if (typeof RegisterView !== 'undefined') compiledHTML += RegisterView.render();
@@ -34,24 +31,25 @@ window.addEventListener('load', () => {
         navContainer.innerHTML = NavigationComponent.render();
     }
     
-    // सुरुवातीला नेव्हिगेशन पूर्ण हायड ठेवणे
+    // NAVIGATION DOCK RULES: Hided until successful authorization profile is loaded
     const dock = document.getElementById('app-nav-dock');
     if (dock) dock.style.display = 'none'; 
     
-    // थेट पहिल्या व्ह्यूवर (Register) ट्रिगर करणे
+    // Globally expose the chatbot floating trigger button right from onboarding step 1
+    exposeGlobalChatbotTrigger(true);
+    
     switchView('register');
     
-    // लोडिंग स्क्रीन (Splash) १००% बंद करणे
     setTimeout(() => {
         const splash = document.getElementById('app-splash-screen');
         if (splash) {
             splash.style.opacity = "0";
             setTimeout(() => { splash.style.display = "none"; }, 300);
         }
-    }, 800);
+    }, 600);
 });
 
-// २. बँकिंग कस्टम अलर्ट सिस्टीम
+// Standard Institutional Notification Engine
 window.triggerAlert = function(title, message, statusType) {
     const box = document.getElementById('custom-alert-box');
     const wrapper = document.getElementById('alert-icon-wrapper');
@@ -77,13 +75,10 @@ window.triggerAlert = function(title, message, statusType) {
 
 window.closeCustomAlert = function() { 
     const box = document.getElementById('custom-alert-box');
-    if (box) {
-        box.style.display = "none";
-        box.classList.add('hidden'); 
-    }
+    if (box) { box.style.display = "none"; box.classList.add('hidden'); }
 };
 
-// ३. प्रगत व्ह्यू स्विचर (Strict Single Pane Screen Locker)
+// Strict Mobile Locking View Screen Engine
 window.switchView = function(viewId) {
     document.querySelectorAll('.view-panel').forEach(p => {
         p.style.display = "none";
@@ -99,6 +94,7 @@ window.switchView = function(viewId) {
     
     const dock = document.getElementById('app-nav-dock');
     if (dock) {
+        // Lower icons visibility rules: Only displayed for Authorized Home ecosystem view tabs
         if (viewId === 'home' || viewId === 'shares' || viewId === 'account') {
             dock.style.display = 'flex';
             dock.classList.remove('hidden');
@@ -117,7 +113,23 @@ window.switchView = function(viewId) {
     if (viewId === 'admin' && typeof syncAdminMasterLedger === 'function') syncAdminMasterLedger();
 };
 
-// ४. ऑनबोर्डिंग नवीन नोंदणी (Registration) ॲक्शन लॉजिक
+// Helper to handle chatbot button placement on non-authorized screens
+function exposeGlobalChatbotTrigger(shouldShow) {
+    let btn = document.getElementById('global-onboarding-chat-trigger');
+    if (!btn && shouldShow) {
+        btn = document.createElement('button');
+        btn.id = 'global-onboarding-chat-trigger';
+        btn.className = "fixed bottom-4 right-4 w-12 h-12 bg-slate-950 text-white rounded-2xl flex items-center justify-center shadow-2xl z-[45] border border-slate-800 active:scale-95 transition-all";
+        btn.innerHTML = `<i class="fa-solid fa-headset text-base"></i><span class="w-2 h-2 bg-emerald-500 rounded-full absolute top-1 right-1 animate-pulse"></span>`;
+        btn.onclick = () => { if (typeof openChatbot === 'function') openChatbot(); };
+        document.body.appendChild(btn);
+    }
+    if (btn) {
+        btn.style.display = shouldShow ? 'flex' : 'none';
+    }
+}
+
+// Onboarding Registration Handshake Logic
 window.handleAdvancedRegistration = function() {
     const name = document.getElementById('reg-name').value.trim();
     const phone = document.getElementById('reg-phone').value.trim();
@@ -125,37 +137,39 @@ window.handleAdvancedRegistration = function() {
     const pin = document.getElementById('reg-pin').value.trim();
     const cpin = document.getElementById('reg-cpin').value.trim();
 
-    if (!name || name.length < 3) return triggerAlert("Validation Error", "कृपया तुमचे पूर्ण नाव टाका.", "error");
-    if (phone.length !== 10 || isNaN(phone)) return triggerAlert("Validation Error", "कृपया १०-अंकी मोबाईल नंबर अचूक टाका.", "error");
-    if (!email.includes("@") || !email.includes(".")) return triggerAlert("Validation Error", "ईमेल आयडी चुकीचा आहे.", "error");
-    if (pin.length !== 4 || pin !== cpin) return triggerAlert("Validation Error", "४-अंकी सिक्युरिटी पिन मॅच होत नाहीये.", "error");
+    if (!name || name.length < 3) return triggerAlert("Validation Error", "Please provide your full registration name.", "error");
+    if (phone.length !== 10 || isNaN(phone)) return triggerAlert("Validation Error", "Please input an authentic 10-digit mobile number.", "error");
+    if (!email.includes("@") || !email.includes(".")) return triggerAlert("Validation Error", "Invalid organizational email structure.", "error");
+    if (pin.length !== 4 || pin !== cpin) return triggerAlert("Validation Error", "Security 4-Digit access PIN parameters do not match.", "error");
 
     window.currentUserMobile = phone;
 
     db.collection("users").doc(window.currentUserMobile).get().then((doc) => {
         if (doc.exists) {
-            triggerAlert("Account Exists", "या नंबरवर आधीच अकाऊंट आहे. लॉगिन सेंटरवर जा.", "info");
+            triggerAlert("Account Exists", "This node vector is already registered. Routing to Login Panel.", "info");
             switchView('login');
         } else {
-            window.globalUserDataObj = { name, phone, email, pin, isPaid: false, utrCode: "", registrationDate: new Date().toISOString().split('T')[0] };
+            window.globalUserDataObj = { name, phone, email, pin, isPaid: false, bankLinked: false, utrCode: "", registrationDate: new Date().toISOString().split('T')[0] };
             switchView('kyc'); 
         }
     }).catch(err => triggerAlert("System Error", err.message, "error"));
 };
 
-// ५. युझर आणि मास्टर ॲडमीन लॉगिन सिस्टीम
+// Vault Authentication Credentials Logic
 window.handleDirectLogin = function() {
     const phone = document.getElementById('login-phone').value.trim();
     const pin = document.getElementById('login-pin').value.trim();
 
-    if (phone.length !== 10 || isNaN(phone)) return triggerAlert("Security Error", "कृपया योग्य १०-अंकी नंबर टाका.", "error");
-    if (pin.length !== 4 || isNaN(pin)) return triggerAlert("Security Error", "पिन ४-अंकी असणे बंधनकारक आहे.", "error");
+    if (phone.length !== 10 || isNaN(phone)) return triggerAlert("Security Error", "Please supply your registered 10-digit credentials.", "error");
+    if (pin.length !== 4 || isNaN(pin)) return triggerAlert("Security Error", "Verification PIN constraint requires 4 digits.", "error");
 
     window.currentUserMobile = phone;
     
+    // Master Administrative Authentication Bypass Hook
     if (phone === "9999999999" && pin === "0000") { 
         window.globalUserDataObj = { name: "Master Admin Team", phone: "9999999999", isAdmin: true };
-        triggerAlert("Access Granted", "मास्टर लेजर क्लिअरन्स स्वीकृत! ॲडमिन डेस्क सुरू होत आहे.", "success");
+        triggerAlert("Access Cleared", "Administrative verification token authorized. Loading ledger nodes.", "success");
+        exposeGlobalChatbotTrigger(false);
         setTimeout(() => { switchView('admin'); }, 600);
         return; 
     }
@@ -165,21 +179,29 @@ window.handleDirectLogin = function() {
             const data = doc.data();
             if (data.pin === pin) { 
                 window.globalUserDataObj = data; 
-                triggerAlert("Success", "लॉगिन यशस्वी झाले!", "success");
-                setTimeout(() => { switchView('home'); }, 600);
-            } else { triggerAlert("Security Error", "तुमचा सिक्युरिटी पिन चुकीचा आहे.", "error"); }
+                triggerAlert("Authorized", "Authentication handshake successful.", "success");
+                exposeGlobalChatbotTrigger(false); // Use dashboard integrated launcher instead
+                
+                setTimeout(() => { 
+                    if (!data.bankLinked) {
+                        // Forward user immediately to step 5 setup if settlement data is completely blank
+                        switchView('signature'); 
+                    } else {
+                        switchView('home'); 
+                    }
+                }, 600);
+            } else { triggerAlert("Security Error", "The access verification PIN configuration is invalid.", "error"); }
         } else {
-            triggerAlert("Not Found", "या नंबरवर अकाऊंट नाही, कृपया नवीन नोंदणी करा.", "info");
+            triggerAlert("Record Missing", "No account registered with this profile node line.", "info");
             switchView('register');
         }
-    }).catch(err => triggerAlert("Sync Error", err.message, "error"));
+    }).catch(err => triggerAlert("Sync Failure", err.message, "error"));
 };
 
-// ६. केवायसी सबमिशन
 window.submitKYC = function() {
     const dob = document.getElementById('kyc-dob').value;
     const edu = document.getElementById('kyc-edu').value;
-    if(!dob) return triggerAlert("KYC Input", "कृपया तुमची जन्मतारीख सिलेक्ट करा.", "error");
+    if(!dob) return triggerAlert("KYC Input", "Please map your actual Date of Birth.", "error");
     
     window.globalUserDataObj.education = edu; 
     window.globalUserDataObj.dob = dob;
@@ -194,28 +216,7 @@ window.submitKYC = function() {
     switchView('agreement');
 };
 
-// ७. नॅव्हिगेशन आणि स्वाक्षरी जतन करणे
 window.navigateToSignature = function() { 
     switchView('signature'); 
     setTimeout(() => { if (typeof initSignatureEngine === 'function') initSignatureEngine(); }, 350); 
-};
-
-window.generateAndSaveAgreement = function() {
-    const canvas = document.getElementById('signature-canvas');
-    if (!canvas) return;
-    
-    const dataUrl = canvas.toDataURL();
-    window.globalUserDataObj.signatureUrl = dataUrl;
-
-    db.collection("users").doc(window.currentUserMobile).set(window.globalUserDataObj).then(() => {
-        triggerAlert("Onboarding Complete", "तुमचा प्रोफाइल डेटा आणि डिजिटल स्वाक्षरी जतन झाली आहे!", "success");
-        setTimeout(() => { switchView('home'); }, 1000);
-    }).catch(err => triggerAlert("Database Error", err.message, "error"));
-};
-
-window.unlockSecureApplication = function() {
-    const dock = document.getElementById('app-nav-dock');
-    if (dock) dock.style.display = 'flex';
-    if (typeof hydrateUserSession === 'function') hydrateUserSession();
-    switchView('home');
 };
