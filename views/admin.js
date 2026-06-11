@@ -1,5 +1,5 @@
 // ==========================================================================
-// BHARAT DIGITAL ASSETS - MASTER ADMIN ARCHITECTURE MANAGEMENT HUB v6.5
+// BHARAT DIGITAL ASSETS - MASTER ADMIN ARCHITECTURE HUB v7.5
 // ==========================================================================
 
 const AdminView = {
@@ -9,8 +9,8 @@ const AdminView = {
                 
                 <div class="flex justify-between items-center border-b pb-3 border-slate-300">
                     <div>
-                        <h2 class="text-xl font-black text-slate-900 tracking-tight">Master Ledger Desk</h2>
-                        <p class="text-[9px] text-slate-500 font-bold uppercase font-mono">Centralized System Core Node</p>
+                        <h2 class="text-xl font-black text-slate-900 tracking-tight">Master Admin Control</h2>
+                        <p class="text-[9px] text-slate-500 font-bold uppercase font-mono">Central System Security Node</p>
                     </div>
                     <button onclick="window.location.reload()" class="text-xs font-black bg-white border border-slate-300 text-red-600 px-3 py-1.5 rounded-xl shadow-xs">Exit Session</button>
                 </div>
@@ -23,12 +23,6 @@ const AdminView = {
                         <input type="text" id="admin-input-master-upi" placeholder="Enter Destination Merchant UPI ID" class="w-full bg-slate-800 border border-slate-700 text-white p-3 rounded-xl text-xs font-mono font-bold">
                         <button onclick="updateMasterPaymentGatewayUPIID()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] rounded-xl uppercase tracking-wider transition">Commit Gateway Routing</button>
                     </div>
-                </div>
-
-                <div class="bg-slate-950 rounded-xl p-3 font-mono text-[9px] text-emerald-400 border border-slate-800 space-y-1 shadow-inner max-h-24 overflow-y-auto">
-                    <p class="text-slate-500 font-bold">[SYSTEM TRAFFIC LOGGER INITIALIZED...]</p>
-                    <p><span class="text-blue-400">[2026-06-11 UTC]</span> Core cluster operational handshakes stable.</p>
-                    <p><span class="text-amber-400">[LEDGER LIVE]</span> Continuous real-time snapshot listeners active.</p>
                 </div>
 
                 <div class="space-y-3 flex-1">
@@ -51,7 +45,7 @@ window.updateMasterPaymentGatewayUPIID = function() {
     const upiStr = document.getElementById('admin-input-master-upi').value.trim();
     if(!upiStr) return alert("Please specify a valid operational target UPI merchant address string.");
     db.collection("config").doc("gateway").set({ upiId: upiStr }).then(() => {
-        alert("Master System Confirmation: Merchant destination link successfully locked to: " + upiStr);
+        alert("Master System Confirmation: Merchant destination link successfully locked.");
     });
 };
 
@@ -64,7 +58,6 @@ window.syncAdminMasterLedger = function() {
         const upiField = document.getElementById('admin-input-master-upi');
         if(upiField && gDoc.exists) upiField.value = liveUpiConfigAddress;
 
-        // Fetch users database and cross reference real-time chat histories logs simultaneously
         db.collection("users").onSnapshot((userSnap) => {
             db.collection("chat_disputes").get().then((chatSnap) => {
                 
@@ -88,13 +81,12 @@ window.syncAdminMasterLedger = function() {
                     const countUnits = user.sharesCount || 1;
 
                     const rowComponent = document.createElement('div');
-                    rowComponent.className = "bg-white border border-slate-200/80 rounded-[2rem] p-5 space-y-4 shadow-xs relative overflow-hidden";
+                    rowComponent.className = "bg-white border border-slate-200 rounded-3xl p-5 space-y-4 shadow-sm relative overflow-hidden flex flex-col";
 
-                    // Dynamic Blinking Badge Injection if user has populated UTR data line code
                     let alertUtrBadgeHTML = "";
                     if (user.utrCode && !user.isPaid) {
                         alertUtrBadgeHTML = `
-                            <div class="bg-red-500 border border-red-600 text-white font-mono text-[8px] font-black tracking-widest px-3 py-1 rounded-full text-center mb-2 animate-pulse-blink uppercase">
+                            <div class="bg-red-500 border border-red-600 text-white font-mono text-[8px] font-black tracking-widest px-3 py-1 rounded-full text-center mb-1 animate-pulse uppercase">
                                 🚨 UTR VERIFICATION ACTION REQUIRED
                             </div>
                         `;
@@ -128,33 +120,26 @@ window.syncAdminMasterLedger = function() {
                         </div>
 
                         <div class="p-3 rounded-2xl text-[10px] border ${user.utrCode ? 'bg-red-50/60 border-red-200/80 text-red-950' : 'bg-slate-50 border-slate-100 text-slate-500 italic'}">
-                            <span class="text-[8px] font-black uppercase tracking-wider block ${user.utrCode ? 'text-red-800' : 'text-slate-400'}">Submitted Banking Payment UTR Token:</span>
-                            <p class="font-mono text-sm font-black mt-0.5 tracking-widest">${user.utrCode ? user.utrCode : 'Awaiting receipt submission from member...'}</p>
+                            <span class="text-[8px] font-black uppercase tracking-wider block ${user.utrCode ? 'text-red-800' : 'text-slate-400'}">Submitted Payment UTR Reference:</span>
+                            <p class="font-mono text-xs font-black mt-0.5 tracking-widest">${user.utrCode ? user.utrCode : 'Awaiting reference submission...'}</p>
                         </div>
 
                         <div class="bg-blue-50/40 border border-blue-100/60 p-3 rounded-2xl text-[10px] space-y-1">
-                            <span class="text-[8px] font-black text-blue-900 uppercase tracking-wider block"><i class="fa-solid fa-headset"></i> Chatbot Helpdesk Tickets</span>
+                            <span class="text-[8px] font-black text-blue-900 uppercase tracking-wider block"><i class="fa-solid fa-headset"></i> Chatbot Enquiries</span>
                             ${userQueriesLog.length === 0 ? 
-                                `<p class="text-slate-400 italic font-medium">No system support interaction logs cataloged.</p>` : 
+                                `<p class="text-slate-400 italic font-medium">No helpdesk logs cataloged.</p>` : 
                                 `<ul class="list-disc list-inside text-slate-600 font-medium space-y-0.5">${userQueriesLog.map(q => `<li class="truncate">${q}</li>`).join('')}</ul>`
                             }
                         </div>
 
-                        ${user.signatureUrl ? `
-                            <div class="space-y-1">
-                                <span class="text-[8px] font-black text-slate-400 uppercase tracking-wider block">Authorized Identity Canvas Signature Seal:</span>
-                                <img src="${user.signatureUrl}" class="h-10 bg-slate-50 border border-dashed rounded-xl px-2.5 py-1 object-contain shadow-inner">
-                            </div>
-                        ` : ''}
-
-                        <div class="pt-2 border-t border-slate-100">
+                        <div class="pt-1 border-t border-slate-100">
                             ${!user.isPaid ? `
-                                <button onclick="approveUserPaymentFromAdmin('${user.phone}')" class="w-full py-3 bg-slate-900 text-white font-black rounded-xl text-[10px] uppercase tracking-wider shadow active:scale-[0.98] transition">
-                                    Approve Capital Allocation Node & Authorize Vault
+                                <button onclick="approveUserPaymentFromAdmin('${user.phone}')" class="w-full py-2.5 bg-slate-900 text-white font-black rounded-xl text-[10px] uppercase tracking-wider active:scale-[0.98] transition">
+                                    Approve Capital Node & Authorize Vault
                                 </button>
                             ` : `
                                 <div class="bg-emerald-50 text-emerald-700 text-center py-2 rounded-xl text-[9px] font-black uppercase tracking-wider border border-emerald-100">
-                                    <i class="fa-solid fa-circle-check"></i> Capital Nodes approved & verified successfully
+                                    <i class="fa-solid fa-circle-check"></i> Capital Node Active
                                 </div>
                             `}
                         </div>
@@ -169,6 +154,6 @@ window.syncAdminMasterLedger = function() {
 window.approveUserPaymentFromAdmin = function(phoneNum) {
     if (!phoneNum) return;
     db.collection("users").doc(phoneNum).update({ isPaid: true }).then(() => {
-        alert("System Success: Node authorized. Asset allocation metrics committed to secure client instance.");
-    }).catch(err => alert("Pipeline Error: " + err.message));
+        alert("Node clearance success committed.");
+    });
 };
