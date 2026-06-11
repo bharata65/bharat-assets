@@ -1,10 +1,14 @@
 // ==========================================================================
-// BHARAT DIGITAL ASSETS - MASTER ROUTER & OPERATIONS FLOW FIX v4.3.1
+// BHARAT DIGITAL ASSETS - MASTER ROUTER & COUPLING ENGINE v4.4 (FINAL)
 // ==========================================================================
+
+let currentUserMobile = "";
+let globalUserDataObj = null;
 
 window.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('view-target-container');
     if (container) {
+        // सर्व व्ह्यूज सिस्टीममध्ये इंजेक्ट करणे
         container.innerHTML = 
             RegisterView.render() + LoginView.render() + KYCView.render() + 
             AgreementView.render() + SignatureView.render() + HomeView.render() + 
@@ -15,9 +19,11 @@ window.addEventListener('DOMContentLoaded', () => {
     const navContainer = document.getElementById('nav-target-container');
     if (navContainer) navContainer.innerHTML = NavigationComponent.render();
     
+    // सुरुवातीला खालची नॅव्हिगेशन पट्टी आणि सर्व पॉपअप्स पूर्णपणे हायड (Lock) करणे
     const dock = document.getElementById('app-nav-dock');
-    if (dock) dock.classList.add('hidden'); // सुरुवातीला नॅव्हिगेशन पट्टी पूर्ण लॉक
+    if (dock) dock.style.display = 'none'; 
     
+    // सर्वात आधी थेट रजिस्ट्रेशन स्क्रीन ओपन करणे
     switchView('register');
     
     setTimeout(() => {
@@ -26,6 +32,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }, 600);
 });
 
+// कडक कस्टम एलर्ट बॉक्स
 function triggerAlert(title, message, statusType) {
     const box = document.getElementById('custom-alert-box');
     const wrapper = document.getElementById('alert-icon-wrapper');
@@ -46,16 +53,20 @@ function triggerAlert(title, message, statusType) {
         wrapper.innerHTML = `<i class="fa-solid fa-circle-info"></i>`;
     }
     box.classList.remove('hidden');
+    box.style.display = "flex";
 }
-function closeCustomAlert() { document.getElementById('custom-alert-box').classList.add('hidden'); }
 
-// कडक व्ह्यू स्विचर इंजिन (Strict Display Classes Reset)
-function switchView(viewId) {
-    if (!globalUserDataObj && viewId !== 'register' && viewId !== 'login' && viewId !== 'kyc' && viewId !== 'agreement' && viewId !== 'signature' && viewId !== 'admin') {
-        return;
+function closeCustomAlert() { 
+    const box = document.getElementById('custom-alert-box');
+    if (box) {
+        box.classList.add('hidden'); 
+        box.style.display = "none";
     }
-    
-    // डोममधील सर्व व्ह्यूज पूर्णपणे गायब करणे (Hides browser bar shifts)
+}
+
+// मोबाईल स्क्रीन आणि स्क्रोलिंग लॉक करणारे मुख्य इंजिन (Strict Single-Screen Display Switcher)
+function switchView(viewId) {
+    // डोममधील इतर सर्व स्क्रीन पूर्णपणे बंद आणि ब्लॉक करणे (जेणेकरून पेज स्क्रोल होणार नाही)
     document.querySelectorAll('.view-panel').forEach(p => {
         p.style.display = "none";
         p.classList.remove('active');
@@ -63,17 +74,20 @@ function switchView(viewId) {
     
     const target = document.getElementById(`view-${viewId}`);
     if (target) {
-        target.style.display = "flex"; // CSS flex सह उभं अलाइनमेंट घट्ट ठेवण्यासाठी
+        target.style.display = "flex"; 
         target.classList.add('active');
+        window.scrollTo(0, 0); // स्क्रीन नेहमी टॉपला लॉक ठेवणे
     }
     
-    // ऑनबोर्डिंग स्क्रीनवर खालचे आयकॉन लपवणे
+    // नियम: फक्त home, shares, आणि account स्क्रीनवरच खालची नॅव्हिगेशन बार दिसणार!
     const dock = document.getElementById('app-nav-dock');
     if (dock) {
-        if (viewId === 'register' || viewId === 'login' || viewId === 'kyc' || viewId === 'agreement' || viewId === 'signature' || viewId === 'admin') {
-            dock.classList.add('hidden');
-        } else {
+        if (viewId === 'home' || viewId === 'shares' || viewId === 'account') {
+            dock.style.display = 'flex';
             dock.classList.remove('hidden');
+        } else {
+            dock.style.display = 'none';
+            dock.classList.add('hidden');
         }
     }
     
@@ -83,9 +97,10 @@ function switchView(viewId) {
     
     if (viewId === 'shares' && typeof renderUserAcquiredShares === 'function') { renderUserAcquiredShares(); }
     if (viewId === 'account' && typeof hydrateUserSession === 'function') { hydrateUserSession(); }
+    if (viewId === 'admin' && typeof syncAdminMasterLedger === 'function') { syncAdminMasterLedger(); }
 }
 
-// नवीन युझर रजिस्ट्रेशन ॲक्शन ट्रिगर (Step 1 -> Step 2 KYC)
+// १. नवीन युझर रजिस्ट्रेशन ॲक्शन ट्रिगर (Step 1 -> Step 2 KYC)
 function handleAdvancedRegistration() {
     const name = document.getElementById('reg-name').value.trim();
     const phone = document.getElementById('reg-phone').value.trim();
@@ -93,39 +108,40 @@ function handleAdvancedRegistration() {
     const pin = document.getElementById('reg-pin').value.trim();
     const cpin = document.getElementById('reg-cpin').value.trim();
 
-    if (!name || name.length < 3) { return triggerAlert("Entry Validation", "Please enter your valid complete full name.", "error"); }
-    if (phone.length !== 10 || isNaN(phone)) { return triggerAlert("Entry Validation", "Please supply an operational 10-digit mobile number.", "error"); }
-    if (!email.includes("@") || !email.includes(".")) { return triggerAlert("Entry Validation", "Email structure syntax mismatch.", "error"); }
-    if (pin.length !== 4 || pin !== cpin) { return triggerAlert("Entry Validation", "4-digit security PIN nodes do not match.", "error"); }
+    if (!name || name.length < 3) { return triggerAlert("Validation Error", "कृपया तुमचे पूर्ण नाव टाका.", "error"); }
+    if (phone.length !== 10 || isNaN(phone)) { return triggerAlert("Validation Error", "कृपया १०-अंकी मोबाईल नंबर अचूक टाका.", "error"); }
+    if (!email.includes("@") || !email.includes(".")) { return triggerAlert("Validation Error", "ईमेल आयडी चुकीचा आहे.", "error"); }
+    if (pin.length !== 4 || pin !== cpin) { return triggerAlert("Validation Error", "४-अंकी सिक्युरिटी पिन मॅच होत नाहीये.", "error"); }
 
     currentUserMobile = phone;
 
     db.collection("users").doc(currentUserMobile).get().then((doc) => {
         if (doc.exists) {
-            triggerAlert("Entity Node Registered", "Account already exists with this number. Redirected to Login.", "info");
+            triggerAlert("Account Exists", "या नंबरवर आधीच अकाऊंट आहे. लॉगिन सेंटरवर जा.", "info");
             switchView('login');
         } else {
+            // तात्पुरता डेटा ऑब्जेक्ट बनवणे आणि केवायसी वर जाणे
             globalUserDataObj = { name, phone, email, pin, isPaid: false, utrCode: "", registrationDate: new Date().toISOString().split('T')[0] };
-            switchView('kyc'); // आता विना अडथळा थेट स्क्रीन २ वर जाणार!
+            switchView('kyc'); 
         }
     }).catch(err => triggerAlert("System Error", err.message, "error"));
 }
 
-// युझर आणि मास्टर ॲडमीनसाठी लॉगिन ट्रिगर
+// २. युझर आणि मास्टर ॲडमीन लॉगिन सिस्टीम
 function handleDirectLogin() {
     const phone = document.getElementById('login-phone').value.trim();
     const pin = document.getElementById('login-pin').value.trim();
 
-    if (phone.length !== 10 || isNaN(phone)) { return triggerAlert("Security Matrix Fail", "Please input an authentic registered 10-digit mobile number.", "error"); }
-    if (pin.length !== 4 || isNaN(pin)) { return triggerAlert("Security Matrix Fail", "Login PIN parameters must match 4-digits standard.", "error"); }
+    if (phone.length !== 10 || isNaN(phone)) { return triggerAlert("Security Error", "कृपया योग्य १०-अंकी नंबर टाका.", "error"); }
+    if (pin.length !== 4 || isNaN(pin)) { return triggerAlert("Security Error", "पिन ४-अंकी असणे बंधनकारक आहे.", "error"); }
 
     currentUserMobile = phone;
     
-    // मास्टर ॲडमिन पॅनल उघडण्याचे गुपित लॉजिक
+    // कडक गुप्त कोड: मास्टर ॲडमिन डॅशबोर्ड उघडणे
     if (phone === "9999999999" && pin === "0000") { 
         globalUserDataObj = { name: "Master Admin Team", phone: "9999999999", isAdmin: true };
-        triggerAlert("Security Clearance", "Master administrative node recognized. Launching Ledger.", "success");
-        setTimeout(() => { launchAdminModule(); }, 500);
+        triggerAlert("Access Granted", "मास्टर लेजर क्लिअरन्स स्वीकृत! ॲडमिन डेस्क सुरू होत आहे.", "success");
+        setTimeout(() => { switchView('admin'); }, 600);
         return; 
     }
 
@@ -134,23 +150,52 @@ function handleDirectLogin() {
             const data = doc.data();
             if (data.pin === pin) { 
                 globalUserDataObj = data; 
-                if (!globalUserDataObj.bankDetails) { openBankModal(); } else { unlockSecureApplication(); }
-            } else { triggerAlert("Validation Error", "The access authentication verification PIN is incorrect.", "error"); }
+                triggerAlert("Success", "लॉगिन यशस्वी झाले!", "success");
+                setTimeout(() => { switchView('home'); }, 600);
+            } else { triggerAlert("Security Error", "तुमचा सिक्युरिटी पिन चुकीचा आहे.", "error"); }
         } else {
-            triggerAlert("Account Missing", "No member account found with this number. Please register.", "info");
+            triggerAlert("Not Found", "या नंबरवर अकाऊंट नाही, कृपया नवीन रजिस्ट्रेशन करा.", "info");
             switchView('register');
         }
-    }).catch(err => triggerAlert("Sync Failure", err.message, "error"));
+    }).catch(err => triggerAlert("Sync Error", err.message, "error"));
 }
 
-// बाकीचे सर्व फंक्शन जसेच्या तसे खाली राहतील...
+// ३. केवायसी सबमिट करून एग्रीमेंटवर जाणे
 function submitKYC() {
     const dob = document.getElementById('kyc-dob').value;
     const edu = document.getElementById('kyc-edu').value;
-    if(!dob) { return triggerAlert("Identity Profile Matrix", "Date of Birth cannot remain vacant.", "error"); }
-    globalUserDataObj.education = edu; globalUserDataObj.dob = dob;
-    const nameSpan = document.getElementById('pdf-insert-name'); const dateSpan = document.getElementById('pdf-insert-date');
-    if(nameSpan) nameSpan.innerText = globalUserDataObj.name; if(dateSpan) dateSpan.innerText = globalUserDataObj.registrationDate;
+    if(!dob) { return triggerAlert("KYC Input", "कृपया तुमची जन्मतारीख सिलेक्ट करा.", "error"); }
+    
+    globalUserDataObj.education = edu; 
+    globalUserDataObj.dob = dob;
+    
+    const nameSpan = document.getElementById('pdf-insert-name'); 
+    const dateSpan = document.getElementById('pdf-insert-date');
+    if(nameSpan) nameSpan.innerText = globalUserDataObj.name; 
+    if(dateSpan) dateSpan.innerText = globalUserDataObj.registrationDate;
+    
     switchView('agreement');
 }
-function navigateToSignature() { switchView('signature'); setTimeout(() => { initSignatureEngine(); }, 350); }
+
+// ४. सिग्नेचर पॅनेलवर जाणे
+function navigateToSignature() { 
+    switchView('signature'); 
+    setTimeout(() => {
+        if (typeof initSignatureEngine === 'function') { initSignatureEngine(); }
+    }, 350); 
+}
+
+// ५. सही आणि डेटा फायरबेसमध्ये सेव्ह करणे (Finalize Onboarding)
+function generateAndSaveAgreement() {
+    const canvas = document.getElementById('signature-canvas');
+    if (!canvas) return;
+    
+    const dataUrl = canvas.toDataURL();
+    globalUserDataObj.signatureUrl = dataUrl;
+
+    // डेटा फायरबेस क्लाउडवर परमनंट सेव्ह करणे
+    db.collection("users").doc(currentUserMobile).set(globalUserDataObj).then(() => {
+        triggerAlert("Onboarding Complete", "तुमचा प्रोफाइल डेटा आणि डिजिटल स्वाक्षरी सुरक्षित जतन झाली आहे!", "success");
+        setTimeout(() => { switchView('home'); }, 1000);
+    }).catch(err => triggerAlert("Database Error", err.message, "error"));
+}
