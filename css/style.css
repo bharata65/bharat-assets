@@ -1,5 +1,5 @@
 /* ==========================================================================
-   BHARAT DIGITAL ASSETS - HIGH-SECURITY COMPACT APP VIEWPORT v7.0 (FINAL)
+   BHARAT DIGITAL ASSETS - HIGH-SECURITY COMPACT APP VIEWPORT v7.5 (FINAL)
    ========================================================================== */
 
 html, body {
@@ -13,10 +13,10 @@ html, body {
     font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-/* Hard Frame Isolation System */
+/* Master Fixed Screen Container */
 #app-root {
     width: 100%;
-    max-width: 28rem; /* Strict 448px Frame Constraint */
+    max-width: 28rem; /* Strict 448px Frame for Mobile Profile */
     height: 100%;
     background-color: #f8fafc;
     position: relative;
@@ -27,21 +27,23 @@ html, body {
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
 }
 
-/* Structural Target Flow Wrapper Container */
+/* Dynamic Core Target View Port - Adjusted to give perfect spacing for dock */
 #view-target-container {
     width: 100%;
-    height: calc(100% - 4.5rem) !important; /* Forces layout to respect nav panel height space */
+    height: calc(100% - 4.6rem) !important;
     overflow-x: hidden;
     overflow-y: auto !important;
     position: relative;
     -webkit-overflow-scrolling: touch;
     box-sizing: border-box;
+    padding-bottom: 1rem;
 }
 
-/* Master Core View Isolated Blocks */
+/* View Panel Base Layouts */
 .view-panel {
     display: none;
     width: 100%;
+    height: auto;
     min-height: 100%;
     padding: 1.25rem;
     flex-direction: column;
@@ -52,13 +54,13 @@ html, body {
     display: flex !important;
 }
 
-/* Anchor Bottom Navigation Interface Deck Bar */
+/* Permanent Fixed Bottom Navigation Dock */
 .bottom-dock {
     position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
-    height: 4.5rem;
+    height: 4.6rem;
     background: rgba(255, 255, 255, 0.98) !important;
     backdrop-filter: blur(12px);
     border-top: 1px solid #e2e8f0;
@@ -66,11 +68,11 @@ html, body {
     justify-content: space-around;
     align-items: center;
     padding-bottom: env(safe-area-inset-bottom);
-    z-index: 80;
+    z-index: 90;
     box-sizing: border-box;
 }
 
-/* High Precision Input Modules */
+/* Standard Inputs and Components */
 .bda-input {
     width: 100%;
     padding: 0.85rem 1.1rem;
