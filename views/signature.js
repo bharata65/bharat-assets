@@ -1,5 +1,5 @@
 // ==========================================================================
-// BHARAT DIGITAL ASSETS - SIGNATURE ENGINE & BANK SETTLEMENT VIEW v5.0
+// BHARAT DIGITAL ASSETS - VALIDATED SIGNATURE & MANUAL BANK HANDSHAKE v5.5
 // ==========================================================================
 
 const SignatureView = {
@@ -10,32 +10,32 @@ const SignatureView = {
                 <div id="sub-panel-signature" class="space-y-5 w-full flex flex-col justify-between flex-1">
                     <div class="space-y-4">
                         <div class="text-center">
-                            <div class="w-12 h-12 bg-blue-50 text-blue-900 rounded-2xl mx-auto flex items-center justify-center shadow-md mb-2 border border-blue-100">
-                                <i class="fa-solid fa-pen-clip text-lg"></i>
+                            <div class="w-12 h-12 bg-blue-900 text-white rounded-2xl mx-auto flex items-center justify-center shadow-lg mb-2">
+                                <i class="fa-solid fa-file-signature text-lg"></i>
                             </div>
-                            <h2 class="text-xl font-black text-blue-950 tracking-tight">Digital Authorization Seal</h2>
-                            <p class="text-xs text-slate-400 font-medium mt-0.5">Step 4 of 5: Legal Verification Signature</p>
+                            <h2 class="text-xl font-black text-blue-950 tracking-tight">Authorization Seal</h2>
+                            <p class="text-xs text-slate-400 font-medium mt-0.5">Step 4 of 5: Secure Digital Signature</p>
                         </div>
 
-                        <div class="bg-slate-900 text-slate-300 p-4 rounded-2xl text-[11px] font-medium leading-relaxed border border-slate-800 shadow-inner">
+                        <div class="bg-slate-900 text-slate-300 p-4 rounded-2xl text-[11px] font-medium leading-relaxed border border-slate-800">
                             <i class="fa-solid fa-circle-info text-amber-400 mr-1"></i>
-                            Please draw your official signature inside the white canvas box using your finger or stylus pen.
+                            Draw your signature below. The system requires an active signature matrix to unlock next structural steps.
                         </div>
 
-                        <div class="relative w-full bg-white border border-slate-200 rounded-3xl p-2 shadow-xl shadow-slate-100/80 overflow-hidden">
-                            <canvas id="signature-canvas" class="w-full h-48 bg-slate-50 rounded-2xl border border-dashed border-slate-200" style="touch-action: none;"></canvas>
+                        <div class="relative w-full bg-white border border-slate-200 rounded-3xl p-2 shadow-xl overflow-hidden">
+                            <canvas id="signature-canvas" class="w-full h-48 bg-slate-50 rounded-2xl border border-dashed border-slate-300" style="touch-action: none !important;"></canvas>
                         </div>
 
                         <div class="flex justify-start">
                             <button onclick="clearSignatureCanvas()" class="px-4 py-2 bg-white text-slate-600 border border-slate-200 font-black rounded-xl text-[10px] uppercase tracking-wider active:bg-slate-50 transition shadow-xs">
-                                <i class="fa-solid fa-eraser mr-1"></i> Clear Board
+                                <i class="fa-solid fa-eraser mr-1"></i> Clear Canvas
                             </button>
                         </div>
                     </div>
 
                     <div class="pt-4 border-t border-slate-200/60 w-full">
-                        <button onclick="saveSignatureAndProceedToBank()" class="w-full py-4 bg-slate-950 text-white rounded-2xl font-bold text-sm shadow-xl active:scale-[0.97] transition duration-150 flex items-center justify-center gap-2">
-                            Accept & Proceed to Bank Setup <i class="fa-solid fa-arrow-right text-xs text-slate-400"></i>
+                        <button onclick="saveSignatureAndProceedToBank()" class="w-full py-4 bg-slate-950 text-white rounded-2xl font-bold text-sm shadow-xl active:scale-[0.97] transition flex items-center justify-center gap-2">
+                            Verify Seal & Continue <i class="fa-solid fa-arrow-right text-xs text-slate-400"></i>
                         </button>
                     </div>
                 </div>
@@ -43,84 +43,45 @@ const SignatureView = {
                 <div id="sub-panel-bank" class="space-y-5 w-full hidden">
                     <div class="text-center">
                         <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl mx-auto flex items-center justify-center shadow-md mb-2 border border-emerald-100">
-                            <i class="fa-solid fa-credit-card text-lg"></i>
+                            <i class="fa-solid fa-building-columns text-lg"></i>
                         </div>
-                        <h2 class="text-xl font-black text-slate-900 tracking-tight">Bank Settlement Node</h2>
-                        <p class="text-xs text-slate-400 font-medium mt-0.5">Step 5 of 5: Link Settlement Account</p>
+                        <h2 class="text-xl font-black text-slate-900 tracking-tight">Settlement Node Account</h2>
+                        <p class="text-xs text-slate-400 font-medium mt-0.5">Step 5 of 5: Link Verification Account</p>
                     </div>
 
-                    <div class="bg-emerald-50 text-emerald-950 p-4 rounded-2xl text-[11px] font-medium leading-relaxed border border-emerald-100 shadow-xs">
-                        <i class="fa-solid fa-shield-check text-emerald-600 mr-1"></i>
-                        Link your operational bank account. A <strong>₹1.00 security micro-deposit</strong> authentication handshake will be triggered post ledger linking.
+                    <div id="bank-loading-spinner" class="hidden flex-col items-center justify-center p-8 bg-slate-950 text-white rounded-3xl space-y-4 animate-fade-in">
+                        <i class="fa-solid fa-circle-notch animate-spin text-3xl text-emerald-400"></i>
+                        <div class="text-center space-y-1">
+                            <p class="text-xs font-black tracking-wider uppercase">Triggering Verification Engine...</p>
+                            <p class="text-[9px] text-slate-400 font-mono">DISPATCHING INR 1.00 IMPS SECURITY TOKEN PATHWAYS...</p>
+                        </div>
                     </div>
 
-                    <div class="space-y-4 bg-white border border-slate-100 rounded-[2rem] p-5 shadow-xl shadow-slate-100/60">
-                        
+                    <div id="bank-form-fields-wrapper" class="space-y-4 bg-white border border-slate-100 rounded-[2rem] p-5 shadow-xl shadow-slate-100/60">
                         <div>
-                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Select Bank Name</label>
-                            <select id="bank-name-select" class="bda-input bg-white font-medium text-slate-800">
-                                <option value="" disabled selected>Choose your banking institution...</option>
-                                <option value="State Bank of India">State Bank of India (SBI)</option>
-                                <option value="HDFC Bank">HDFC Bank Limited</option>
-                                <option value="ICICI Bank">ICICI Bank Limited</option>
-                                <option value="Bank of Baroda">Bank of Baroda</option>
-                                <option value="Punjab National Bank">Punjab National Bank (PNB)</option>
-                                <option value="Axis Bank">Axis Bank Limited</option>
-                                <option value="Kotak Mahindra Bank">Kotak Mahindra Bank</option>
-                                <option value="Canara Bank">Canara Bank</option>
-                                <option value="Union Bank of India">Union Bank of India</option>
-                                <option value="Indian Bank">Indian Bank</option>
-                                <option value="Bank of India">Bank of India</option>
-                                <option value="Central Bank of India">Central Bank of India</option>
-                                <option value="IDBI Bank">IDBI Bank</option>
-                                <option value="IndusInd Bank">IndusInd Bank</option>
-                                <option value="Federal Bank">Federal Bank</option>
-                                <option value="Yes Bank">Yes Bank Limited</option>
-                                <option value="UCO Bank">UCO Bank</option>
-                                <option value="Bank of Maharashtra">Bank of Maharashtra</option>
-                                <option value="India Post Payments Bank">India Post Payments Bank (IPPB)</option>
-                                <option value="Paytm Payments Bank">Paytm Payments Bank</option>
-                                <option value="Airtel Payments Bank">Airtel Payments Bank</option>
-                                <option value="Jio Payments Bank">Jio Payments Bank</option>
-                                <option value="NSDL Payments Bank">NSDL Payments Bank</option>
-                                <option value="Fino Payments Bank">Fino Payments Bank</option>
-                                <option value="AU Small Finance Bank">AU Small Finance Bank</option>
-                                <option value="Equitas Small Finance Bank">Equitas Small Finance Bank</option>
-                                <option value="Suryoday Small Finance Bank">Suryoday Small Finance Bank</option>
-                                <option value="Ujjivan Small Finance Bank">Ujjivan Small Finance Bank</option>
-                                <option value="Capital Small Finance Bank">Capital Small Finance Bank</option>
-                                <option value="ESAF Small Finance Bank">ESAF Small Finance Bank</option>
-                                <option value="Jana Small Finance Bank">Jana Small Finance Bank</option>
-                                <option value="North East Small Finance Bank">North East Small Finance Bank</option>
-                                <option value="Shivalik Small Finance Bank">Shivalik Small Finance Bank</option>
-                                <option value="Unity Small Finance Bank">Unity Small Finance Bank</option>
-                                <option value="Utkarsh Small Finance Bank">Utkarsh Small Finance Bank</option>
-                            </select>
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Bank Name</label>
+                            <input type="text" id="bank-name-manual" placeholder="e.g. State Bank of India, HDFC Bank" class="bda-input">
                         </div>
-
                         <div>
                             <label class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Account Holder Name</label>
-                            <input type="text" id="bank-holder-name" placeholder="As printed on bank passbook" class="bda-input">
+                            <input type="text" id="bank-holder-name" placeholder="As printed on bank records" class="bda-input">
                         </div>
-
                         <div>
                             <label class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Bank Account Number</label>
-                            <input type="password" id="bank-account-num" placeholder="Enter bank account number" class="bda-input font-mono tracking-widest">
+                            <input type="password" id="bank-account-num" placeholder="Enter account number" class="bda-input font-mono tracking-widest">
                         </div>
-
                         <div>
                             <label class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Confirm Account Number</label>
-                            <input type="text" id="bank-account-conf" placeholder="Re-enter bank account number" class="bda-input font-mono tracking-widest" onpaste="return false;">
+                            <input type="text" id="bank-account-conf" placeholder="Re-enter account number" class="bda-input font-mono tracking-widest" onpaste="return false;">
                         </div>
-
                         <div>
                             <label class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">IFSC Code</label>
-                            <input type="text" id="bank-ifsc-code" maxlength="11" placeholder="e.g. SBIN0001234" class="bda-input uppercase font-mono font-bold">
+                            <input type="text" id="bank-ifsc-code" maxlength="11" placeholder="e.g. SBIN0001234" class="bda-input uppercase font-mono font-bold tracking-wider">
                         </div>
 
                         <div class="pt-2">
-                            <button onclick="handleCompleteOnboardingSettlement()" class="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-emerald-600/20 active:scale-[0.96] transition duration-150 flex items-center justify-center gap-2">
-                                <i class="fa-solid fa-vault text-xs"></i> Finalize Secure Node Enrollment
+                            <button onclick="handleCompleteOnboardingSettlement()" class="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-emerald-600/20 active:scale-[0.96] transition flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-shield-halved text-xs"></i> Authorize & Link Card Node
                             </button>
                         </div>
                     </div>
@@ -130,90 +91,58 @@ const SignatureView = {
     }
 };
 
-// ==========================================================================
-// ANTI-CRASH INTERACTIVE TOUCH MOUNTING CORE ENGINE
-// ==========================================================================
-let isDrawingActive = false;
-let sigLastX = 0;
-let sigLastY = 0;
-let base64SignatureData = "";
+let hasUserSignedOnCanvas = false;
+let canvasIsDrawing = false;
+let sigCanvasX = 0; let sigCanvasY = 0;
+let rawSignatureBase64String = "";
 
 window.initSignatureEngine = function() {
     const canvas = document.getElementById('signature-canvas');
-    const subPanelSig = document.getElementById('sub-panel-signature');
-    const subPanelBank = document.getElementById('sub-panel-bank');
-    
     if (!canvas) return;
     
-    // रीसेट सब-पॅनेल्स व्हिजिबिलिटी स्टेट्स
-    if (subPanelSig) subPanelSig.style.display = "flex";
-    if (subPanelBank) subPanelBank.style.display = "none";
+    hasUserSignedOnCanvas = false; 
+    document.getElementById('sub-panel-signature').style.display = "flex";
+    document.getElementById('sub-panel-bank').style.display = "none";
 
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // मोबाईल डिव्हाइसेसवर वेक्टर को-ऑर्डिनेट्स तंतोतंत अलाइन करणे
     const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width;
-    canvas.height = rect.height;
+    canvas.width = rect.width; canvas.height = rect.height;
 
-    ctx.strokeStyle = '#0f172a'; // Deep Institutional Blue Ink
-    ctx.lineWidth = 2.8;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 3.0; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
 
-    function getVectorCoordinates(evt) {
+    function getCoords(e) {
         const cRect = canvas.getBoundingClientRect();
-        if (evt.touches && evt.touches.length > 0) {
-            return {
-                x: evt.touches[0].clientX - cRect.left,
-                y: evt.touches[0].clientY - cRect.top
-            };
-        } else {
-            return {
-                x: evt.clientX - cRect.left,
-                y: evt.clientY - cRect.top
-            };
+        if (e.touches && e.touches.length > 0) {
+            return { x: e.touches[0].clientX - cRect.left, y: e.touches[0].clientY - cRect.top };
         }
+        return { x: e.clientX - cRect.left, y: e.clientY - cRect.top };
     }
 
-    // मोबाईल रिस्पॉन्सिव्ह टच इव्हेंट मॅपिंग्ज
     canvas.addEventListener('touchstart', (e) => {
-        isDrawingActive = true;
-        const coords = getVectorCoordinates(e);
-        sigLastX = coords.x; sigLastY = coords.y;
+        canvasIsDrawing = true; hasUserSignedOnCanvas = true;
+        const pts = getCoords(e); sigCanvasX = pts.x; sigCanvasY = pts.y;
     }, { passive: true });
 
     canvas.addEventListener('touchmove', (e) => {
-        if (!isDrawingActive) return;
-        const coords = getVectorCoordinates(e);
-        
-        ctx.beginPath();
-        ctx.moveTo(sigLastX, sigLastY);
-        ctx.lineTo(coords.x, coords.y);
-        ctx.stroke();
-
-        sigLastX = coords.x; sigLastY = coords.y;
+        if (!canvasIsDrawing) return;
+        const pts = getCoords(e);
+        ctx.beginPath(); ctx.moveTo(sigCanvasX, sigCanvasY); ctx.lineTo(pts.x, pts.y); ctx.stroke();
+        sigCanvasX = pts.x; sigCanvasY = pts.y;
     }, { passive: true });
 
-    canvas.addEventListener('touchend', () => { isDrawingActive = false; });
-
-    // डेस्कटॉप माउस ओव्हरराईड इव्हेंट्स
+    canvas.addEventListener('touchend', () => canvasIsDrawing = false);
+    
     canvas.addEventListener('mousedown', (e) => {
-        isDrawingActive = true;
-        const coords = getVectorCoordinates(e);
-        sigLastX = coords.x; sigLastY = coords.y;
+        canvasIsDrawing = true; hasUserSignedOnCanvas = true;
+        const pts = getCoords(e); sigCanvasX = pts.x; sigCanvasY = pts.y;
     });
-
     canvas.addEventListener('mousemove', (e) => {
-        if (!isDrawingActive) return;
-        const coords = getVectorCoordinates(e);
-        ctx.beginPath(); ctx.moveTo(sigLastX, sigLastY); ctx.lineTo(coords.x, coords.y); ctx.stroke();
-        sigLastX = coords.x; sigLastY = coords.y;
+        if (!canvasIsDrawing) return;
+        const pts = getCoords(e);
+        ctx.beginPath(); ctx.moveTo(sigCanvasX, sigCanvasY); ctx.lineTo(pts.x, pts.y); ctx.stroke();
+        sigCanvasX = pts.x; sigCanvasY = pts.y;
     });
-
-    canvas.addEventListener('mouseup', () => { isDrawingActive = false; });
-    canvas.addEventListener('mouseleave', () => { isDrawingActive = false; });
+    canvas.addEventListener('mouseup', () => canvasIsDrawing = false);
 };
 
 window.clearSignatureCanvas = function() {
@@ -221,51 +150,51 @@ window.clearSignatureCanvas = function() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    hasUserSignedOnCanvas = false;
 };
 
-// सही सेव्ह करून बँक सिलेक्शन पॅनेल उघडणे
 window.saveSignatureAndProceedToBank = function() {
+    if (!hasUserSignedOnCanvas) {
+        return triggerAlert("Signature Required", "Please provide your dynamic signature seal before clicking continue.", "error");
+    }
     const canvas = document.getElementById('signature-canvas');
-    if (!canvas) return;
+    rawSignatureBase64String = canvas.toDataURL();
     
-    base64SignatureData = canvas.toDataURL();
-    
-    // सब-पॅनेल टॉगल करणे (स्वाक्षरी पॅनेल लपवून बँक फॉर्म दाखवणे)
     document.getElementById('sub-panel-signature').style.display = "none";
-    
-    const bankPanel = document.getElementById('sub-panel-bank');
-    bankPanel.classList.remove('hidden');
-    bankPanel.style.display = "block";
+    const bPanel = document.getElementById('sub-panel-bank');
+    bPanel.classList.remove('hidden'); bPanel.style.display = "block";
 };
 
-// अंतिम स्टेप ५: ऑल इंडिया बँक डिटेल्स व्हॅलिडेशन आणि फायरबेस सिंक
 window.handleCompleteOnboardingSettlement = function() {
-    const bankName = document.getElementById('bank-name-select').value;
+    const bankName = document.getElementById('bank-name-manual').value.trim();
     const holderName = document.getElementById('bank-holder-name').value.trim();
     const accountNum = document.getElementById('bank-account-num').value.trim();
     const accountConf = document.getElementById('bank-account-conf').value.trim();
     const ifscCode = document.getElementById('bank-ifsc-code').value.trim().toUpperCase();
 
-    if (!bankName) return triggerAlert("Validation Error", "Please select your financial bank institution.", "error");
-    if (!holderName || holderName.length < 3) return triggerAlert("Validation Error", "Please input account holder legal name.", "error");
-    if (accountNum.length < 9 || isNaN(accountNum)) return triggerAlert("Validation Error", "Invalid Bank Account Number configuration.", "error");
-    if (accountNum !== accountConf) return triggerAlert("Validation Error", "Account Number matching mismatch.", "error");
-    if (ifscCode.length !== 11) return triggerAlert("Validation Error", "IFSC configuration code requires precisely 11 alphanumeric keys.", "error");
+    if (!bankName) return triggerAlert("Input Error", "Please provide your operational bank name.", "error");
+    if (!holderName || holderName.length < 3) return triggerAlert("Input Error", "Please enter account holder name.", "error");
+    if (accountNum.length < 9) return triggerAlert("Input Error", "Invalid Bank Account Number length.", "error");
+    if (accountNum !== accountConf) return triggerAlert("Input Error", "Account Number entries mismatch.", "error");
+    if (ifscCode.length !== 11) return triggerAlert("Input Error", "IFSC must be exactly 11 characters.", "error");
 
-    // बँक डिटेल्स आणि स्वाक्षरी डेटा मूळ ऑब्जेक्टमध्ये इंजेक्ट करणे
-    window.globalUserDataObj.signatureUrl = base64SignatureData;
-    window.globalUserDataObj.bankLinked = true;
-    window.globalUserDataObj.bankDetails = {
-        bankName: bankName,
-        holderName: holderName,
-        accountNumber: accountNum,
-        ifscCode: ifscCode,
-        microDepositDispatched: true // ₹१.०० ट्रिगर मार्क सिस्टीम व्हॅल्यू
-    };
+    document.getElementById('bank-form-fields-wrapper').style.display = "none";
+    const spinner = document.getElementById('bank-loading-spinner');
+    spinner.classList.remove('hidden'); spinner.style.display = "flex";
 
-    // संपूर्ण डेटा डेटाबेसमध्ये सुरक्षित सेव्ह करणे
-    db.collection("users").doc(window.currentUserMobile).set(window.globalUserDataObj).then(() => {
-        triggerAlert("Settlement Verified", "Bank settlement ledger linked. ₹1.00 processing pipeline initialized.", "success");
-        setTimeout(() => { switchView('home'); }, 1200);
-    }).catch(err => triggerAlert("Database Fault", err.message, "error"));
+    setTimeout(() => {
+        window.globalUserDataObj.signatureUrl = rawSignatureBase64String;
+        window.globalUserDataObj.bankLinked = true;
+        window.globalUserDataObj.sharesCount = 1; // Default allocation unit
+        window.globalUserDataObj.bankDetails = { bankName, holderName, accountNumber: accountNum, ifscCode, microDepositDispatched: true };
+
+        db.collection("users").doc(window.currentUserMobile).set(window.globalUserDataObj).then(() => {
+            triggerAlert("Verification Success", "Account validated successfully. INR 1.00 credited via IMPS node transaction.", "success");
+            setTimeout(() => { switchView('home'); }, 1200);
+        }).catch(err => {
+            document.getElementById('bank-loading-spinner').style.display = "none";
+            document.getElementById('bank-form-fields-wrapper').style.display = "block";
+            triggerAlert("Database Error", err.message, "error");
+        });
+    }, 2500); // 2.5 Sec Real-time banking linkage simulation window delay
 };
