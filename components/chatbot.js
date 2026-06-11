@@ -1,15 +1,21 @@
 // ==========================================================================
-// BHARAT DIGITAL ASSETS - CHATBOT INTERFACE BINDING HUB v6.0
+// BHARAT DIGITAL ASSETS - UNIVERSAL EVENT CHATBOT TRIGGER HUB v6.5
 // ==========================================================================
 
 const ChatbotComponent = {
     open: function() {
         const drawer = document.getElementById('chatbot-drawer');
-        if (drawer) { drawer.classList.remove('hidden'); drawer.style.setProperty('display', 'flex', 'important'); }
+        if (drawer) { 
+            drawer.classList.remove('hidden'); 
+            drawer.style.setProperty('display', 'flex', 'important'); 
+        }
     },
     close: function() {
         const drawer = document.getElementById('chatbot-drawer');
-        if (drawer) { drawer.classList.add('hidden'); drawer.style.setProperty('display', 'none', 'important'); }
+        if (drawer) { 
+            drawer.classList.add('hidden'); 
+            drawer.style.setProperty('display', 'none', 'important'); 
+        }
     },
     processReply: function(optionId) {
         const streamBox = document.getElementById('chat-stream-box');
@@ -33,11 +39,10 @@ const ChatbotComponent = {
         const activeUserPhone = window.currentUserMobile || "Guest_Visitor";
         const activeUserName = (window.globalUserDataObj && window.globalUserDataObj.name) ? window.globalUserDataObj.name : "Anonymous Node";
 
-        // Sync chat logs to centralized administrative collector
         db.collection("chat_disputes").add({ phone: activeUserPhone, name: activeUserName, query: userQueryText, timestamp: new Date().toISOString() });
 
         setTimeout(() => {
-            streamBox.innerHTML += `<div class="flex items-start gap-2 max-w-[85%] w-full animate-fade-in"><div class="bg-white border p-3.5 rounded-2xl rounded-tl-none text-slate-800 text-xs font-bold leading-relaxed shadow-sm">${botResponseText}</div></div>`;
+            streamBox.innerHTML += `<div class="flex items-start gap-2 max-w-[85%] w-full animate-fade-in"><div class="bg-white border p-3.5 rounded-2xl rounded-tl-none text-slate-800 text-xs font-bold shadow-sm">${botResponseText}</div></div>`;
             streamBox.scrollTop = streamBox.scrollHeight;
         }, 500);
     }
