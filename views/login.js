@@ -3,15 +3,14 @@
 // ==========================================================================
 
 const LoginView = {
-    // स्क्रीन १बी: लॉगिन पॅनेलचा स्वतंत्र लेआउट रेंडर करणे
     render: function() {
         return `
             <div id="view-login" class="view-panel p-5 flex flex-col justify-center min-h-screen bg-slate-50/50 pb-16" style="display: none;">
-                <div id="panel-login-sub" class="w-full space-y-6 animate-fade-in">
+                <div class="w-full space-y-6 animate-fade-in">
                     
                     <div class="text-center">
                         <div class="w-16 h-16 bg-slate-950 rounded-2xl mx-auto flex items-center justify-center shadow-xl shadow-slate-950/10 mb-3 border border-slate-800">
-                            <i class="fa-solid fa-fingerprint text-white text-2xl animate-pulse"></i>
+                            <i class="fa-solid fa-fingerprint text-white text-2xl"></i>
                         </div>
                         <h1 class="text-2xl font-black text-slate-900 tracking-tight">Vault Access Centre</h1>
                         <p class="text-xs text-slate-400 font-medium mt-1">Unlock Institutional Share Node Portfolio</p>
@@ -36,7 +35,7 @@ const LoginView = {
                         </div>
                         
                         <div class="text-center pt-2 border-t border-slate-50">
-                            <p class="text-xs text-slate-400 font-medium">New asset member? <button onclick="toggleAuthPanels('register'); switchView('register')" class="text-slate-950 font-black underline focus:outline-none ml-1">Create Node Portfolio</button></p>
+                            <p class="text-xs text-slate-400 font-medium">New asset member? <button onclick="switchView('register')" class="text-slate-950 font-black underline focus:outline-none ml-1">Create Node Portfolio</button></p>
                         </div>
                     </div>
                 </div>
@@ -44,5 +43,3 @@ const LoginView = {
         `;
     }
 };
-
-console.log("BDA Views Hub: Discrete login vault view template registered.");
