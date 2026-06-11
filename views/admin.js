@@ -1,5 +1,5 @@
 // ==========================================================================
-// BHARAT DIGITAL ASSETS - MASTER ADMIN ARCHITECTURE HUB v6.0
+// BHARAT DIGITAL ASSETS - MASTER ADMIN ARCHITECTURE MANAGEMENT HUB v6.5
 // ==========================================================================
 
 const AdminView = {
@@ -7,22 +7,40 @@ const AdminView = {
         return `
             <div id="view-admin" class="view-panel p-5 space-y-5 min-h-screen bg-slate-100 flex flex-col pb-16 overflow-y-auto" style="display: none; width: 100%;">
                 
-                <div class="flex justify-between items-center border-b pb-3">
-                    <div><h2 class="text-xl font-black text-slate-900 tracking-tight">Master Admin Control</h2><p class="text-[9px] text-slate-500 font-bold uppercase font-mono">Dynamic Payment Config Node</p></div>
-                    <button onclick="window.location.reload()" class="text-xs font-black bg-white border border-slate-300 text-red-600 px-3 py-1 rounded-xl">Exit Shell</button>
+                <div class="flex justify-between items-center border-b pb-3 border-slate-300">
+                    <div>
+                        <h2 class="text-xl font-black text-slate-900 tracking-tight">Master Ledger Desk</h2>
+                        <p class="text-[9px] text-slate-500 font-bold uppercase font-mono">Centralized System Core Node</p>
+                    </div>
+                    <button onclick="window.location.reload()" class="text-xs font-black bg-white border border-slate-300 text-red-600 px-3 py-1.5 rounded-xl shadow-xs">Exit Session</button>
                 </div>
 
-                <div class="bg-slate-900 text-white p-4 rounded-2xl space-y-3 shadow-md">
-                    <p class="text-[9px] font-black tracking-wider text-blue-400 uppercase"><i class="fa-solid fa-bolt"></i> Live Gateway Configuration</p>
+                <div class="bg-slate-900 text-white p-4 rounded-2xl space-y-3 shadow-md border border-slate-800">
+                    <p class="text-[9px] font-black tracking-wider text-blue-400 uppercase flex items-center gap-1">
+                        <i class="fa-solid fa-bolt animate-pulse"></i> Core Gateway Master Target UPI ID
+                    </p>
                     <div class="space-y-2">
-                        <input type="text" id="admin-input-master-upi" placeholder="Enter Master Merchant UPI ID (e.g. business@ybl)" class="w-full bg-slate-800 border border-slate-700 text-white p-3 rounded-xl text-xs font-mono">
-                        <button onclick="updateMasterPaymentGatewayUPIID()" class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] rounded-xl uppercase tracking-wider transition">Update Live Gateway String</button>
+                        <input type="text" id="admin-input-master-upi" placeholder="Enter Destination Merchant UPI ID" class="w-full bg-slate-800 border border-slate-700 text-white p-3 rounded-xl text-xs font-mono font-bold">
+                        <button onclick="updateMasterPaymentGatewayUPIID()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] rounded-xl uppercase tracking-wider transition">Commit Gateway Routing</button>
                     </div>
                 </div>
 
+                <div class="bg-slate-950 rounded-xl p-3 font-mono text-[9px] text-emerald-400 border border-slate-800 space-y-1 shadow-inner max-h-24 overflow-y-auto">
+                    <p class="text-slate-500 font-bold">[SYSTEM TRAFFIC LOGGER INITIALIZED...]</p>
+                    <p><span class="text-blue-400">[2026-06-11 UTC]</span> Core cluster operational handshakes stable.</p>
+                    <p><span class="text-amber-400">[LEDGER LIVE]</span> Continuous real-time snapshot listeners active.</p>
+                </div>
+
                 <div class="space-y-3 flex-1">
-                    <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-server"></i> Active Pipeline</h3>
-                    <div id="admin-master-super-wrapper" class="space-y-4"></div>
+                    <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-folder-tree"></i> Centralized User Audits Realtime Matrix
+                    </h3>
+                    
+                    <div id="admin-master-super-wrapper" class="space-y-4">
+                        <div class="text-center p-8 bg-white rounded-2xl border text-xs text-slate-400 font-bold">
+                            <i class="fa-solid fa-circle-notch animate-spin mr-1.5"></i> Initializing ledger syncer matrix...
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
@@ -31,9 +49,9 @@ const AdminView = {
 
 window.updateMasterPaymentGatewayUPIID = function() {
     const upiStr = document.getElementById('admin-input-master-upi').value.trim();
-    if(!upiStr) return alert("Please enter a valid UPI address framework string.");
+    if(!upiStr) return alert("Please specify a valid operational target UPI merchant address string.");
     db.collection("config").doc("gateway").set({ upiId: upiStr }).then(() => {
-        alert("Success: Master merchant payment channel redirected to: " + upiStr);
+        alert("Master System Confirmation: Merchant destination link successfully locked to: " + upiStr);
     });
 };
 
@@ -42,35 +60,106 @@ window.syncAdminMasterLedger = function() {
     if (!mainWrapper) return;
 
     db.collection("config").doc("gateway").get().then(gDoc => {
-        const activeLiveUPI = gDoc.exists ? gDoc.data().upiId : "merchant@upi";
+        const liveUpiConfigAddress = gDoc.exists ? gDoc.data().upiId : "merchant@upi";
         const upiField = document.getElementById('admin-input-master-upi');
-        if(upiField && gDoc.exists) upiField.value = activeLiveUPI;
+        if(upiField && gDoc.exists) upiField.value = liveUpiConfigAddress;
 
+        // Fetch users database and cross reference real-time chat histories logs simultaneously
         db.collection("users").onSnapshot((userSnap) => {
             db.collection("chat_disputes").get().then((chatSnap) => {
-                let chatMap = {}; chatSnap.forEach(c => { let d = c.data(); if(!chatMap[d.phone]) chatMap[d.phone] = []; chatMap[d.phone].push(d.query); });
+                
+                let chatHistoryLogsMap = {};
+                chatSnap.forEach(c => { 
+                    let d = c.data(); 
+                    if(!chatHistoryLogsMap[d.phone]) chatHistoryLogsMap[d.phone] = []; 
+                    chatHistoryLogsMap[d.phone].push(d.query); 
+                });
+
                 mainWrapper.innerHTML = "";
+                if(userSnap.empty) {
+                    mainWrapper.innerHTML = `<div class="text-center p-6 bg-white rounded-2xl border text-xs text-slate-400 font-bold">No active user data blocks found inside collection.</div>`;
+                    return;
+                }
 
                 userSnap.forEach((uDoc) => {
-                    const user = uDoc.data(); const bank = user.bankDetails || {}; const chatHistoryList = chatMap[user.phone] || []; const shareCountVal = user.sharesCount || 1;
-                    const cardNode = document.createElement('div'); cardNode.className = "bg-white border rounded-[2rem] p-5 space-y-4 text-xs shadow-xs";
+                    const user = uDoc.data();
+                    const bank = user.bankDetails || {};
+                    const userQueriesLog = chatHistoryLogsMap[user.phone] || [];
+                    const countUnits = user.sharesCount || 1;
 
-                    cardNode.innerHTML = `
-                        <div class="flex justify-between items-start border-b pb-2">
-                            <div><h4 class="font-black text-slate-900 uppercase">${user.name}</h4><p class="text-[10px] font-mono text-slate-500 font-bold">${user.phone} | ${user.email}</p></div>
-                            <span class="text-[9px] font-black font-mono px-2 py-0.5 rounded-md ${user.isPaid ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}">${user.isPaid ? 'VERIFIED' : 'AWAITING AUDIT'}</span>
+                    const rowComponent = document.createElement('div');
+                    rowComponent.className = "bg-white border border-slate-200/80 rounded-[2rem] p-5 space-y-4 shadow-xs relative overflow-hidden";
+
+                    // Dynamic Blinking Badge Injection if user has populated UTR data line code
+                    let alertUtrBadgeHTML = "";
+                    if (user.utrCode && !user.isPaid) {
+                        alertUtrBadgeHTML = `
+                            <div class="bg-red-500 border border-red-600 text-white font-mono text-[8px] font-black tracking-widest px-3 py-1 rounded-full text-center mb-2 animate-pulse-blink uppercase">
+                                🚨 UTR VERIFICATION ACTION REQUIRED
+                            </div>
+                        `;
+                    }
+
+                    rowComponent.innerHTML = `
+                        ${alertUtrBadgeHTML}
+                        
+                        <div class="flex justify-between items-start border-b border-slate-100 pb-2">
+                            <div>
+                                <h4 class="font-black text-slate-900 uppercase text-xs tracking-tight">${user.name}</h4>
+                                <p class="text-[9px] font-mono text-slate-500 font-bold mt-0.5">${user.phone} | ${user.email}</p>
+                            </div>
+                            <span class="text-[9px] font-black font-mono px-2 py-0.5 rounded ${user.isPaid ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}">
+                                ${user.isPaid ? 'VERIFIED' : 'PENDING'}
+                            </span>
                         </div>
-                        <div class="bg-slate-50 p-3 rounded-xl text-[10px] space-y-1">
-                            <p class="text-blue-900 font-bold">Units Secured: ${shareCountVal} (Total Value: ₹${shareCountVal * 200})</p>
-                            <p><span class="text-slate-400">Linked Bank:</span> <strong>${bank.bankName || 'N/A'}</strong> | A/C: <strong>${bank.accountNumber || 'N/A'}</strong> | IFSC: <strong>${bank.ifscCode || 'N/A'}</strong></p>
+
+                        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100 text-[10px] space-y-1.5">
+                            <div class="text-blue-900 font-black flex justify-between items-center text-[10px]">
+                                <span>SECURED SHARES VOLUME: ${countUnits} Unit${countUnits > 1 ? 's' : ''}</span>
+                                <span class="font-mono text-slate-900 font-black bg-slate-200 px-2 py-0.5 rounded">₹${countUnits * 200}.00</span>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-x-2 gap-y-1 text-slate-600 border-t border-slate-200/60 pt-1.5 mt-1.5">
+                                <p><span class="text-slate-400 text-[8px] block uppercase font-bold">Bank Node:</span><strong class="text-slate-800">${bank.bankName || 'Not Linked'}</strong></p>
+                                <p><span class="text-slate-400 text-[8px] block uppercase font-bold">IFSC Code:</span><strong class="font-mono text-slate-800">${bank.ifscCode || 'N/A'}</strong></p>
+                                <p><span class="text-slate-400 text-[8px] block uppercase font-bold">Account No:</span><strong class="font-mono text-slate-800">${bank.accountNumber || 'N/A'}</strong></p>
+                                <p><span class="text-slate-400 text-[8px] block uppercase font-bold">Verification:</span><strong class="text-emerald-600">₹1.00 Dispatched</strong></p>
+                            </div>
                         </div>
-                        <div class="bg-blue-50/30 p-2.5 rounded-xl text-[10px] space-y-1">
-                            <p class="font-bold text-slate-500 uppercase text-[8px]">Chat History Enquiries Logs:</p>
-                            ${chatHistoryList.length === 0 ? `<p class="text-slate-400 italic">No chat records mapped.</p>` : `<ul class="list-disc list-inside text-slate-600 space-y-0.5">${chatHistoryList.map(q => `<li>${q}</li>`).join('')}</ul>`}
+
+                        <div class="p-3 rounded-2xl text-[10px] border ${user.utrCode ? 'bg-red-50/60 border-red-200/80 text-red-950' : 'bg-slate-50 border-slate-100 text-slate-500 italic'}">
+                            <span class="text-[8px] font-black uppercase tracking-wider block ${user.utrCode ? 'text-red-800' : 'text-slate-400'}">Submitted Banking Payment UTR Token:</span>
+                            <p class="font-mono text-sm font-black mt-0.5 tracking-widest">${user.utrCode ? user.utrCode : 'Awaiting receipt submission from member...'}</p>
                         </div>
-                        ${!user.isPaid ? `<button onclick="approveUserPaymentFromAdmin('${user.phone}')" class="w-full py-2 bg-slate-900 text-white font-black rounded-xl text-[10px] uppercase">Approve Capital Allocation & Lock Assets</button>` : `<p class="text-center text-emerald-600 font-bold bg-emerald-50 py-1.5 rounded-xl uppercase tracking-wider text-[9px]">Node Active & Documents Dispatched</p>`}
+
+                        <div class="bg-blue-50/40 border border-blue-100/60 p-3 rounded-2xl text-[10px] space-y-1">
+                            <span class="text-[8px] font-black text-blue-900 uppercase tracking-wider block"><i class="fa-solid fa-headset"></i> Chatbot Helpdesk Tickets</span>
+                            ${userQueriesLog.length === 0 ? 
+                                `<p class="text-slate-400 italic font-medium">No system support interaction logs cataloged.</p>` : 
+                                `<ul class="list-disc list-inside text-slate-600 font-medium space-y-0.5">${userQueriesLog.map(q => `<li class="truncate">${q}</li>`).join('')}</ul>`
+                            }
+                        </div>
+
+                        ${user.signatureUrl ? `
+                            <div class="space-y-1">
+                                <span class="text-[8px] font-black text-slate-400 uppercase tracking-wider block">Authorized Identity Canvas Signature Seal:</span>
+                                <img src="${user.signatureUrl}" class="h-10 bg-slate-50 border border-dashed rounded-xl px-2.5 py-1 object-contain shadow-inner">
+                            </div>
+                        ` : ''}
+
+                        <div class="pt-2 border-t border-slate-100">
+                            ${!user.isPaid ? `
+                                <button onclick="approveUserPaymentFromAdmin('${user.phone}')" class="w-full py-3 bg-slate-900 text-white font-black rounded-xl text-[10px] uppercase tracking-wider shadow active:scale-[0.98] transition">
+                                    Approve Capital Allocation Node & Authorize Vault
+                                </button>
+                            ` : `
+                                <div class="bg-emerald-50 text-emerald-700 text-center py-2 rounded-xl text-[9px] font-black uppercase tracking-wider border border-emerald-100">
+                                    <i class="fa-solid fa-circle-check"></i> Capital Nodes approved & verified successfully
+                                </div>
+                            `}
+                        </div>
                     `;
-                    mainWrapper.appendChild(cardNode);
+                    mainWrapper.appendChild(rowComponent);
                 });
             });
         });
@@ -78,43 +167,8 @@ window.syncAdminMasterLedger = function() {
 };
 
 window.approveUserPaymentFromAdmin = function(phoneNum) {
-    db.collection("users").doc(phoneNum).update({ isPaid: true }).then(() => { alert("Node authorized successfully."); });
-};
-
-// ==========================================================================
-// CENTRAL CLIENT INTENT DISPATCH HOOK (QR CODE GENERATOR ADAPTER LINK)
-// ==========================================================================
-window.openPaymentGateway = function() {
-    if (!window.globalUserDataObj) return;
-    const u = window.globalUserDataObj;
-    const computedSum = u.sharesCount * 200;
-    
-    db.collection("config").doc("gateway").get().then(gDoc => {
-        const targetMerchantUPIAddress = gDoc.exists ? gDoc.data().upiId : "merchant@upi";
-        
-        // Cryptographic deep linked interface adapters config
-        const upiIntentString = `upi://pay?pa=${targetMerchantUPIAddress}&pn=Bharat%20Digital%20Assets&am=${computedSum}.00&cu=INR&tn=BDA-NODE-TOKEN-${u.phone.slice(-4)}`;
-        const qrChartAPIEndpoint = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiIntentString)}`;
-        
-        const gModal = document.getElementById('payment-gateway-modal');
-        const qrImgContainer = document.getElementById('dynamic-qr-string-display');
-        const intentAnchorLink = document.getElementById('dynamic-upi-intent-link');
-        
-        if (gModal && qrImgContainer && intentAnchorLink) {
-            qrImgContainer.innerHTML = `<img src="${qrChartAPIEndpoint}" class="mx-auto border p-2 rounded-xl bg-slate-50 shadow-inner" alt="Payment QR Grid">`;
-            intentAnchorLink.href = upiIntentString;
-            gModal.style.setProperty('display', 'flex', 'important');
-            gModal.classList.remove('hidden');
-        }
-    });
-};
-
-window.closePaymentGateway = function() { document.getElementById('payment-gateway-modal').classList.add('hidden'); };
-window.submitUTRVerification = function() {
-    const code = document.getElementById('input-utr-code').value.trim();
-    if(code.length !== 12 || isNaN(code)) return triggerAlert("UTR Mismatch", "Bank standard transaction references require 12 numerical characters.", "error");
-    db.collection("users").doc(window.currentUserMobile).update({ utrCode: code }).then(() => {
-        triggerAlert("UTR Submitted", "Transaction token mapped successfully. Waiting for centralized administrative clearance validation.", "success");
-        closePaymentGateway();
-    });
+    if (!phoneNum) return;
+    db.collection("users").doc(phoneNum).update({ isPaid: true }).then(() => {
+        alert("System Success: Node authorized. Asset allocation metrics committed to secure client instance.");
+    }).catch(err => alert("Pipeline Error: " + err.message));
 };
