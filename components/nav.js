@@ -1,53 +1,47 @@
 // ==========================================================================
-// BHARAT DIGITAL ASSETS - ENTERPRISE BOTTOM FLOATING NAVIGATION DOCK v4.3
+// BHARAT DIGITAL ASSETS - ENTERPRISE BOTTOM NAVIGATION RENDERING ENGINE
 // ==========================================================================
 
 const NavigationComponent = {
-    // मुख्य नेव्हिगेशन पट्टीचा HTML लेआउट जनरेट करणे
     render: function() {
         return `
-            <nav id="app-nav-dock" class="bottom-dock shadow-2xl transition-all duration-300">
-                <button onclick="switchView('home')" class="flex flex-col items-center gap-1 text-blue-900 transition-all duration-200" id="nav-home">
+            <nav id="app-nav-dock" class="bottom-dock shadow-2xl" style="display: none;">
+                <button onclick="switchView('home')" class="flex flex-col items-center gap-1 text-blue-900 transition-all" id="nav-home">
                     <div class="w-10 h-6 flex items-center justify-center rounded-full transition-all" id="nav-bg-home">
-                        <i class="fa-solid fa-wallet text-xl"></i>
+                        <i class="fa-solid fa-wallet text-lg"></i>
                     </div>
-                    <span class="text-[10px] font-black tracking-wider uppercase">Home</span>
+                    <span class="text-[9px] font-black tracking-wider uppercase">Home</span>
                 </button>
 
-                <button onclick="switchView('shares')" class="flex flex-col items-center gap-1 text-slate-400 transition-all duration-200" id="nav-shares">
+                <button onclick="switchView('shares')" class="flex flex-col items-center gap-1 text-slate-400 transition-all" id="nav-shares">
                     <div class="w-10 h-6 flex items-center justify-center rounded-full transition-all" id="nav-bg-shares">
-                        <i class="fa-solid fa-chart-pie text-xl"></i>
+                        <i class="fa-solid fa-chart-pie text-lg"></i>
                     </div>
-                    <span class="text-[10px] font-black tracking-wider uppercase">Shares</span>
+                    <span class="text-[9px] font-black tracking-wider uppercase">Shares</span>
                 </button>
 
-                <button onclick="switchView('account')" class="flex flex-col items-center gap-1 text-slate-400 transition-all duration-200" id="nav-account">
+                <button onclick="switchView('account')" class="flex flex-col items-center gap-1 text-slate-400 transition-all" id="nav-account">
                     <div class="w-10 h-6 flex items-center justify-center rounded-full transition-all" id="nav-bg-account">
-                        <i class="fa-solid fa-user-shield text-xl"></i>
+                        <i class="fa-solid fa-user-shield text-lg"></i>
                     </div>
-                    <span class="text-[10px] font-black tracking-wider uppercase">Account</span>
+                    <span class="text-[9px] font-black tracking-wider uppercase">Account</span>
                 </button>
             </nav>
         `;
     },
     
-    // युझर ज्या स्क्रीनवर असेल, त्यानुसार खालचा आयकॉन हायलाईट करणे (State Matrix)
     updateActiveState: function(viewId) {
-        const views = ['home', 'shares', 'account'];
-        
-        if (views.includes(viewId)) {
-            views.forEach(v => {
-                const buttonEl = document.getElementById(`nav-${v}`);
-                const bgEl = document.getElementById(`nav-bg-${v}`);
-                
-                if (buttonEl && bgEl) {
-                    if (v === viewId) {
-                        // ॲक्टिव्ह आयकॉन डिझाईन (Premium Wealth Blue)
-                        buttonEl.className = "flex flex-col items-center gap-1 text-blue-900 scale-105 font-bold transition-all duration-200";
+        const tabs = ['home', 'shares', 'account'];
+        if (tabs.includes(viewId)) {
+            tabs.forEach(t => {
+                const btnEl = document.getElementById(`nav-${t}`);
+                const bgEl = document.getElementById(`nav-bg-${t}`);
+                if (btnEl && bgEl) {
+                    if (t === viewId) {
+                        btnEl.className = "flex flex-col items-center gap-1 text-blue-900 scale-105 font-bold transition-all";
                         bgEl.classList.add('bg-blue-50/80', 'px-3');
                     } else {
-                        // इन-ॲक्टिव्ह आयकॉन डिझाईन (Slate Muted)
-                        buttonEl.className = "flex flex-col items-center gap-1 text-slate-400 active:scale-95 transition-all duration-200";
+                        btnEl.className = "flex flex-col items-center gap-1 text-slate-400 transition-all";
                         bgEl.className = "w-10 h-6 flex items-center justify-center rounded-full transition-all";
                     }
                 }
@@ -55,5 +49,3 @@ const NavigationComponent = {
         }
     }
 };
-
-console.log("BDA Components Hub: Bottom dock navigation renderer loaded.");
