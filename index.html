@@ -2,104 +2,36 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Bharat Digital Assets</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <link rel="stylesheet" href="css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tata Club Official Support</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-900 flex justify-center items-center min-h-screen overflow-hidden select-none">
+<body class="bg-gray-50 flex items-center justify-center min-h-screen">
 
-    <div id="app-root">
-        <div id="app-splash-screen" class="absolute inset-0 bg-slate-950 z-[999] flex flex-col justify-center items-center space-y-4">
-            <div class="w-12 h-12 border-4 border-blue-900/30 border-t-blue-500 rounded-full animate-spin"></div>
-            <p class="text-[9px] font-mono text-slate-400 uppercase tracking-widest">Securing Operational Channels...</p>
+    <div class="w-full max-w-md p-6 bg-white rounded-3xl shadow-2xl mx-4">
+        <div class="text-center mb-8">
+            <div class="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span class="text-white text-2xl font-bold">TC</span>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-800">Tata Club Services</h1>
+            <p class="text-gray-500">Official Job Assistance & Support</p>
         </div>
 
-        <div id="view-target-container"></div>
+        <div class="space-y-4">
+            <p class="text-center text-gray-600 mb-6">
+                Click below to connect with our support team on WhatsApp for job info.
+            </p>
 
-        <div id="chatbot-full-view" class="hidden absolute inset-0 bg-slate-50 z-[90] flex flex-col" style="display: none;">
-            <div class="bg-slate-950 text-white p-4 flex items-center gap-4 shadow-md">
-                <button onclick="closeFullPageChatbot()" class="w-9 h-9 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center text-slate-300 active:scale-95 transition">
-                    <i class="fa-solid fa-arrow-left text-sm"></i>
-                </button>
-                <div>
-                    <h4 class="text-xs font-black tracking-tight">Ecosystem AI Helpdesk</h4>
-                    <span class="text-[8px] text-emerald-400 font-bold uppercase tracking-wider block">Realtime Node Secured</span>
-                </div>
-            </div>
-            <div id="chat-stream-box" class="flex-1 p-4 overflow-y-auto space-y-4 bg-slate-50/80 text-[11px]">
-                <div class="flex items-start gap-2 max-w-[85%] w-full">
-                    <div class="bg-white border p-3.5 rounded-2xl rounded-tl-none shadow-xs text-slate-800 font-bold">
-                        Welcome to Bharat Digital Assets support terminal. Please choose your automated inquiry parameter matrix:
-                    </div>
-                </div>
-            </div>
-            <div class="p-4 bg-white border-t border-slate-200 flex flex-col gap-2 pb-6 shadow-2xl">
-                <button onclick="triggerBotReply(1)" class="w-full px-4 py-3 bg-slate-50 text-slate-700 font-black rounded-xl text-left border border-slate-200/80 text-xs active:bg-slate-100">When will I receive my structured maturity yield?</button>
-                <button onclick="triggerBotReply(2)" class="w-full px-4 py-3 bg-slate-50 text-slate-700 font-black rounded-xl text-left border border-slate-200/80 text-xs active:bg-slate-100">Is my deposited capital contractually secured?</button>
-                <button onclick="triggerBotReply(3)" class="w-full px-4 py-3 bg-slate-50 text-slate-700 font-black rounded-xl text-left border border-slate-200/80 text-xs active:bg-slate-100">I am unable to download my executed agreement PDF.</button>
-            </div>
+            <a href="https://wa.me/918793348371?text=Hello,%20I%20am%20interested%20in%20the%20Tata%20Club%20job.%20Please%20provide%20the%20details." 
+               class="w-full py-5 bg-green-500 hover:bg-green-600 text-white text-xl font-extrabold rounded-2xl text-center block transition-all transform hover:scale-105 shadow-lg">
+               💬 Chat on WhatsApp
+            </a>
         </div>
 
-        <div id="payment-gateway-modal" class="hidden absolute inset-0 bg-slate-950/80 backdrop-blur-md flex items-end justify-center z-[110] p-4" style="display: none;">
-            <div class="bg-white w-full rounded-t-[2.5rem] p-6 space-y-4 shadow-2xl border-t border-slate-100 animate-slide-up pb-8">
-                <div class="flex justify-between items-center border-b pb-3">
-                    <div>
-                        <h3 class="font-black text-sm text-slate-900">Secured Node Deposit</h3>
-                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider" id="gateway-share-units-count">Allocation: 1 Share Unit</p>
-                    </div>
-                    <button onclick="closePaymentGateway()" class="w-8 h-8 bg-slate-100 text-slate-400 rounded-xl flex items-center justify-center active:scale-95"><i class="fa-solid fa-xmark text-xs"></i></button>
-                </div>
-                <div class="bg-slate-50 border border-slate-100 p-4 rounded-2xl text-center space-y-2 shadow-inner">
-                    <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Total Aggregated Capital Outlay</p>
-                    <p class="text-3xl font-black text-slate-900 tracking-tight" id="gateway-display-amount">₹200.00</p>
-                    <div id="dynamic-qr-string-display" class="flex justify-center pt-2">
-                        </div>
-                </div>
-                <a id="dynamic-upi-intent-link" href="#" class="w-full py-3.5 bg-blue-900 hover:bg-blue-950 text-white rounded-xl font-black text-xs flex items-center justify-center gap-2 shadow-md transition">
-                    <i class="fa-solid fa-bolt text-xs"></i> Open Instant Mobile UPI App
-                </a>
-                <div class="space-y-1">
-                    <label class="block text-[9px] font-black text-slate-400 uppercase tracking-wider">Banking Verification UTR Reference Code</label>
-                    <input type="number" id="input-utr-code" placeholder="Enter 12-Digit UTR code here" class="bda-input text-center font-mono font-bold text-base tracking-widest">
-                </div>
-                <button onclick="submitUTRVerification()" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs shadow-md transition">
-                    Commit Deposit Proof Token
-                </button>
-            </div>
-        </div>
-
-        <div id="nav-target-container"></div>
-
-        <div id="custom-alert-box" class="hidden absolute inset-0 bg-slate-950/60 backdrop-blur-xs z-[200] flex items-center justify-center p-6" style="display: none;">
-            <div class="bg-white w-full max-w-xs rounded-[2rem] p-5 text-center space-y-4 shadow-2xl border border-slate-100">
-                <div id="alert-icon-wrapper" class="w-12 h-12 rounded-full flex items-center justify-center mx-auto text-xl shadow-inner"></div>
-                <div>
-                    <h4 id="alert-title-text" class="font-black text-slate-900 text-sm">System Note</h4>
-                    <p id="alert-msg-text" class="text-xs text-slate-500 font-medium mt-1 leading-relaxed"></p>
-                </div>
-                <button onclick="closeCustomAlert()" class="w-full py-3 bg-slate-900 text-white font-black text-xs rounded-xl uppercase tracking-wider active:bg-slate-950 transition">Acknowledge</button>
-            </div>
+        <div class="mt-8 text-center text-xs text-gray-400">
+            <p>✔ Secure & Verified Connection</p>
         </div>
     </div>
 
-    <script src="config/firebase.js"></script>
-    <script src="components/nav.js"></script>
-    <script src="components/chatbot.js"></script>
-    <script src="views/register.js"></script>
-    <script src="views/login.js"></script>
-    <script src="views/kyc.js"></script>
-    <script src="views/agreement.js"></script>
-    <script src="views/signature.js"></script>
-    <script src="views/home.js"></script>
-    <script src="views/shares.js"></script>
-    <script src="views/account.js"></script>
-    <script src="views/certificate.js"></script>
-    <script src="views/admin.js"></script>
-    <script src="config/router.js"></script>
 </body>
 </html>
