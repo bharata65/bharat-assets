@@ -3,37 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Join Tata Club | Professional</title>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap" rel="stylesheet">
-    <!-- Font Awesome for WhatsApp Icon -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
+    <title>COOE HACK SOFTWARE | Premium</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #00bfa5, #00897b); height: 100vh; display: flex; align-items: center; justify-content: center; margin: 0; }
-        .card { background: white; padding: 40px; border-radius: 25px; box-shadow: 0 15px 30px rgba(0,0,0,0.2); text-align: center; max-width: 400px; width: 90%; }
-        h1 { color: #333; font-size: 22px; margin-bottom: 25px; }
-        .wa-btn {
-            background-color: #25D366; color: white; padding: 18px 25px;
-            font-size: 18px; font-weight: bold; border-radius: 50px;
-            text-decoration: none; display: flex; align-items: center; justify-content: center;
-            transition: 0.3s; box-shadow: 0 8px 20px rgba(37, 211, 102, 0.3);
-        }
-        .wa-btn i { margin-right: 12px; font-size: 24px; }
-        .wa-btn:hover { background-color: #128C7E; transform: scale(1.05); }
+        body { font-family: 'Orbitron', sans-serif; background: #0a0a0a; color: #00ff00; padding: 20px; }
+        .container { max-width: 450px; margin: auto; background: #111; padding: 25px; border: 2px solid #00ff00; border-radius: 15px; box-shadow: 0 0 20px #00ff00; }
+        h2 { text-align: center; text-transform: uppercase; color: #fff; }
+        input, select { width: 100%; padding: 12px; margin: 10px 0; background: #222; border: 1px solid #00ff00; color: #fff; border-radius: 5px; box-sizing: border-box; }
+        .price-tag { text-align: center; font-size: 20px; color: #ff00ff; margin: 15px 0; }
+        .pay-btn { width: 100%; padding: 15px; background: #00ff00; border: none; font-weight: bold; cursor: pointer; border-radius: 5px; }
+        #upi-section { display: none; text-align: center; margin-top: 20px; }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h1>Message on WhatsApp for Joining Colour Trading Job</h1>
-        
-        <!-- ही लिंक मेसेज १००% टाईप करेल -->
-        <a href="https://wa.me/917058563295?text=Hello%20!%20Can%20i%20get%20more%20info%20on%20this%20%3F" 
-           class="wa-btn">
-           <i class="fab fa-whatsapp"></i> Chat on WhatsApp
-        </a>
-    </div>
+<div class="container">
+    <h2>COOE HACK SOFTWARE</h2>
+    <input type="text" placeholder="Full Name" id="name">
+    <input type="date" id="dob">
+    <select id="hack-type">
+        <option value="Premium">Premium Hack</option>
+        <option value="Advance">Advance Hack</option>
+        <option value="Level3">Under 3 Level</option>
+        <option value="Level4">Under 4 Level</option>
+    </select>
+    
+    <div class="price-tag">Price: ₹700</div>
+    <button class="pay-btn" onclick="showPayment()">GET YOUR HACK</button>
 
+    <div id="upi-section">
+        <p>Scan & Pay ₹700</p>
+        <!-- UPI QR Code Generator API -->
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=shivchawa@axl&pn=COOE_HACK&am=700&cu=INR" alt="QR">
+        <p>UPI: <b>shivchawa@axl</b></p>
+        <a href="upi://pay?pa=shivchawa@axl&pn=COOE_HACK&am=700&cu=INR" class="pay-btn">Pay via GPay/PhonePe</a>
+        <input type="text" placeholder="Enter UTR Number" id="utr">
+        <button class="pay-btn" onclick="confirmPayment()">SUBMIT UTR</button>
+    </div>
+</div>
+
+<script>
+    function showPayment() { document.getElementById('upi-section').style.display = 'block'; }
+    function confirmPayment() {
+        alert("Wait for confirmation! Your request is processing...");
+    }
+</script>
 </body>
 </html>
