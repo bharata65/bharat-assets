@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bharat Digital Assets</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .page { display: none; }
+        .active { display: block; }
+    </style>
+</head>
+<body class="bg-black text-white font-sans">
+
+    <!-- Pages Container -->
+    <div id="app">
+        <!-- Register Page -->
+        <div id="page-register" class="page active p-6">
+            <h1 class="text-3xl font-bold text-blue-500 mb-2">Create Account</h1>
+            <p class="text-gray-400 mb-8">Join the future of assets.</p>
+            <input type="number" id="reg-phone" placeholder="Mobile Number" class="w-full bg-gray-800 p-4 rounded-xl mb-4 outline-none border border-gray-700">
+            <input type="password" id="reg-pass" placeholder="4 Digit Password" maxlength="4" class="w-full bg-gray-800 p-4 rounded-xl mb-6 outline-none border border-gray-700">
+            <button onclick="register()" class="w-full bg-blue-600 p-4 rounded-xl font-bold">Continue</button>
+        </div>
+        
+        <!-- Home Page (Locked State) -->
+        <div id="page-home" class="page p-6">
+            <div class="flex justify-between items-center mb-8">
+                <div><p class="text-gray-400">Balance</p><h2 class="text-2xl font-bold">₹0.00</h2></div>
+                <button class="bg-green-600 px-4 py-2 rounded-lg">Deposit</button>
+            </div>
+            <!-- Dynamic Shares Area -->
+            <div id="shares-container"></div>
+        </div>
+    </div>
+
+    <script type="module" src="main.js"></script>
+</body>
+</html>
+
