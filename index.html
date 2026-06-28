@@ -1,17 +1,21 @@
 <!DOCTYPE html>
-<html>
+<html lang="mr">
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="assets/css/style.css">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="flex items-center justify-center h-screen bg-black">
-    <div class="w-full max-w-sm p-6 bg-white/5 rounded-3xl border border-white/10">
-        <h2 class="text-2xl font-bold text-center mb-6">Login</h2>
-        <input id="num" class="w-full p-3 bg-gray-800 rounded mb-4" placeholder="Number">
-        <input id="pin" type="password" class="w-full p-3 bg-gray-800 rounded mb-6" placeholder="PIN">
-        <button onclick="login()" class="w-full bg-blue-600 p-3 rounded font-bold">Login</button>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="glass-panel w-full max-w-sm">
+        <h2 class="text-3xl font-bold mb-2">Welcome Back</h2>
+        <p class="text-gray-400 mb-8">Login to your account</p>
+        
+        <input id="num" class="input-field" placeholder="Mobile Number">
+        <input id="pin" type="password" class="input-field" placeholder="4 Digit PIN">
+        
+        <button onclick="login()" class="btn-premium mb-4">Login Securely</button>
+        <p class="text-center text-sm">Don't have an account? <a href="#" class="text-blue-500 font-bold">Register</a></p>
     </div>
     <script type="module" src="assets/js/app.js"></script>
 </body>
 </html>
-
