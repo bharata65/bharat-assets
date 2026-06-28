@@ -1,0 +1,26 @@
+body { background: #0a0a0a; color: #fff; font-family: 'Segoe UI', sans-serif; }
+.glass-panel {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 30px;
+    padding: 2rem;
+}
+.input-field {
+    background: #151515;
+    border: 1px solid #333;
+    padding: 15px;
+    border-radius: 15px;
+    width: 100%;
+    margin-bottom: 15px;
+    color: white;
+}
+.btn-premium {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    padding: 15px;
+    border-radius: 15px;
+    width: 100%;
+    font-weight: bold;
+    cursor: pointer;
+}
+
