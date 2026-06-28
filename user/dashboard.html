@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-black text-white p-6">
+    <div class="border border-white/10 p-6 rounded-2xl bg-white/5">
+        <h2 class="text-xl text-gray-400">Total Balance</h2>
+        <h1 class="text-4xl font-bold">₹0.00</h1>
+    </div>
+    
+    <div class="mt-10">
+        <button onclick="withdraw()" class="w-full bg-blue-600 p-4 rounded-xl font-bold">Withdraw</button>
+    </div>
+
+    <script>
+        function withdraw() {
+            // Locking System
+            alert("🔒 Account Status: Standard. Pay ₹200 Activation Fee to unlock withdrawals.");
+        }
+    </script>
+</body>
+</html>
+
