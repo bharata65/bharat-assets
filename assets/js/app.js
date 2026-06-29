@@ -1,49 +1,71 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
 import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
-import { firebaseConfig } from "../../config.js"; // हा पाथ बरोबर असणे खूप महत्त्वाचे आहे!
+import { firebaseConfig } from "../../config.js"; 
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// Advanced UI Popup Function
+window.showToast = (message, isSuccess = false) => {
+    const toast = document.getElementById('toast');
+    const msg = document.getElementById('toast-msg');
+    
+    msg.innerText = message;
+    
+    // यशासाठी हिरवा रंग, एररसाठी लाल रंग
+    if(isSuccess) {
+        toast.classList.replace('bg-red-600/90', 'bg-green-600/90');
+    } else {
+        toast.classList.replace('bg-green-600/90', 'bg-red-600/90');
+    }
+
+    toast.classList.add('toast-show');
+    
+    // ३ सेकंदांनी पॉपअप आपोआप गायब होईल
+    setTimeout(() => {
+        toast.classList.remove('toast-show');
+    }, 3000);
+};
+
 window.registerUser = async () => {
-    // 1. डेटा गोळा करणे
     const name = document.getElementById('name').value;
     const num = document.getElementById('num').value;
     const pass = document.getElementById('pass').value;
     const cpass = document.getElementById('cpass').value;
     const agree = document.getElementById('agree').checked;
 
-    // 2. व्हॅलिडेशन (चुका तपासणे)
-    if (!name || !num || !pass) { alert("सर्व माहिती भरा!"); return; }
-    if (!agree) { alert("Please agree to terms!"); return; }
-    if (pass !== cpass) { alert("Passwords do not match!"); return; }
-    if (num.length !== 10) { alert("Enter valid 10 digit number!"); return; }
+    // Custom Error Popups
+    if (!name || !num || !pass) { showToast("⚠️ सर्व माहिती भरणे अनिवार्य आहे!"); return; }
+    if (num.length !== 10) { showToast("⚠️ मोबाईल नंबर १० अंकीच असावा!"); return; }
+    if (pass.length !== 4) { showToast("⚠️ पासवर्ड ४ अंकी PIN असावा!"); return; }
+    if (pass !== cpass) { showToast("⚠️ दोन्ही पासवर्ड जुळत नाहीत!"); return; }
+    if (!agree) { showToast("⚠️ कृपया Terms & Conditions मान्य करा!"); return; }
 
-    // बटण लोडिंग स्टेटवर नेणे
-    const btn = document.querySelector("button");
+    const btn = document.getElementById("reg-btn");
     const originalText = btn.innerText;
     btn.innerText = "Processing...";
     btn.disabled = true;
 
     try {
-        // 3. फायरबेस मध्ये डेटा पाठवणे
         await addDoc(collection(db, "users"), {
             name: name,
             number: num,
             password: pass,
-            userId: Math.floor(100000 + Math.random() * 900000), // 6-Digit ID
+            userId: Math.floor(100000 + Math.random() * 900000), 
             status: "standard",
             balance: 0
         });
 
-        alert("Account Created! Redirecting to Home...");
+        showToast("✅ Account Created Successfully!", true);
         
-        // 4. थेट Dashboard वर पाठवणे (इथे चूक होती, ती दुरुस्त केली आहे)
-        window.location.href = "user/dashboard.html"; 
+        // २ सेकंद थांबून Dashboard वर रिडायरेक्ट करेल
+        setTimeout(() => {
+            window.location.href = "user/dashboard.html"; 
+        }, 2000);
 
     } catch (error) {
         console.error("Firebase Error: ", error);
-        alert("Error! फायरबेस कनेक्ट होत नाहीये. (Console चेक कर)");
+        showToast("⚠️ नेटवर्क एरर! पुन्हा प्रयत्न करा.");
         btn.innerText = originalText;
         btn.disabled = false;
     }
