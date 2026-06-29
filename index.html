@@ -3,47 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bharat Share's</title>
+    <title>Bharat Share's - Register</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <style>
         body { background-color: #050505; font-family: 'Poppins', sans-serif; }
         .input-glass { background: #111; border: 1px solid #333; color: white; }
-        /* Advanced Popup CSS */
-        #toast {
-            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        }
-        .toast-show {
-            opacity: 1 !important;
-            transform: translate(-50%, 0) !important;
-        }
+        #toast { transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+        .toast-show { opacity: 1 !important; transform: translate(-50%, 0) !important; }
     </style>
 </head>
 <body class="flex flex-col min-h-screen relative">
 
-    <!-- Advanced UI Popup (Hidden by default) -->
     <div id="toast" class="fixed top-10 left-1/2 transform -translate-x-1/2 -translate-y-10 opacity-0 bg-red-600/90 backdrop-blur-md text-white px-6 py-3 rounded-full shadow-2xl z-50 pointer-events-none flex items-center gap-2 font-semibold">
-        <span id="toast-msg">Error Message</span>
+        <span id="toast-msg">Error</span>
     </div>
 
-    <!-- Header -->
     <header class="w-full bg-gradient-to-r from-blue-600 to-purple-600 p-6 shadow-xl text-center rounded-b-3xl">
         <h1 class="text-white text-2xl font-bold tracking-wider">Bharat Share's</h1>
     </header>
 
-    <!-- Main Container -->
     <main class="flex-grow flex items-center justify-center p-4">
         <div class="w-full max-w-sm bg-[#0a0a0a] border border-gray-800 p-6 rounded-3xl shadow-2xl">
             <h2 class="text-white text-2xl font-bold mb-6 text-center">Create Account</h2>
             
             <input type="text" id="name" placeholder="Full Name" class="input-glass w-full p-4 rounded-xl mb-4 focus:border-blue-500 outline-none transition-all">
-            
-            <!-- Number Lock (Max 10 Digits) -->
             <input type="number" id="num" placeholder="10 Digit Mobile Number" class="input-glass w-full p-4 rounded-xl mb-4 focus:border-blue-500 outline-none transition-all" oninput="if(this.value.length > 10) this.value = this.value.slice(0, 10);">
-            
-            <!-- Password Lock (Max 4 Digits) -->
             <input type="number" id="pass" placeholder="4 Digit PIN" class="input-glass w-full p-4 rounded-xl mb-4 focus:border-blue-500 outline-none transition-all" oninput="if(this.value.length > 4) this.value = this.value.slice(0, 4);">
-            
             <input type="number" id="cpass" placeholder="Confirm 4 Digit PIN" class="input-glass w-full p-4 rounded-xl mb-4 focus:border-blue-500 outline-none transition-all" oninput="if(this.value.length > 4) this.value = this.value.slice(0, 4);">
             
             <label class="flex items-center text-gray-400 text-sm mb-6 cursor-pointer">
@@ -51,19 +37,16 @@
                 I agree to the Terms & Privacy Policy
             </label>
             
-            <button id="reg-btn" onclick="registerUser()" class="w-full bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-500 hover:to-blue-700 text-white p-4 rounded-xl font-bold transition-all shadow-lg shadow-blue-900/50">
+            <button id="reg-btn" class="w-full bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-500 hover:to-blue-700 text-white p-4 rounded-xl font-bold transition-all shadow-lg shadow-blue-900/50">
                 Continue
             </button>
 
-            <!-- Login Link Below -->
             <p class="text-center text-gray-500 text-sm mt-6">
                 Already have an account? 
-                <a href="#" class="text-blue-500 font-bold hover:text-blue-400">Login</a>
+                <a href="login.html" class="text-blue-500 font-bold hover:text-blue-400">Login</a>
             </p>
         </div>
     </main>
-
-    <!-- JS Link -->
     <script type="module" src="assets/js/app.js"></script>
 </body>
 </html>
