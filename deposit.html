@@ -1,19 +1,19 @@
-<!-- नवीन लोडर (हे <body> च्या सुरुवातीला टाक) -->
-<div id="loader" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-    <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600"></div>
+<!-- नवीन लोडिंग ॲनिमेशन - हे बटनच्या आत किंवा वर दाखवता येते -->
+<div id="loader" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-white"></div>
 </div>
 
 <script>
     function proceed() {
         const amt = document.getElementById('custom-amount').value;
         if(amt < 200) return;
-        
-        // Loader दाखवा
+
+        // पॉपअप ऐवजी लोडर दाखवा
         document.getElementById('loader').classList.remove('hidden');
         
-        // 2 सेकंदानंतर रिडायरेक्ट
+        // १-२ सेकंद थांबून रिडायरेक्ट
         setTimeout(() => {
             window.location.href = "payment-gateway.html";
-        }, 2000);
+        }, 1500); 
     }
 </script>
