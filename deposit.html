@@ -1,6 +1,67 @@
-<div class="p-6">
-    <h2 class="text-2xl font-bold mb-4">Add Funds</h2>
-    <input type="number" id="dep-amount" class="w-full p-4 bg-gray-800 rounded-xl mb-4" placeholder="Enter Amount">
-    <button onclick="processDeposit()" class="w-full bg-blue-600 p-4 rounded-xl font-bold">Continue to Payment</button>
-</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deposit Funds</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: #f3f4f6; font-family: sans-serif; }
+        .amount-btn { border: 1px solid #e5e7eb; background: white; padding: 12px; border-radius: 8px; font-weight: bold; }
+        .active-btn { border: 2px solid #2563eb; color: #2563eb; }
+    </style>
+</head>
+<body class="p-4">
 
+    <!-- Header -->
+    <div class="flex items-center mb-6">
+        <button onclick="history.back()" class="text-2xl mr-4">←</button>
+        <h2 class="text-xl font-bold flex-grow text-center">Deposit</h2>
+        <a href="deposit-history.html" class="text-sm text-gray-500">Deposit history</a>
+    </div>
+
+    <!-- Amount Selection -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm mb-6">
+        <h3 class="font-bold mb-4">Deposit amount</h3>
+        <div class="grid grid-cols-3 gap-3 mb-4">
+            <button class="amount-btn" onclick="setAmount(100, this)">₹ 100</button>
+            <button class="amount-btn" onclick="setAmount(200, this)">₹ 200</button>
+            <button class="amount-btn" onclick="setAmount(300, this)">₹ 300</button>
+            <button class="amount-btn" onclick="setAmount(400, this)">₹ 400</button>
+            <button class="amount-btn" onclick="setAmount(500, this)">₹ 500</button>
+            <button class="amount-btn" onclick="setAmount(1000, this)">₹ 1K</button>
+        </div>
+        <input type="number" id="custom-amount" class="w-full p-4 border rounded-lg" placeholder="₹ 100.00 - 50,000.00">
+    </div>
+
+    <!-- Instructions -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm mb-6 text-sm text-gray-600">
+        <h3 class="font-bold text-black mb-3">Recharge instructions</h3>
+        <ul class="list-disc pl-4 space-y-2">
+            <li>The transfer amount must match the order you created.</li>
+            <li>If you transfer the wrong amount, the money cannot be credited!</li>
+            <li>Do not cancel the order after the money has been transferred.</li>
+        </ul>
+    </div>
+
+    <!-- Deposit Button -->
+    <button onclick="proceedToPayment()" class="w-full bg-slate-300 text-slate-600 p-4 rounded-xl font-bold">Deposit</button>
+
+    <script>
+        function setAmount(val, btn) {
+            document.getElementById('custom-amount').value = val;
+            document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active-btn'));
+            btn.classList.add('active-btn');
+        }
+
+        function proceedToPayment() {
+            const amount = document.getElementById('custom-amount').value;
+            if (amount < 100) { alert("Minimum deposit is ₹100"); return; }
+            
+            // इथे Razorpay चे लॉजिक येईल
+            alert("Redirecting to Payment Gateway for ₹" + amount);
+            // window.location.href = "razorpay-link-or-script";
+        }
+    </script>
+</body>
+</html>
