@@ -1,7 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
-// Firebase Configuration
 const firebaseConfig = {
     apiKey: "AIzaSyCkA8HNQd8kDA8uLP6hNWgkjF78d3wKXbU",
     authDomain: "bharat-digital-assets.firebaseapp.com",
@@ -14,64 +13,77 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 1. Global Loader Animation Logic
-window.showLoader = () => {
-    const loader = document.getElementById('loader');
-    if (loader) loader.classList.remove('hidden');
-};
-
-window.hideLoader = () => {
-    const loader = document.getElementById('loader');
-    if (loader) loader.classList.add('hidden');
-};
-
-// 2. Transaction Logic: Deposit Request
-window.saveDepositRequest = async (amount) => {
+// 1. Submit UTR and save to Deposits Collection
+window.submitUTR = async () => {
+    const utr = document.getElementById('utr-input')?.value;
+    const amount = localStorage.getItem("lastAmount") || "200";
     const userId = localStorage.getItem("bharatUserSession");
-    if (!userId) return;
 
-    window.showLoader();
+    if (!utr || utr.length < 9) {
+        alert("Please enter a valid 12-digit UTR number");
+        return;
+    }
+
     try {
         await addDoc(collection(db, "deposits"), {
             userId: userId,
-            amount: amount,
+            amount: parseInt(amount),
+            utr: utr,
             status: "Processing",
             timestamp: new Date()
         });
-        window.location.href = "payment-gateway.html";
+        alert("Payment Submitted! Admin will verify soon.");
+        window.location.href = "deposit-history.html";
     } catch (e) {
-        window.hideLoader();
-        alert("Error processing request. Please try again.");
+        alert("Error saving transaction. Try again.");
     }
 };
 
-// 3. Admin Panel: Fetch All Users & Bank Details
-window.loadAdminUserData = async () => {
-    const usersList = document.getElementById("user-table");
-    if (!usersList) return;
+// 2. Load User's Deposit History
+window.loadDepositHistory = async () => {
+    const container = document.getElementById("history-container");
+    if (!container) return;
 
-    const querySnapshot = await getDocs(collection(db, "users"));
-    usersList.innerHTML = "";
+    const userId = localStorage.getItem("bharatUserSession");
+    const q = query(collection(db, "deposits"), where("userId", "==", userId), orderBy("timestamp", "desc"));
     
+    const querySnapshot = await getDocs(q);
+    container.innerHTML = "";
+
     querySnapshot.forEach((doc) => {
-        const u = doc.data();
-        usersList.innerHTML += `
-            <tr class="border-b">
-                <td class="p-3">${u.name}</td>
-                <td class="p-3">${u.number}</td>
-                <td class="p-3">${u.bankName || 'N/A'}</td>
-                <td class="p-3"><button onclick="banUser('${doc.id}')" class="text-red-500 font-bold">Ban</button></td>
-            </tr>
+        const d = doc.data();
+        container.innerHTML += `
+            <div class="bg-white p-4 rounded-xl flex justify-between items-center shadow-sm border border-gray-100">
+                <div>
+                    <p class="font-bold text-gray-800">₹${d.amount}</p>
+                    <p class="text-[10px] text-gray-400">${d.timestamp.toDate().toLocaleString()}</p>
+                </div>
+                <span class="px-3 py-1 rounded-full text-[10px] uppercase font-bold 
+                    ${d.status === 'Processing' ? 'bg-yellow-100 text-yellow-600' : 'bg-green-100 text-green-600'}">
+                    ${d.status}
+                </span>
+            </div>
         `;
     });
 };
 
-// 4. Global Click Listener for Loader (सर्व क्लिकला लोडर मिळेल)
-document.addEventListener('click', function(e) {
-    if (e.target.tagName === 'BUTTON' && !e.target.disabled && !e.target.onclick) {
-        window.showLoader();
-        setTimeout(() => window.hideLoader(), 1500);
-    }
-});
+// 3. Admin: Fetch All Deposit Requests for Admin Panel
+window.loadAdminDeposits = async () => {
+    const adminTable = document.getElementById("admin-deposit-table");
+    if (!adminTable) return;
 
-console.log("Bharat Share's Engine Loaded Successfully!");
+    const querySnapshot = await getDocs(collection(db, "deposits"));
+    adminTable.innerHTML = "";
+
+    querySnapshot.forEach((doc) => {
+        const d = doc.data();
+        adminTable.innerHTML += `
+            <tr class="border-b">
+                <td class="p-3">${d.amount}</td>
+                <td class="p-3">${d.utr}</td>
+                <td class="p-3">${d.status}</td>
+                <td class="p-3"><button onclick="approveDeposit('${doc.id}')" class="bg-green-500 text-white px-2 py-1 rounded">Approve</button></td>
+            </tr>
+        `;
+    });
+};
