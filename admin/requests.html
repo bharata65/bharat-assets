@@ -1,0 +1,13 @@
+import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+const db = getFirestore();
+
+// हे फंक्शन आपोआप नवीन रिक्वेस्ट आल्यावर अपडेट करेल
+onSnapshot(collection(db, "withdrawalRequests"), (snapshot) => {
+    snapshot.docChanges().forEach((change) => {
+        if (change.type === "added") {
+            alert("नवीन विथड्रॉल विनंती आली आहे!");
+            // इथे कोड टाक जो रिक्वेस्ट लिस्टमध्ये दिसेल
+        }
+    });
+});
+
