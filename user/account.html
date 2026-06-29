@@ -1,30 +1,7 @@
-<!DOCTYPE html>
-<html lang="mr">
-<head>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="../assets/css/style.css">
-</head>
-<body class="p-6">
-    <div class="brand-header">Account Details</div>
-    
-    <div class="glass-panel mt-6">
-        <p class="text-gray-400">Unique User ID</p>
-        <h2 id="uid-display" class="text-3xl font-mono font-bold text-blue-400">######</h2>
+<div class="brand-header">My Account</div>
+<div class="p-6 space-y-4">
+    <div class="glass-panel">
+        <p>User ID: <span id="uid" class="text-blue-500">######</span></p>
     </div>
-
-    <div class="mt-6 space-y-4">
-        <div class="glass-panel">
-            <h3 class="font-bold">Transaction History</h3>
-            <p class="text-sm text-gray-400">View your previous activities here.</p>
-        </div>
-        <div class="glass-panel">
-            <h3 class="font-bold">Privacy Policy</h3>
-        </div>
-    </div>
-
-    <script type="module">
-        // इथे तू Firebase मधून युजरचा ID फेटच करून 'uid-display' मध्ये टाकणार
-    </script>
-</body>
-</html>
-
+    <a href="../index.html" class="block text-center bg-red-600 p-4 rounded-xl">Logout</a>
+</div>
