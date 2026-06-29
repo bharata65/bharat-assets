@@ -12,9 +12,9 @@ window.onerror = function(message, source, lineno, colno, error) {
 const userSession = localStorage.getItem("bharatUserSession");
 const currentPath = window.location.pathname;
 
-// जर युजर लॉग इन असेल आणि तो Login/Register पेजवर असेल, तर थेट डॅशबोर्डवर पाठवा
+// जर युजर लॉग इन असेल, तर थेट dashboard.html वर पाठवा
 if (userSession && (currentPath.endsWith("index.html") || currentPath.endsWith("login.html") || currentPath === "/" || currentPath.endsWith("/"))) {
-    window.location.replace("user/dashboard.html");
+    window.location.replace("dashboard.html"); // पाथ फिक्स केला!
 }
 
 // ==========================================
@@ -36,27 +36,37 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // ==========================================
-// 4. ADVANCED UI TOAST (ENGLISH ONLY)
+// 4. ADVANCED BIG BLUE TOAST UI
 // ==========================================
-window.showToast = (message, isSuccess = false) => {
+window.showToast = (message) => {
     const toast = document.getElementById('toast');
     const msg = document.getElementById('toast-msg');
     
     if (!toast || !msg) return; 
     
     msg.innerText = message;
+    
+    // एकदम भारी मोठा Blue Popup Design
+    toast.style.background = "linear-gradient(135deg, #1e3a8a, #3b82f6)"; // Premium Blue
+    toast.style.padding = "18px 32px"; // बॉक्स मोठा केला
+    toast.style.fontSize = "16px"; // फॉन्ट मोठा केला
+    toast.style.borderRadius = "16px";
+    toast.style.boxShadow = "0 10px 40px rgba(59, 130, 246, 0.6)";
+    toast.style.border = "1px solid rgba(255,255,255,0.2)";
+    toast.style.color = "white";
+    
     toast.style.opacity = "1";
-    toast.style.transform = "translate(-50%, 0)";
-    toast.style.backgroundColor = isSuccess ? "rgba(22, 163, 74, 0.95)" : "rgba(220, 38, 38, 0.95)";
+    toast.style.transform = "translate(-50%, 20px)"; // पॉपअप थोडा खाली घेतला
+    toast.style.top = "10px";
 
     setTimeout(() => {
         toast.style.opacity = "0";
-        toast.style.transform = "translate(-50%, -20px)";
-    }, 3000);
+        toast.style.transform = "translate(-50%, -30px)";
+    }, 4000);
 };
 
 // ==========================================
-// 5. REGISTRATION LOGIC
+// 5. REGISTRATION LOGIC (With 'Already Exists' Check)
 // ==========================================
 window.registerUser = async () => {
     const name = document.getElementById('name')?.value.trim();
@@ -78,6 +88,19 @@ window.registerUser = async () => {
     regBtn.disabled = true;
 
     try {
+        // 🔍 १. चेक करा की हा नंबर आधीपासून आहे का?
+        const checkQuery = query(collection(db, "users"), where("number", "==", num));
+        const checkSnapshot = await getDocs(checkQuery);
+
+        if (!checkSnapshot.empty) {
+            // जर नंबर सापडला, तर एरर द्या आणि थांबवा
+            window.showToast("⚠️ Account Already Exists! Please Login.");
+            regBtn.innerHTML = originalContent;
+            regBtn.disabled = false;
+            return;
+        }
+
+        // 📝 २. जर नंबर नसेल, तर नवीन अकाउंट बनवा
         await addDoc(collection(db, "users"), {
             name: name,
             number: num,
@@ -88,13 +111,11 @@ window.registerUser = async () => {
             createdAt: new Date()
         });
 
-        window.showToast("✅ Account Created Successfully!", true);
-        
-        // Session Save करा आणि Redirect करा
+        window.showToast("✅ Account Created Successfully!");
         localStorage.setItem("bharatUserSession", num);
         
         setTimeout(() => { 
-            window.location.href = "user/dashboard.html"; 
+            window.location.href = "dashboard.html"; // पाथ फिक्स केला!
         }, 1500);
 
     } catch (error) {
@@ -105,7 +126,7 @@ window.registerUser = async () => {
 };
 
 // ==========================================
-// 6. LOGIN LOGIC
+// 6. LOGIN LOGIC (With 'Invalid Details' Check)
 // ==========================================
 window.loginUser = async () => {
     const num = document.getElementById('login-num')?.value.trim();
@@ -124,13 +145,12 @@ window.loginUser = async () => {
         const querySnapshot = await getDocs(q);
 
         if (!querySnapshot.empty) {
-            window.showToast("✅ Login Successful!", true);
-            
-            // Session Save करा (Auto-login साठी)
+            window.showToast("✅ Login Successful!");
             localStorage.setItem("bharatUserSession", num);
             
-            setTimeout(() => { window.location.href = "user/dashboard.html"; }, 1000);
+            setTimeout(() => { window.location.href = "dashboard.html"; }, 1000); // पाथ फिक्स केला!
         } else {
+            // ❌ चुकीचा डेटा असेल तर
             window.showToast("⚠️ Invalid Mobile Number or PIN!");
             loginBtn.innerHTML = originalContent;
             loginBtn.disabled = false;
