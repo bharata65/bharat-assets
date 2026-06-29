@@ -12,9 +12,9 @@ window.onerror = function(message, source, lineno, colno, error) {
 const userSession = localStorage.getItem("bharatUserSession");
 const currentPath = window.location.pathname;
 
-// जर युजर लॉग इन असेल, तर थेट dashboard.html वर पाठवा
-if (userSession && (currentPath.endsWith("index.html") || currentPath.endsWith("login.html") || currentPath === "/" || currentPath.endsWith("/"))) {
-    window.location.replace("dashboard.html"); // पाथ फिक्स केला!
+// जर युजर लॉग इन असेल, तर थेट user/dashboard.html वर पाठवा
+if (userSession && (currentPath.endsWith("index.html") || currentPath.endsWith("login.html") || currentPath === "/" || currentPath.endsWith("bharat-assets/"))) {
+    window.location.replace("user/dashboard.html"); // पाथ फिक्स केला
 }
 
 // ==========================================
@@ -45,18 +45,16 @@ window.showToast = (message) => {
     if (!toast || !msg) return; 
     
     msg.innerText = message;
-    
-    // एकदम भारी मोठा Blue Popup Design
-    toast.style.background = "linear-gradient(135deg, #1e3a8a, #3b82f6)"; // Premium Blue
-    toast.style.padding = "18px 32px"; // बॉक्स मोठा केला
-    toast.style.fontSize = "16px"; // फॉन्ट मोठा केला
+    toast.style.background = "linear-gradient(135deg, #1e3a8a, #3b82f6)";
+    toast.style.padding = "18px 32px";
+    toast.style.fontSize = "16px";
     toast.style.borderRadius = "16px";
     toast.style.boxShadow = "0 10px 40px rgba(59, 130, 246, 0.6)";
     toast.style.border = "1px solid rgba(255,255,255,0.2)";
     toast.style.color = "white";
     
     toast.style.opacity = "1";
-    toast.style.transform = "translate(-50%, 20px)"; // पॉपअप थोडा खाली घेतला
+    toast.style.transform = "translate(-50%, 20px)";
     toast.style.top = "10px";
 
     setTimeout(() => {
@@ -66,7 +64,7 @@ window.showToast = (message) => {
 };
 
 // ==========================================
-// 5. REGISTRATION LOGIC (With 'Already Exists' Check)
+// 5. REGISTRATION LOGIC
 // ==========================================
 window.registerUser = async () => {
     const name = document.getElementById('name')?.value.trim();
@@ -83,24 +81,20 @@ window.registerUser = async () => {
 
     const regBtn = document.getElementById("reg-btn");
     const originalContent = regBtn.innerHTML;
-    
     regBtn.innerHTML = `Processing...`;
     regBtn.disabled = true;
 
     try {
-        // 🔍 १. चेक करा की हा नंबर आधीपासून आहे का?
         const checkQuery = query(collection(db, "users"), where("number", "==", num));
         const checkSnapshot = await getDocs(checkQuery);
 
         if (!checkSnapshot.empty) {
-            // जर नंबर सापडला, तर एरर द्या आणि थांबवा
             window.showToast("⚠️ Account Already Exists! Please Login.");
             regBtn.innerHTML = originalContent;
             regBtn.disabled = false;
             return;
         }
 
-        // 📝 २. जर नंबर नसेल, तर नवीन अकाउंट बनवा
         await addDoc(collection(db, "users"), {
             name: name,
             number: num,
@@ -115,7 +109,7 @@ window.registerUser = async () => {
         localStorage.setItem("bharatUserSession", num);
         
         setTimeout(() => { 
-            window.location.href = "dashboard.html"; // पाथ फिक्स केला!
+            window.location.href = "user/dashboard.html"; // पाथ फिक्स केला
         }, 1500);
 
     } catch (error) {
@@ -126,7 +120,7 @@ window.registerUser = async () => {
 };
 
 // ==========================================
-// 6. LOGIN LOGIC (With 'Invalid Details' Check)
+// 6. LOGIN LOGIC
 // ==========================================
 window.loginUser = async () => {
     const num = document.getElementById('login-num')?.value.trim();
@@ -136,7 +130,6 @@ window.loginUser = async () => {
 
     const loginBtn = document.getElementById("login-btn");
     const originalContent = loginBtn.innerHTML;
-    
     loginBtn.innerHTML = `Verifying...`;
     loginBtn.disabled = true;
 
@@ -148,9 +141,10 @@ window.loginUser = async () => {
             window.showToast("✅ Login Successful!");
             localStorage.setItem("bharatUserSession", num);
             
-            setTimeout(() => { window.location.href = "dashboard.html"; }, 1000); // पाथ फिक्स केला!
+            setTimeout(() => { 
+                window.location.href = "user/dashboard.html"; // पाथ फिक्स केला
+            }, 1000);
         } else {
-            // ❌ चुकीचा डेटा असेल तर
             window.showToast("⚠️ Invalid Mobile Number or PIN!");
             loginBtn.innerHTML = originalContent;
             loginBtn.disabled = false;
