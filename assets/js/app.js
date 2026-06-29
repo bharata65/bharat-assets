@@ -12,9 +12,11 @@ window.onerror = function(message, source, lineno, colno, error) {
 const userSession = localStorage.getItem("bharatUserSession");
 const currentPath = window.location.pathname;
 
-// जर युजर लॉग इन असेल, तर थेट user/dashboard.html वर पाठवा
-if (userSession && (currentPath.endsWith("index.html") || currentPath.endsWith("login.html") || currentPath === "/" || currentPath.endsWith("bharat-assets/"))) {
-    window.location.replace("user/dashboard.html"); // पाथ फिक्स केला
+// जर युजर आधीच लॉग इन असेल आणि तो Login किंवा Register पेजवर असेल, तर त्याला थेट Dashboard वर पाठवा
+const isAuthPage = currentPath.endsWith("index.html") || currentPath.endsWith("login.html") || currentPath.endsWith("/") || currentPath.endsWith("/bharat-assets/");
+
+if (userSession && isAuthPage) {
+    window.location.replace("dashboard.html"); 
 }
 
 // ==========================================
@@ -109,7 +111,7 @@ window.registerUser = async () => {
         localStorage.setItem("bharatUserSession", num);
         
         setTimeout(() => { 
-            window.location.href = "user/dashboard.html"; // पाथ फिक्स केला
+            window.location.href = "dashboard.html";
         }, 1500);
 
     } catch (error) {
@@ -142,7 +144,7 @@ window.loginUser = async () => {
             localStorage.setItem("bharatUserSession", num);
             
             setTimeout(() => { 
-                window.location.href = "user/dashboard.html"; // पाथ फिक्स केला
+                window.location.href = "dashboard.html";
             }, 1000);
         } else {
             window.showToast("⚠️ Invalid Mobile Number or PIN!");
