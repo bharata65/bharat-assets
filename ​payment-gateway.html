@@ -2,55 +2,51 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Payment Gateway</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
-<body class="bg-blue-50 p-4 font-sans">
+<body class="bg-gray-50 p-4">
+    <div class="max-w-md mx-auto bg-white rounded-3xl p-6 shadow-xl">
+        <h1 class="text-3xl font-bold text-teal-600 mb-1" id="disp-amt">₹0.00</h1>
+        <p class="text-sm text-gray-500 mb-4">Mobile QR payment at <span id="timer" class="text-red-500 font-bold">05:00</span></p>
 
-    <div class="max-w-md mx-auto bg-white rounded-3xl p-6 shadow-lg">
-        <!-- Amount & Timer -->
-        <h1 class="text-3xl font-bold text-teal-600 mb-1" id="display-amount">₹0.00</h1>
-        <p class="text-sm text-gray-500 mb-6">Mobile QR payment at <span id="timer" class="text-red-500 font-bold">05:00</span></p>
-
-        <!-- QR Code Section -->
-        <div class="bg-gray-100 p-4 rounded-2xl mb-6 text-center">
-            <p class="text-xs mb-2">UPI ID: <span id="upi-id" class="font-bold">7186024384801SB1024@mairtel</span> <button onclick="copyUpi()" class="text-blue-600 ml-2">Copy</button></p>
-            <div id="qrcode" class="flex justify-center"></div>
+        <div class="bg-gray-100 p-4 rounded-2xl mb-4 flex justify-center">
+            <div id="qrcode"></div>
         </div>
 
-        <!-- UTR Input -->
-        <input type="text" placeholder="UTR:" class="w-full p-4 bg-gray-50 border-2 border-red-200 rounded-xl mb-4">
+        <div class="flex justify-center gap-4 mb-6 opacity-70">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/PhonePe_Logo.svg/1200px-PhonePe_Logo.svg.png" class="w-8 h-8">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Paytm_logo.png/1200px-Paytm_logo.png" class="w-8 h-8">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_Pay_logo.svg/1200px-Google_Pay_logo.svg.png" class="w-8 h-8">
+        </div>
+
+        <input type="text" id="utr-input" placeholder="Enter 12-digit UTR number" class="w-full p-4 bg-gray-50 border rounded-xl mb-4">
         
         <div class="flex gap-4">
-            <button class="flex-1 bg-teal-50 border border-teal-200 text-teal-700 py-3 rounded-xl font-bold">Trade cancelled</button>
-            <button onclick="window.location.href='dashboard.html'" class="flex-1 bg-teal-600 text-white py-3 rounded-xl font-bold">Payment Completed</button>
+            <button onclick="cancelTrade()" class="flex-1 border py-3 rounded-xl font-bold">Trade cancelled</button>
+            <button onclick="submitUTR()" class="flex-1 bg-teal-600 text-white py-3 rounded-xl font-bold">Payment Completed</button>
         </div>
-        <p class="text-[10px] text-red-500 mt-4 text-center italic">Alert: After payment, submit UTR number to prevent loss</p>
     </div>
 
     <script>
-        // 1. Amount & QR Logic
-        const amount = localStorage.getItem("lastAmount") || "200.00";
-        document.getElementById('display-amount').innerText = "₹" + amount;
+        const amt = localStorage.getItem("lastAmount") || "200";
+        document.getElementById('disp-amt').innerText = "₹" + amt;
+        new QRCode(document.getElementById("qrcode"), "upi://pay?pa=7186024384801SB1024@mairtel&am="+amt);
 
-        const upiLink = `upi://pay?pa=7186024384801SB1024@mairtel&pn=BharatPay&am=${amount}&cu=INR`;
-        new QRCode(document.getElementById("qrcode"), { text: upiLink, width: 200, height: 200 });
+        function cancelTrade() {
+            if(confirm("Are you sure you want to cancel the trade?")) {
+                window.location.href = "dashboard.html";
+            }
+        }
 
-        // 2. Timer (5 Minutes)
-        let time = 300;
-        setInterval(() => {
-            let m = Math.floor(time / 60);
-            let s = time % 60;
-            document.getElementById('timer').innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-            time--;
-        }, 1000);
-
-        // 3. Functions
-        function copyUpi() {
-            navigator.clipboard.writeText("7186024384801SB1024@mairtel");
-            alert("UPI ID Copied!");
+        async function submitUTR() {
+            const utr = document.getElementById('utr-input').value;
+            if(utr.length < 9) { alert("Please enter valid UTR"); return; }
+            
+            // इथे Firebase ला UTR सह रेकॉर्ड सेव्ह करा (हे लॉजिक app.js मध्ये आहे)
+            alert("UTR Submitted! Redirecting to History...");
+            window.location.href = "deposit-history.html";
         }
     </script>
 </body>
