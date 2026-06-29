@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Deposit Funds</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
@@ -12,25 +13,22 @@
     </style>
 </head>
 <body class="p-4">
-    <!-- Loader -->
+    <!-- Global Loader -->
     <div id="loader" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
         <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-white"></div>
     </div>
 
-    <!-- Header -->
     <div class="flex items-center mb-6">
-        <button onclick="history.back()" class="text-2xl">←</button>
+        <button onclick="history.back()" class="text-2xl mr-4">←</button>
         <h2 class="text-xl font-bold flex-grow text-center">Deposit</h2>
         <a href="deposit-history.html" class="text-blue-600 text-sm">History</a>
     </div>
 
-    <!-- Premium Balance Box -->
     <div class="bg-gray-900 text-white p-6 rounded-2xl shadow-lg mb-6 text-center">
         <p class="text-gray-400 text-sm">Available Balance</p>
         <h1 class="text-4xl font-bold mt-1">₹0.00</h1>
     </div>
 
-    <!-- Amount Selection -->
     <div class="bg-white p-6 rounded-2xl shadow-sm mb-6">
         <h3 class="font-bold mb-4">Deposit amount</h3>
         <div class="grid grid-cols-3 gap-3 mb-4">
@@ -41,10 +39,9 @@
             <button class="amount-btn" onclick="setAmount(5000, this)">₹ 5K</button>
             <button class="amount-btn" onclick="setAmount(10000, this)">₹ 10K</button>
         </div>
-        <input type="number" id="custom-amount" oninput="checkInput()" class="w-full p-4 border rounded-lg" placeholder="Enter amount (Min: 200)">
+        <input type="number" id="custom-amount" oninput="validateAmount()" class="w-full p-4 border rounded-lg" placeholder="Enter amount (Min: 200)">
     </div>
 
-    <!-- Deposit Button -->
     <button id="dep-btn" onclick="proceedToPayment()" disabled class="w-full bg-gray-400 text-white p-4 rounded-xl font-bold cursor-not-allowed">
         Deposit
     </button>
@@ -55,7 +52,7 @@
             document.getElementById('custom-amount').value = val;
             document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            window.checkInput();
+            validateAmount();
         }
     </script>
 </body>
