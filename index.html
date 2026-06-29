@@ -1,21 +1,43 @@
 <!DOCTYPE html>
 <html lang="mr">
 <head>
-    <link rel="stylesheet" href="assets/css/style.css">
+    <meta charset="UTF-8">
+    <!-- Mobile Response साठी हा टॅग गरजेचा आहे -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bharat Share's</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #050505; font-family: 'Poppins', sans-serif; }
+        .brand-text { font-family: 'Poppins', sans-serif; letter-spacing: 1px; }
+        .input-glass { background: #111; border: 1px solid #333; color: white; }
+    </style>
 </head>
-<body>
-    <div class="brand-header">Bharat Share's</div>
-    
-    <div class="p-6">
-        <h2 class="text-2xl font-bold mb-6">Create Account</h2>
-        <input id="num" class="w-full p-4 bg-gray-900 border border-gray-700 rounded-xl mb-4" placeholder="10 Digit Number">
-        <input id="pass" type="password" class="w-full p-4 bg-gray-900 border border-gray-700 rounded-xl mb-4" placeholder="4 Digit Password">
-        <label class="flex items-center mb-6">
-            <input type="checkbox" id="agree" class="mr-2"> Agree to terms
-        </label>
-        <button onclick="registerUser()" class="w-full bg-blue-600 p-4 rounded-xl font-bold">Continue</button>
-    </div>
+<body class="flex flex-col min-h-screen">
+
+    <!-- Professional Gradient Header -->
+    <header class="w-full bg-gradient-to-r from-blue-600 to-purple-600 p-6 shadow-xl text-center">
+        <h1 class="brand-text text-white text-2xl font-bold">Bharat Share's</h1>
+    </header>
+
+    <!-- Main Register Container -->
+    <main class="flex-grow flex items-center justify-center p-4">
+        <div class="w-full max-w-sm bg-[#0a0a0a] border border-gray-800 p-6 rounded-3xl shadow-2xl">
+            <h2 class="text-white text-xl font-bold mb-6">Create Account</h2>
+            
+            <input type="text" id="name" placeholder="Full Name" class="input-glass w-full p-4 rounded-xl mb-3">
+            <input type="number" id="num" placeholder="10 Digit Number" class="input-glass w-full p-4 rounded-xl mb-3">
+            <input type="password" id="pass" placeholder="4 Digit Password" class="input-glass w-full p-4 rounded-xl mb-3">
+            <input type="password" id="cpass" placeholder="Confirm Password" class="input-glass w-full p-4 rounded-xl mb-3">
+            
+            <label class="flex items-center text-gray-400 text-sm mb-6">
+                <input type="checkbox" id="agree" class="mr-2"> I agree to terms
+            </label>
+            
+            <button onclick="registerUser()" class="w-full bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-xl font-bold transition-all">Continue</button>
+        </div>
+    </main>
+
+    <script type="module" src="assets/js/app.js"></script>
 </body>
 </html>
-
