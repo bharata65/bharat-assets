@@ -1,0 +1,19 @@
+/* style.css */
+:root {
+    --primary-gradient: linear-gradient(90deg, #3b82f6, #8b5cf6);
+}
+
+.brand-header {
+    background: var(--primary-gradient);
+    padding: 1.5rem;
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: white;
+    border-bottom-left-radius: 20px;
+    border-bottom-right-radius: 20px;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+body { background-color: #050505; color: white; font-family: 'Segoe UI', sans-serif; }
+
