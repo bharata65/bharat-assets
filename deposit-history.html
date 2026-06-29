@@ -1,8 +1,23 @@
-<!-- deposit-history.html -->
-<div class="p-6">
-    <h2 class="text-xl font-bold mb-4">Deposit History</h2>
-    <div id="history-list" class="space-y-4">
-        <!-- इथं ट्रान्झॅक्शन्स डायनॅमिकली दिसतील -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-4">
+    <div class="flex items-center mb-6">
+        <button onclick="history.back()" class="text-2xl">←</button>
+        <h2 class="text-lg font-bold ml-4">Deposit History</h2>
     </div>
-</div>
-
+    
+    <div id="history-list" class="space-y-3">
+        <!-- इथं खालील प्रमाणे कार्ड्स येतील -->
+        <div class="bg-white p-4 rounded-xl flex justify-between items-center shadow-sm">
+            <div>
+                <p class="font-bold">₹500</p>
+                <p class="text-xs text-gray-500">29 Jun 2026, 06:20 PM</p>
+            </div>
+            <span class="px-3 py-1 rounded-full text-xs bg-yellow-100 text-yellow-600">Processing</span>
+        </div>
+    </div>
+</body>
+</html>
