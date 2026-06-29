@@ -1,32 +1,32 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+// Global Function for Loading Animation
+window.showLoader = () => {
+    document.getElementById('loader').classList.remove('hidden');
+    setTimeout(() => {
+        document.getElementById('loader').classList.add('hidden');
+    }, 2000);
+};
 
-const firebaseConfig = { /* तुझा कॉन्फिग कोड इथे टाक */ };
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-// विथड्रॉल लॉजिक
-window.initiateWithdraw = async () => {
-    const amount = document.getElementById('dep-amount')?.value;
+// Deposit Amount Validation & Button Color Logic
+window.checkInput = () => {
+    const amount = document.getElementById('custom-amount').value;
+    const btn = document.getElementById('dep-btn');
+    if (!btn) return;
     
-    // १ रुपया व्हेरिफिकेशन पॉपअप
-    alert("30 seconds verification in progress...");
-    
-    // १२ रुपयांच्या वर असेल तर ॲडमिन कडे पाठवा
-    if (amount > 12) {
-        await addDoc(collection(db, "withdraw_requests"), {
-            status: "pending",
-            userId: localStorage.getItem("uid"),
-            amount: amount
-        });
-        alert("Request sent for Approval!");
+    if (amount >= 200) {
+        btn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+        btn.classList.add('bg-blue-600');
+        btn.disabled = false;
     } else {
-        alert("Instant Withdrawal Initiated!");
+        btn.classList.remove('bg-blue-600');
+        btn.classList.add('bg-gray-400', 'cursor-not-allowed');
+        btn.disabled = true;
     }
 };
 
-// ॲडमिन पॅनेल डेटा लोड
-window.loadAdminData = async () => {
-    const requests = await getDocs(collection(db, "withdraw_requests"));
-    requests.forEach(doc => console.log(doc.data()));
+// Proceed to Payment (No popups, only loader)
+window.proceedToPayment = () => {
+    window.showLoader();
+    setTimeout(() => {
+        window.location.href = "payment-gateway.html";
+    }, 1500);
 };
