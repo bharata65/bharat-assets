@@ -11,29 +11,24 @@
     </style>
 </head>
 <body class="p-4">
-
     <div class="max-w-md mx-auto">
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-bold">ArUpiPay</h2>
             <button class="bg-red-100 text-red-500 px-3 py-1 rounded-full text-xs font-bold">Customer Service</button>
         </div>
-
         <div class="card mb-4 flex justify-between items-center">
             <h1 class="text-2xl font-bold" id="disp-amt">₹0.00</h1>
             <span id="timer" class="text-red-500 font-bold">14:35</span>
         </div>
-
         <div class="grid grid-cols-2 gap-3 mb-4">
             <div class="bg-cyan-100 border-2 border-cyan-400 p-3 rounded-xl text-center font-bold">Paytm</div>
             <div class="bg-purple-100 border-2 border-purple-400 p-3 rounded-xl text-center font-bold">PhonePe</div>
         </div>
-
         <div class="card text-center mb-4">
             <div id="qrcode" class="flex justify-center mb-4"></div>
             <p class="text-xs text-gray-500">1. Please use another device to scan QR</p>
             <p class="text-xs text-gray-500">2. If you scan from gallery, amount may be limited</p>
         </div>
-
         <div class="card mb-6">
             <label class="block text-sm font-bold mb-2">Input UTR/ Paste UTR</label>
             <div class="flex border-2 border-gray-200 rounded-xl overflow-hidden">
@@ -42,15 +37,12 @@
             </div>
             <p class="text-[10px] text-red-600 mt-2 italic font-bold">If you do not back fill UTR/ paste UTR, 100% will fail.</p>
         </div>
-
         <button onclick="submitUTR()" class="w-full bg-teal-600 text-white py-4 rounded-xl font-bold text-lg">Payment Completed</button>
     </div>
-
     <script>
         const amt = localStorage.getItem("lastAmount") || "200";
         document.getElementById('disp-amt').innerText = "₹" + amt;
         new QRCode(document.getElementById("qrcode"), { text: "upi://pay?pa=7186024384801SB1024@mairtel&am="+amt, width: 180, height: 180 });
-
         let time = 875;
         setInterval(() => {
             time--;
@@ -58,18 +50,15 @@
             let s = time % 60;
             document.getElementById('timer').innerText = `${m}:${s < 10 ? '0'+s : s}`;
         }, 1000);
-
         async function pasteUTR() {
             const text = await navigator.clipboard.readText();
             document.getElementById('utr-input').value = text;
         }
-
         function submitUTR() {
             const utr = document.getElementById('utr-input').value;
             if(utr.length < 12) { alert("Please enter 12 digit UTR"); return; }
             alert("UTR Submitted Successfully!");
-            // पाथ बरोबर केला आहे
-            window.location.href = "/bharat-assets/deposit-history.html";
+            window.location.href = "./deposit-history.html";
         }
     </script>
 </body>
