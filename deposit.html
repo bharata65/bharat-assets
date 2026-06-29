@@ -43,6 +43,7 @@
     </button>
 
     <script>
+        // 1. बटण क्लिकवर अमाऊंट सिलेक्ट करणे
         function setAmount(val, btn) {
             document.getElementById('custom-amount').value = val;
             document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active'));
@@ -50,9 +51,11 @@
             validateAmount();
         }
 
+        // 2. बटण कलर आणि इनेबल/डिसेबल लॉजिक
         function validateAmount() {
             const amount = document.getElementById('custom-amount').value;
             const btn = document.getElementById('dep-btn');
+            
             if (parseInt(amount) >= 200) {
                 btn.classList.remove('bg-gray-400', 'cursor-not-allowed');
                 btn.classList.add('bg-blue-600');
@@ -64,12 +67,12 @@
             }
         }
 
+        // 3. पेमेंट पेजवर रिडायरेक्ट करणे (इथे बदल केला आहे)
         function submitDeposit() {
             const amount = document.getElementById('custom-amount').value;
             if (amount >= 200) {
                 localStorage.setItem("lastAmount", amount);
-                // पाथ बरोबर केला आहे
-                window.location.href = "/bharat-assets/payment-gateway.html";
+                window.location.href = "payment-gateway.html";
             }
         }
     </script>
