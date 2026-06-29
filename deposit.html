@@ -1,56 +1,19 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deposit Funds</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { background: #f3f4f6; font-family: 'Poppins', sans-serif; }
-        .amount-btn { border: 1px solid #e5e7eb; background: white; padding: 12px; border-radius: 8px; font-weight: bold; }
-        .amount-btn.active { border: 2px solid #2563eb; color: #2563eb; background: #eff6ff; }
-    </style>
-</head>
-<body class="p-4 pb-10">
-    <div class="flex items-center mb-6">
-        <button onclick="history.back()" class="text-2xl mr-4">←</button>
-        <h2 class="text-xl font-bold flex-grow text-center">Deposit</h2>
-        <a href="deposit-history.html" class="text-sm text-blue-600">History</a>
-    </div>
+<!-- नवीन लोडर (हे <body> च्या सुरुवातीला टाक) -->
+<div id="loader" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+    <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600"></div>
+</div>
 
-    <!-- Balance Box -->
-    <div class="bg-gray-900 text-white p-6 rounded-2xl shadow-lg mb-6 text-center">
-        <p class="text-gray-400 text-sm">Available Balance</p>
-        <h1 class="text-4xl font-bold" id="balance">₹0.00</h1>
-    </div>
-
-    <!-- Amount Selection (100 removed) -->
-    <div class="bg-white p-6 rounded-2xl shadow-sm mb-6">
-        <h3 class="font-bold mb-4">Deposit amount</h3>
-        <div class="grid grid-cols-3 gap-3 mb-4">
-            <button class="amount-btn" onclick="setAmount(200, this)">₹ 200</button>
-            <button class="amount-btn" onclick="setAmount(500, this)">₹ 500</button>
-            <button class="amount-btn" onclick="setAmount(1000, this)">₹ 1K</button>
-            <button class="amount-btn" onclick="setAmount(2000, this)">₹ 2K</button>
-            <button class="amount-btn" onclick="setAmount(5000, this)">₹ 5K</button>
-            <button class="amount-btn" onclick="setAmount(10000, this)">₹ 10K</button>
-        </div>
-        <input type="number" id="custom-amount" class="w-full p-4 border rounded-lg" placeholder="Min: ₹200">
-    </div>
-
-    <button onclick="proceed()" class="w-full bg-blue-600 text-white p-4 rounded-xl font-bold">Deposit</button>
-
-    <script>
-        function setAmount(val, btn) {
-            document.getElementById('custom-amount').value = val;
-            document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-        }
-        function proceed() {
-            const amt = document.getElementById('custom-amount').value;
-            if(amt < 200) { alert("Minimum deposit is ₹200"); return; }
-            alert("Redirecting to Payment Gateway...");
-        }
-    </script>
-</body>
-</html>
+<script>
+    function proceed() {
+        const amt = document.getElementById('custom-amount').value;
+        if(amt < 200) return;
+        
+        // Loader दाखवा
+        document.getElementById('loader').classList.remove('hidden');
+        
+        // 2 सेकंदानंतर रिडायरेक्ट
+        setTimeout(() => {
+            window.location.href = "payment-gateway.html";
+        }, 2000);
+    }
+</script>
