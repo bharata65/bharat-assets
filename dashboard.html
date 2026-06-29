@@ -3,43 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bharat Share's - Dashboard</title>
+    <title>Bharat Share's | Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { background-color: #050505; color: white; font-family: sans-serif; padding-bottom: 80px; }
-        .glass-card { background: #111; border: 1px solid #222; border-radius: 20px; padding: 20px; }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Poppins', sans-serif; background: #050505; color: white; }</style>
 </head>
-<body>
-    <header class="p-6 bg-gradient-to-r from-blue-600 to-purple-600 rounded-b-3xl flex justify-between">
+<body class="pb-24">
+    <header class="p-6 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-b-3xl">
         <h1 class="text-xl font-bold">Bharat Share's</h1>
-        <button onclick="localStorage.clear(); window.location.href='login.html'" class="text-sm bg-white/20 px-3 py-1 rounded">Logout</button>
+        <p class="text-xs opacity-80">Portfolio Value: ₹0.00</p>
     </header>
 
-    <main class="p-4 space-y-6">
-        <!-- Install App Button -->
-        <button id="install-btn" class="w-full bg-blue-900 py-2 rounded-lg text-sm text-blue-200 hidden">Install App for better experience</button>
-
-        <div class="glass-card">
-            <p class="text-gray-400 text-sm">Total Portfolio Value</p>
-            <h2 class="text-4xl font-bold my-2">₹0.00</h2>
-            <div class="flex gap-4 mt-4">
-                <button onclick="window.location.href='deposit.html'" class="flex-1 bg-green-600 py-3 rounded-xl font-bold">Deposit</button>
-                <button onclick="window.location.href='withdraw.html'" class="flex-1 bg-red-600 py-3 rounded-xl font-bold">Withdraw</button>
+    <main class="p-4 space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+            <button onclick="window.location.href='deposit.html'" class="bg-emerald-600 p-4 rounded-2xl font-bold">Deposit</button>
+            <button onclick="window.location.href='withdraw.html'" class="bg-rose-600 p-4 rounded-2xl font-bold">Withdraw</button>
+        </div>
+        <div id="shares-container" class="space-y-4 mt-6">
             </div>
-        </div>
-
-        <div id="shares-list" class="space-y-4">
-            <!-- शेअर्स इथे आपोआप लोड होतील -->
-        </div>
     </main>
 
-    <nav class="fixed bottom-0 w-full bg-black border-t border-gray-800 flex justify-around p-4">
+    <nav class="fixed bottom-0 w-full bg-gray-900 border-t border-gray-800 flex justify-around p-4">
         <a href="dashboard.html" class="text-blue-500">Home</a>
-        <a href="shares.html" class="text-gray-400">Shares</a>
+        <a href="shares.html" class="text-gray-400">My Shares</a>
         <a href="account.html" class="text-gray-400">Account</a>
     </nav>
-
     <script type="module" src="assets/js/app.js"></script>
 </body>
 </html>
