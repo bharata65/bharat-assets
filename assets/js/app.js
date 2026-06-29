@@ -1,13 +1,24 @@
 // ==========================================
-// 1. GLOBAL ERROR TRACKER (Silent Errors पकडण्यासाठी)
+// 1. GLOBAL ERROR TRACKER
 // ==========================================
 window.onerror = function(message, source, lineno, colno, error) {
-    alert("🔴 System Error: " + message + " (Line: " + lineno + ")");
+    console.error("System Error: ", message);
     return true; 
 };
 
 // ==========================================
-// 2. FIREBASE INITIALIZATION 
+// 2. AUTO-LOGIN CHECK (Persistent Session)
+// ==========================================
+const userSession = localStorage.getItem("bharatUserSession");
+const currentPath = window.location.pathname;
+
+// जर युजर लॉग इन असेल आणि तो Login/Register पेजवर असेल, तर थेट डॅशबोर्डवर पाठवा
+if (userSession && (currentPath.endsWith("index.html") || currentPath.endsWith("login.html") || currentPath === "/" || currentPath.endsWith("/"))) {
+    window.location.replace("user/dashboard.html");
+}
+
+// ==========================================
+// 3. FIREBASE INITIALIZATION 
 // ==========================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
 import { getFirestore, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
@@ -25,16 +36,13 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // ==========================================
-// 3. ADVANCED UI TOAST (POPUP)
+// 4. ADVANCED UI TOAST (ENGLISH ONLY)
 // ==========================================
 window.showToast = (message, isSuccess = false) => {
     const toast = document.getElementById('toast');
     const msg = document.getElementById('toast-msg');
     
-    if (!toast || !msg) { 
-        alert(message); // Fallback 
-        return; 
-    }
+    if (!toast || !msg) return; 
     
     msg.innerText = message;
     toast.style.opacity = "1";
@@ -48,34 +56,26 @@ window.showToast = (message, isSuccess = false) => {
 };
 
 // ==========================================
-// 4. REGISTRATION LOGIC
+// 5. REGISTRATION LOGIC
 // ==========================================
 window.registerUser = async () => {
-    const name = document.getElementById('name')?.value;
-    const num = document.getElementById('num')?.value;
-    const pass = document.getElementById('pass')?.value;
-    const cpass = document.getElementById('cpass')?.value;
+    const name = document.getElementById('name')?.value.trim();
+    const num = document.getElementById('num')?.value.trim();
+    const pass = document.getElementById('pass')?.value.trim();
+    const cpass = document.getElementById('cpass')?.value.trim();
     const agree = document.getElementById('agree')?.checked;
 
-    // Validations
-    if (!name || !num || !pass || !cpass) { window.showToast("⚠️ सर्व माहिती भरणे अनिवार्य आहे!"); return; }
-    if (num.length !== 10) { window.showToast("⚠️ मोबाईल नंबर १० अंकीच असावा!"); return; }
-    if (pass.length !== 4) { window.showToast("⚠️ पासवर्ड ४ अंकी PIN असावा!"); return; }
-    if (pass !== cpass) { window.showToast("⚠️ दोन्ही पासवर्ड जुळत नाहीत!"); return; }
-    if (!agree) { window.showToast("⚠️ कृपया Terms & Privacy Policy मान्य करा!"); return; }
+    if (!name || !num || !pass || !cpass) { window.showToast("⚠️ Please fill in all details!"); return; }
+    if (num.length !== 10) { window.showToast("⚠️ Mobile number must be 10 digits!"); return; }
+    if (pass.length !== 4) { window.showToast("⚠️ PIN must be exactly 4 digits!"); return; }
+    if (pass !== cpass) { window.showToast("⚠️ Passwords do not match!"); return; }
+    if (!agree) { window.showToast("⚠️ Please agree to the Terms & Privacy Policy!"); return; }
 
     const regBtn = document.getElementById("reg-btn");
     const originalContent = regBtn.innerHTML;
     
-    // Loading Animation
-    regBtn.innerHTML = `
-        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg> Processing...
-    `;
+    regBtn.innerHTML = `Processing...`;
     regBtn.disabled = true;
-    regBtn.classList.add("opacity-80");
 
     try {
         await addDoc(collection(db, "users"), {
@@ -90,41 +90,34 @@ window.registerUser = async () => {
 
         window.showToast("✅ Account Created Successfully!", true);
         
-        // Redirect to Dashboard
+        // Session Save करा आणि Redirect करा
+        localStorage.setItem("bharatUserSession", num);
+        
         setTimeout(() => { 
             window.location.href = "user/dashboard.html"; 
         }, 1500);
 
     } catch (error) {
-        console.error("Firebase Error: ", error);
-        window.showToast("⚠️ Error: " + error.message); // Exact error दिसेल
+        window.showToast("⚠️ Server Error: Please try again.");
         regBtn.innerHTML = originalContent;
         regBtn.disabled = false;
-        regBtn.classList.remove("opacity-80");
     }
 };
 
 // ==========================================
-// 5. LOGIN LOGIC
+// 6. LOGIN LOGIC
 // ==========================================
 window.loginUser = async () => {
-    const num = document.getElementById('login-num')?.value;
-    const pass = document.getElementById('login-pass')?.value;
+    const num = document.getElementById('login-num')?.value.trim();
+    const pass = document.getElementById('login-pass')?.value.trim();
 
-    if (!num || !pass) { window.showToast("⚠️ मोबाईल नंबर आणि पिन टाका!"); return; }
+    if (!num || !pass) { window.showToast("⚠️ Please enter Mobile Number and PIN!"); return; }
 
     const loginBtn = document.getElementById("login-btn");
     const originalContent = loginBtn.innerHTML;
     
-    // Loading Animation
-    loginBtn.innerHTML = `
-        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg> Verifying...
-    `;
+    loginBtn.innerHTML = `Verifying...`;
     loginBtn.disabled = true;
-    loginBtn.classList.add("opacity-80");
 
     try {
         const q = query(collection(db, "users"), where("number", "==", num), where("password", "==", pass));
@@ -132,18 +125,19 @@ window.loginUser = async () => {
 
         if (!querySnapshot.empty) {
             window.showToast("✅ Login Successful!", true);
-            setTimeout(() => { window.location.href = "user/dashboard.html"; }, 1500);
+            
+            // Session Save करा (Auto-login साठी)
+            localStorage.setItem("bharatUserSession", num);
+            
+            setTimeout(() => { window.location.href = "user/dashboard.html"; }, 1000);
         } else {
-            window.showToast("⚠️ चुकीचा नंबर किंवा पिन!");
+            window.showToast("⚠️ Invalid Mobile Number or PIN!");
             loginBtn.innerHTML = originalContent;
             loginBtn.disabled = false;
-            loginBtn.classList.remove("opacity-80");
         }
     } catch (error) {
-        console.error("Login Error: ", error);
-        window.showToast("⚠️ Error: " + error.message);
+        window.showToast("⚠️ Network Error! Please try again.");
         loginBtn.innerHTML = originalContent;
         loginBtn.disabled = false;
-        loginBtn.classList.remove("opacity-80");
     }
 };
