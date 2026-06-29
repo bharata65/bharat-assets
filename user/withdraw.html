@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body class="p-6">
+    <div class="brand-header">Withdraw Funds</div>
+
+    <div class="glass-panel mt-6">
+        <h3 class="mb-4 font-bold">Add Bank Details</h3>
+        <input id="bankName" class="input-field" placeholder="Bank Name">
+        <input id="accNo" class="input-field" placeholder="Account Number">
+        <input id="ifsc" class="input-field" placeholder="IFSC Code">
+        
+        <button onclick="saveBank()" class="btn-premium mb-6">Save Bank Details</button>
+        
+        <h3 class="mb-4 font-bold">Withdrawal Request</h3>
+        <input id="amount" class="input-field" placeholder="Enter Amount">
+        <button onclick="requestWithdraw()" class="bg-red-600 w-full p-4 rounded-xl font-bold">Submit Request</button>
+    </div>
+
+    <script type="module">
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+        const db = getFirestore();
+
+        window.requestWithdraw = async () => {
+            const amt = document.getElementById('amount').value;
+            // ही रिक्वेस्ट थेट Admin ला जाईल
+            await addDoc(collection(db, "withdrawalRequests"), {
+                amount: amt,
+                status: "pending",
+                timestamp: new Date()
+            });
+            alert("विथड्रॉल विनंती पाठवली आहे!");
+        };
+    </script>
+</body>
+</html>
+
