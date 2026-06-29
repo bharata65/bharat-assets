@@ -13,7 +13,7 @@
     </style>
 </head>
 <body class="p-4">
-    
+
     <div class="flex items-center mb-6">
         <button onclick="history.back()" class="text-2xl mr-4">←</button>
         <h2 class="text-xl font-bold flex-grow text-center">Deposit</h2>
@@ -38,12 +38,12 @@
         <input type="number" id="custom-amount" oninput="validateAmount()" class="w-full p-4 border rounded-lg focus:outline-none" placeholder="Enter amount (Min: 200)">
     </div>
 
-    <button id="dep-btn" onclick="proceedToPayment()" disabled class="w-full bg-gray-400 text-white p-4 rounded-xl font-bold transition-all cursor-not-allowed">
+    <button id="dep-btn" onclick="submitDeposit()" disabled class="w-full bg-gray-400 text-white p-4 rounded-xl font-bold transition-all cursor-not-allowed">
         Deposit
     </button>
 
     <script>
-        // बटण आणि इनपुट लॉजिक
+        // 1. बटण क्लिकवर अमाऊंट सिलेक्ट करणे
         function setAmount(val, btn) {
             document.getElementById('custom-amount').value = val;
             document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active'));
@@ -51,6 +51,7 @@
             validateAmount();
         }
 
+        // 2. बटण कलर आणि इनेबल/डिसेबल लॉजिक
         function validateAmount() {
             const amount = document.getElementById('custom-amount').value;
             const btn = document.getElementById('dep-btn');
@@ -66,11 +67,13 @@
             }
         }
 
-        function proceedToPayment() {
-            document.getElementById('loader').classList.remove('hidden');
-            setTimeout(() => {
+        // 3. पेमेंट पेजवर रिडायरेक्ट करणे
+        function submitDeposit() {
+            const amount = document.getElementById('custom-amount').value;
+            if (amount >= 200) {
+                localStorage.setItem("lastAmount", amount);
                 window.location.href = "payment-gateway.html";
-            }, 1500);
+            }
         }
     </script>
 </body>
