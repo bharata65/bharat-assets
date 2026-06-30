@@ -3,71 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SARKAR CRACKER</title>
+    <title>Steps - SARKAR CRACKER</title>
     <style>
         body { 
             background: #000; 
             color: #fff; 
             font-family: 'Segoe UI', sans-serif; 
             margin: 0; 
-            padding: 15px; 
+            padding: 20px; 
         }
-        h1 { 
+        h2 { 
             color: #FFD700; 
             text-align: center; 
-            font-size: 28px; 
             text-transform: uppercase; 
-            letter-spacing: 2px;
-            margin-bottom: 25px;
+            margin-bottom: 25px; 
         }
-        .box { 
+        .step-box { 
             background: #1a1a1a; 
             padding: 20px; 
             border-radius: 15px; 
-            border: 1px solid #FFD700; 
-            margin-bottom: 20px; 
-            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.1);
+            border: 1px solid #333; 
+            line-height: 1.8;
+            font-size: 15px;
         }
-        h3 { margin-top: 0; color: #fff; }
-        p { color: #ccc; font-size: 14px; margin: 10px 0; }
-        button { 
+        b { color: #FFD700; }
+        .btn { 
             background: #FFD700; 
-            border: none; 
-            padding: 12px; 
+            color: #000; 
+            padding: 15px; 
             width: 100%; 
-            border-radius: 8px; 
+            border: none; 
+            border-radius: 10px; 
             font-weight: bold; 
+            margin-top: 30px; 
             font-size: 16px;
             cursor: pointer;
-            transition: 0.3s;
         }
-        button:active { transform: scale(0.98); }
     </style>
 </head>
 <body>
 
-    <h1>SARKAR CRACKER</h1>
+    <h2>STEPS OF SOFTWARE</h2>
     
-    <div class="box">
-        <h3>WINGO 1 MINUTE</h3>
-        <p>Daily Profit Limit: 2700rs</p>
-        <p>Price: <b>203rs</b></p>
-        <button onclick="window.location.href='steps.html?price=203'">BUY NOW</button>
+    <div class="step-box">
+        1) जैसे ही आप Payment Complete करोगे वैसे तुरंत आपके whatsapp number पे हमारी टीम से आपको colour Trading Software Apk मिलेगा अगर आपका ios हो तो Link मिलेगी।<br><br>
+        2) Apk install करके उसमे <b>RPIRTAUTU</b> ये पासवर्ड कोड डालके Software Start करना है।<br><br>
+        3) जितना लिमिट बताया है, उतना प्रॉफिट होते ही software बंद करना है, नहीं तो बादमे software work नही करेगा।<br><br>
+        4) software की validity खतम होने से पहले Renew किया करना, नहीं तो बाद मे Renew नही होगा।
     </div>
 
-    <div class="box">
-        <h3>WINGO 30 SECOND</h3>
-        <p>Daily Profit Limit: 2300rs</p>
-        <p>Price: <b>276rs</b></p>
-        <button onclick="window.location.href='steps.html?price=276'">BUY NOW</button>
-    </div>
+    <button class="btn" onclick="goToPayment()">CONTINUE TO PAYMENT</button>
 
-    <div class="box">
-        <h3>WINGO 3 MINUTE</h3>
-        <p>Daily Profit Limit: 3600rs</p>
-        <p>Price: <b>296rs</b></p>
-        <button onclick="window.location.href='steps.html?price=296'">BUY NOW</button>
-    </div>
+    <script>
+        function goToPayment() {
+            const params = new URLSearchParams(window.location.search);
+            const price = params.get('price');
+            window.location.href = 'payment.html?price=' + price;
+        }
+    </script>
 
 </body>
 </html>
