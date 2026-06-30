@@ -10,6 +10,11 @@
         input { width: 90%; padding: 12px; margin: 10px 0; border-radius: 8px; border: none; background: #333; color: white; }
         button { background: gold; border: none; padding: 12px 30px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; }
         .toggle { color: gold; cursor: pointer; margin-top: 15px; display: block; font-size: 14px; }
+        
+        /* Advanced Popup Styles */
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; }
+        .popup { background: #1a1a1a; padding: 25px; border-radius: 15px; border: 1px solid gold; text-align: center; width: 70%; }
+        .popup button { background: gold; color: #000; width: 100px; }
     </style>
 </head>
 <body>
@@ -23,8 +28,26 @@
     <span class="toggle" id="toggleBtn" onclick="toggleForm()">Already have account? Login</span>
 </div>
 
+<div id="popupOverlay" class="overlay">
+    <div class="popup">
+        <h3 id="popupTitle">Message</h3>
+        <p id="popupMsg"></p>
+        <button onclick="closePopup()">OK</button>
+    </div>
+</div>
+
 <script>
     let isLogin = false;
+
+    function showPopup(title, msg) {
+        document.getElementById('popupTitle').innerText = title;
+        document.getElementById('popupMsg').innerText = msg;
+        document.getElementById('popupOverlay').style.display = 'flex';
+    }
+
+    function closePopup() {
+        document.getElementById('popupOverlay').style.display = 'none';
+    }
 
     function toggleForm() {
         isLogin = !isLogin;
@@ -40,27 +63,25 @@
         let name = document.getElementById('name').value;
 
         if (isLogin) {
-            // LOGIN LOGIC
             let storedUser = localStorage.getItem(wa);
             if (storedUser) {
                 let userData = JSON.parse(storedUser);
                 if (userData.pass === pass) {
                     window.location.href = "home.html";
                 } else {
-                    alert("Wrong Password!");
+                    showPopup("ERROR", "Wrong Password!");
                 }
             } else {
-                alert("Account not found. Please Register!");
+                showPopup("ERROR", "Account not found. Please Register!");
             }
         } else {
-            // REGISTER LOGIC
             if (localStorage.getItem(wa)) {
-                alert("Account Already Exists!");
+                showPopup("WARNING", "Account Already Exists!");
             } else {
                 let userData = { name: name, pass: pass };
                 localStorage.setItem(wa, JSON.stringify(userData));
-                alert("Registered Successfully!");
-                toggleForm(); // लॉगिन फॉर्मवर स्विच करा
+                showPopup("SUCCESS", "Registered Successfully!");
+                toggleForm();
             }
         }
     }
