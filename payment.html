@@ -1,34 +1,53 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Payment</title>
     <style>
-        .gateway { background: #fff; color: #000; padding: 20px; border-radius: 10px; text-align: center; }
-        #timer { color: red; font-weight: bold; }
+        body { background: #f4f4f4; font-family: sans-serif; margin: 0; padding: 10px; }
+        .pay-card { background: #fff; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; }
+        .timer { color: red; font-weight: bold; font-size: 1.2rem; }
+        #qr-code { width: 250px; height: 250px; margin: 15px 0; }
+        .btn { background: #ff4757; color: white; padding: 12px; border: none; width: 100%; border-radius: 8px; font-weight: bold; }
+        input { width: 90%; padding: 10px; margin-top: 10px; border: 1px solid #ccc; border-radius: 5px; }
     </style>
 </head>
 <body>
-    <div class="gateway">
-        <h3>ArUpiPay</h3>
-        <p>Amount: ₹<span id="price"></span></p>
-        <p id="timer">14:35</p>
-        <img id="qrCode" src="" width="200">
-        <p>1. Scan QR with another device.</p>
-        <input type="text" id="utr" placeholder="Input 12 digits UTR">
-        <button onclick="submitUtr()">Submit</button>
-    </div>
 
-    <script>
-        const params = new URLSearchParams(window.location.search);
-        document.getElementById('price').innerText = params.get('amt');
-        document.getElementById('qrCode').src = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=7186024384801SB1024@mairtel&am=" + params.get('amt');
+<div class="pay-card">
+    <h3>ArUpiPay</h3>
+    <div class="timer" id="timer">14:59</div>
+    <div style="font-size: 24px; font-weight: bold;">₹203.00</div>
+    
+    <!-- QR generated based on price -->
+    <img id="qr-code" src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=upi://pay?pa=7186024384801SB1024@mairtel&pn=SARKAR_CRACKER&am=203">
+    
+    <p>1. Scan QR with any UPI App<br>2. Input 12 digits UTR below</p>
+    
+    <input type="text" id="utr" placeholder="Input 12 digits UTR here">
+    <button class="btn" onclick="submitUTR()">SUBMIT UTR</button>
+</div>
 
-        function submitUtr() {
-            let utr = document.getElementById('utr').value;
-            // हा डेटा ॲडमिनला पाठवण्यासाठी बॅकएंडची गरज आहे
-            alert("UTR Submitted: " + utr + ". Please wait for activation.");
-            window.location.href = "ritesh.html";
+<script>
+    // Timer Logic
+    let time = 899;
+    setInterval(() => {
+        let m = Math.floor(time/60);
+        let s = time % 60;
+        document.getElementById('timer').innerText = `${m}:${s < 10 ? '0'+s : s}`;
+        time--;
+    }, 1000);
+
+    function submitUTR() {
+        let utr = document.getElementById('utr').value;
+        if(utr.length == 12) {
+            // ही माहिती admin panel ला जाईल
+            alert("Payment request sent successfully!");
+            window.location.href = "success.html";
+        } else {
+            alert("Please enter valid 12 digit UTR");
         }
-    </script>
+    }
+</script>
 </body>
 </html>
