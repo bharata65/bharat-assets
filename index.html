@@ -2,22 +2,45 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
-        .card { background: #1a1a1a; padding: 20px; border-radius: 15px; border: 1px solid #FFD700; }
-        input { width: 80%; padding: 12px; margin: 10px; border-radius: 8px; border: none; }
-        button { background: #FFD700; border: none; padding: 12px 30px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        body { background: #000; color: #fff; padding: 20px; font-family: sans-serif; text-align: center; }
+        .box { background: #1a1a1a; padding: 20px; border-radius: 15px; border: 1px solid gold; }
+        input { width: 90%; padding: 12px; margin: 10px; border-radius: 8px; border: none; }
+        button { background: gold; border: none; padding: 12px 30px; border-radius: 8px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
-    <h1>SARKAR CRACKER</h1>
-    <div class="card" id="reg">
+    <div class="box">
         <h3>Register</h3>
-        <input type="text" id="nm" placeholder="Full Name"><br>
-        <input type="text" id="wh" placeholder="WhatsApp Number"><br>
-        <input type="password" id="pw" placeholder="4 Digit Password" maxlength="4"><br>
-        <button onclick="window.location.href='home.html'">REGISTER</button>
-        <p>Already have account? <a href="login.html" style="color:gold;">Login</a></p>
+        <input type="text" id="nm" placeholder="Name">
+        <input type="text" id="wh" placeholder="WhatsApp Number">
+        <input type="password" id="pw" placeholder="4 Digit Password" maxlength="4">
+        <button onclick="register()">REGISTER</button>
     </div>
+
+    <script>
+        const firebaseConfig = { /* इथे तुमची Firebase Config टाका */ };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        function register() {
+            let wh = document.getElementById('wh').value;
+            let nm = document.getElementById('nm').value;
+            let pw = document.getElementById('pw').value;
+
+            // 'Already Exist' Check
+            db.ref('users/' + wh).once('value', (snap) => {
+                if(snap.exists()) {
+                    alert("User Already Registered!");
+                } else {
+                    db.ref('users/' + wh).set({ name: nm, password: pw, whatsapp: wh });
+                    alert("Registered Successfully!");
+                    window.location.href = "home.html";
+                }
+            });
+        }
+    </script>
 </body>
 </html>
