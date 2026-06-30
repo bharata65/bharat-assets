@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SARKAR CRACKER</title>
+    <style>
+        body { background: #000; color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; }
+        .header { text-align: center; color: #FFD700; font-size: 32px; font-weight: 800; text-transform: uppercase; margin: 20px 0; text-shadow: 0 0 10px #FFD700; }
+        .box { background: #1a1a1a; padding: 20px; border-radius: 20px; border: 1px solid #FFD700; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: none; background: #333; color: #fff; box-sizing: border-box; }
+        .btn { width: 100%; padding: 15px; background: #FFD700; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; color: #000; }
+        .step-text { font-size: 14px; line-height: 1.6; color: #ccc; }
+    </style>
+</head>
+<body>
+    <div class="header">SARKAR CRACKER</div>
+
+    <div class="box" id="regSection">
+        <h3>Register / Login</h3>
+        <input type="text" id="name" placeholder="Full Name">
+        <input type="tel" id="wha" placeholder="WhatsApp Number">
+        <input type="password" id="pass" placeholder="4 Digit Password" maxlength="4">
+        <button class="btn" onclick="saveUser()">CONTINUE</button>
+    </div>
+
+    <div id="shop" style="display:none;">
+        <div class="box">
+            <h3>WINGO 1 MINUTE</h3>
+            <p>Profit: 2700 | Price: 203rs</p>
+            <button class="btn" onclick="showSteps(203)">BUY NOW</button>
+        </div>
+        </div>
+
+    <script>
+        function saveUser() {
+            let name = document.getElementById('name').value;
+            localStorage.setItem('user', name);
+            document.getElementById('regSection').style.display = 'none';
+            document.getElementById('shop').style.display = 'block';
+        }
+
+        function showSteps(amt) {
+            let steps = `STEPS OF SOFTWARE:\n1) Screenshot nikala.\n2) Payment kara.\n3) Apk milel.\n4) Password: RPIRTAUTU.`;
+            alert(steps);
+            let upi = "7186024384801SB1024@mairtel";
+            window.location.href = `upi://pay?pa=${upi}&pn=SARKAR_CRACKER&am=${amt}&cu=INR`;
+        }
+    </script>
+</body>
+</html>
