@@ -1,35 +1,32 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>SARKAR ADMIN</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
-        body { background: #000; color: #0f0; padding: 20px; font-family: monospace; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        body { background: #111; color: #0f0; padding: 20px; font-family: monospace; }
+        table { width: 100%; border-collapse: collapse; }
         th, td { border: 1px solid #333; padding: 10px; }
     </style>
 </head>
 <body>
     <h1>Admin Panel - RITESH</h1>
     <table>
-        <thead><tr><th>WhatsApp</th><th>Status</th><th>UTR</th></tr></thead>
-        <tbody id="userTable"></tbody>
+        <thead><tr><th>Name</th><th>WhatsApp</th><th>UTR (Payments)</th></tr></thead>
+        <tbody id="adminTable"></tbody>
     </table>
 
     <script>
-        // Firebase कॉन्फिगरेशन (तुझ्या Firebase प्रोजेक्टमधून इथे पेस्ट कर)
-        const firebaseConfig = { /* तुझी Config इथे येइल */ };
+        const firebaseConfig = { /* इथे तुमची Firebase Config टाका */ };
         firebase.initializeApp(firebaseConfig);
         
-        const db = firebase.database().ref('users');
-        db.on('value', (snapshot) => {
-            let html = "";
+        firebase.database().ref('users').on('value', (snapshot) => {
+            let table = "";
             snapshot.forEach((child) => {
-                let data = child.val();
-                html += `<tr><td>${data.whatsapp}</td><td>Registered</td><td>${data.utr || 'N/A'}</td></tr>`;
+                let u = child.val();
+                table += `<tr><td>${u.name}</td><td>${u.whatsapp}</td><td>${u.utr || 'No Payment'}</td></tr>`;
             });
-            document.getElementById('userTable').innerHTML = html;
+            document.getElementById('adminTable').innerHTML = table;
         });
     </script>
 </body>
