@@ -1,11 +1,19 @@
-<?php
-echo "<h1>Admin - SARKAR CRACKER</h1>";
-echo "<table border='1' width='100%'><tr><th>Name</th><th>WhatsApp</th><th>Time</th></tr>";
-$file = file("users.txt");
-foreach($file as $line){
-    $d = explode("|", $line);
-    echo "<tr><td>{$d[0]}</td><td>{$d[1]}</td><td>{$d[2]}</td></tr>";
-}
-echo "</table>";
-?>
-
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SARKAR ADMIN</title>
+    <style>
+        body { background: #000; color: #0f0; padding: 20px; font-family: monospace; }
+        .data-box { border: 1px solid #0f0; padding: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Admin Panel - RITESH</h1>
+    <div class="data-box" id="adminData">Loading user activity...</div>
+    <script>
+        // LocalStorage वरून डेटा फेंच करणे
+        let userData = localStorage.getItem('user');
+        document.getElementById('adminData').innerHTML = "Last Registered: " + (userData || "No data");
+    </script>
+</body>
+</html>
