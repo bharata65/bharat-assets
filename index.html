@@ -1,46 +1,74 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SARKAR CRACKER | Login/Register</title>
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
-        body { background: #000; color: #fff; padding: 20px; font-family: sans-serif; text-align: center; }
-        .box { background: #1a1a1a; padding: 20px; border-radius: 15px; border: 1px solid gold; }
-        input { width: 90%; padding: 12px; margin: 10px; border-radius: 8px; border: none; }
-        button { background: gold; border: none; padding: 12px 30px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        body { background: #000; color: #fff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .box { background: #1a1a1a; padding: 30px; border-radius: 20px; border: 1px solid gold; width: 85%; max-width: 400px; text-align: center; }
+        input { width: 90%; padding: 12px; margin: 10px 0; border-radius: 8px; border: none; background: #333; color: white; }
+        button { background: gold; border: none; padding: 12px 30px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; }
+        .toggle { color: gold; cursor: pointer; margin-top: 15px; display: block; font-size: 14px; }
     </style>
 </head>
 <body>
-    <div class="box">
-        <h3>Register</h3>
-        <input type="text" id="nm" placeholder="Name">
-        <input type="text" id="wh" placeholder="WhatsApp Number">
-        <input type="password" id="pw" placeholder="4 Digit Password" maxlength="4">
-        <button onclick="register()">REGISTER</button>
-    </div>
 
-    <script>
-        const firebaseConfig = { /* इथे तुमची Firebase Config टाका */ };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+<div class="box">
+    <h2 id="formTitle">REGISTER</h2>
+    <input type="text" id="name" placeholder="Full Name">
+    <input type="tel" id="wa" placeholder="WhatsApp Number">
+    <input type="password" id="pass" placeholder="4 Digit Password" maxlength="4">
+    <button id="mainBtn" onclick="process()">REGISTER</button>
+    <span class="toggle" id="toggleBtn" onclick="toggleForm()">Already have account? Login</span>
+</div>
 
-        function register() {
-            let wh = document.getElementById('wh').value;
-            let nm = document.getElementById('nm').value;
-            let pw = document.getElementById('pw').value;
+<script>
+    // Firebase Config (येथे तुझी Firebase Config टाक)
+    const firebaseConfig = { /* तुझी Config इथे येइल */ };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-            // 'Already Exist' Check
-            db.ref('users/' + wh).once('value', (snap) => {
+    let isLogin = false;
+
+    function toggleForm() {
+        isLogin = !isLogin;
+        document.getElementById('formTitle').innerText = isLogin ? "LOGIN" : "REGISTER";
+        document.getElementById('mainBtn').innerText = isLogin ? "LOGIN" : "REGISTER";
+        document.getElementById('name').style.display = isLogin ? "none" : "block";
+        document.getElementById('toggleBtn').innerText = isLogin ? "New user? Register" : "Already have account? Login";
+    }
+
+    function process() {
+        let wa = document.getElementById('wa').value;
+        let pass = document.getElementById('pass').value;
+        let name = document.getElementById('name').value;
+
+        if (isLogin) {
+            // LOGIN LOGIC
+            db.ref('users/' + wa).once('value', (snap) => {
+                if(snap.exists() && snap.val().password == pass) {
+                    window.location.href = "home.html";
+                } else {
+                    alert("Wrong Number or Password!");
+                }
+            });
+        } else {
+            // REGISTER LOGIC
+            db.ref('users/' + wa).once('value', (snap) => {
                 if(snap.exists()) {
                     alert("User Already Registered!");
                 } else {
-                    db.ref('users/' + wh).set({ name: nm, password: pw, whatsapp: wh });
+                    db.ref('users/' + wa).set({ name: name, password: pass, whatsapp: wa });
                     alert("Registered Successfully!");
                     window.location.href = "home.html";
                 }
             });
         }
-    </script>
+    }
+</script>
 </body>
 </html>
