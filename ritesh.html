@@ -1,12 +1,36 @@
 <!DOCTYPE html>
 <html>
-<head><style>body{background:#111; color:#0f0; padding:20px;}</style></head>
+<head>
+    <title>SARKAR ADMIN</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        body { background: #000; color: #0f0; padding: 20px; font-family: monospace; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #333; padding: 10px; }
+    </style>
+</head>
 <body>
-    <h1>SARKAR CRACKER ADMIN</h1>
-    <div style="border:1px solid #0f0; padding:20px;">
-        <h3>Today's Registered Users: 0</h3>
-        <h3>Total Renewals: 0</h3>
-        <h3>Total Payments Received: 0</h3>
-    </div>
+    <h1>Admin Panel - RITESH</h1>
+    <table>
+        <thead><tr><th>WhatsApp</th><th>Status</th><th>UTR</th></tr></thead>
+        <tbody id="userTable"></tbody>
+    </table>
+
+    <script>
+        // Firebase कॉन्फिगरेशन (तुझ्या Firebase प्रोजेक्टमधून इथे पेस्ट कर)
+        const firebaseConfig = { /* तुझी Config इथे येइल */ };
+        firebase.initializeApp(firebaseConfig);
+        
+        const db = firebase.database().ref('users');
+        db.on('value', (snapshot) => {
+            let html = "";
+            snapshot.forEach((child) => {
+                let data = child.val();
+                html += `<tr><td>${data.whatsapp}</td><td>Registered</td><td>${data.utr || 'N/A'}</td></tr>`;
+            });
+            document.getElementById('userTable').innerHTML = html;
+        });
+    </script>
 </body>
 </html>
