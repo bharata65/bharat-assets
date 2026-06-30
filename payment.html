@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SARKAR CRACKER PAYMENT</title>
     <style>
         body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
         .pay-card { background: #1a1a1a; padding: 20px; border-radius: 20px; border: 1px solid #ffd700; }
-        #qr-code { background: white; padding: 10px; border-radius: 10px; margin: 20px 0; }
+        #qr-code { background: #fff; padding: 10px; border-radius: 10px; margin: 20px auto; width: 200px; }
         .btn { background: #ffd700; color: #000; padding: 15px; border: none; border-radius: 10px; width: 100%; font-weight: bold; }
         input { width: 90%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: none; }
     </style>
@@ -16,39 +15,38 @@
 
 <div class="pay-card">
     <h2 style="color: gold;">ArUpiPay</h2>
-    <div id="timer" style="color: #ff4757; font-weight: bold;">14:59</div>
-    <h1 id="amt-text">₹0.00</h1>
-    
+    <div id="timer" style="color: #ff4757; font-weight: bold; font-size: 1.2rem;">14:59</div>
+    <h1 id="display-price">₹0.00</h1>
     <div id="qr-code"></div>
-    
-    <p>1. Scan QR with any UPI App<br>2. Input 12 digits UTR below</p>
-    <input type="text" id="utr" placeholder="Input 12 digits UTR">
+    <p>1. Scan QR with UPI App<br>2. Input 12 digits UTR</p>
+    <input type="text" id="utr" placeholder="Input 12 digits UTR" maxlength="12">
     <button class="btn" onclick="submitPayment()">SUBMIT UTR</button>
 </div>
 
 <script>
-    // URL मधून प्राईस काढणे
-    const urlParams = new URLSearchParams(window.location.search);
-    const price = urlParams.get('price');
-    
-    // UI अपडेट करणे
-    document.getElementById('amt-text').innerText = "₹" + price + ".00";
-    
-    // QR कोड जनरेट करणे (डायनॅमिक)
-    const upiLink = `upi://pay?pa=7186024384801SB1024@mairtel&pn=SARKAR_CRACKER&am=${price}&cu=INR`;
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiLink)}`;
-    
-    const img = document.createElement('img');
-    img.src = qrUrl;
-    document.getElementById('qr-code').appendChild(img);
+    // URL वरून प्राईस मिळवणे
+    const params = new URLSearchParams(window.location.search);
+    let price = params.get('price');
 
-    // सबमिट लॉजिक
+    // जर URL मध्ये प्राईस नसेल तर डिफॉल्ट 203 धरा
+    if (!price) { price = "203"; }
+
+    // अमाऊंट स्क्रीनवर दाखवणे
+    document.getElementById('display-price').innerText = "₹" + price + ".00";
+
+    // QR जनरेट करणे
+    const upiLink = `upi://pay?pa=7186024384801SB1024@mairtel&pn=SARKAR_CRACKER&am=${price}&cu=INR`;
+    const qrImg = document.createElement('img');
+    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiLink)}`;
+    qrImg.style.width = "100%";
+    document.getElementById('qr-code').appendChild(qrImg);
+
     function submitPayment() {
         if(document.getElementById('utr').value.length == 12) {
-            alert("Payment Request Sent Successfully!");
+            alert("Payment request sent successfully!");
             window.location.href = "home.html";
         } else {
-            alert("Please enter valid 12 digits UTR");
+            alert("Please enter valid 12 digit UTR");
         }
     }
 </script>
