@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SARKAR CRACKER | Login/Register</title>
-    <!-- Firebase SDK -->
+    <title>SARKAR CRACKER</title>
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
@@ -12,7 +12,6 @@
         .box { background: #1a1a1a; padding: 30px; border-radius: 20px; border: 1px solid gold; width: 85%; max-width: 400px; text-align: center; }
         input { width: 90%; padding: 12px; margin: 10px 0; border-radius: 8px; border: none; background: #333; color: white; }
         button { background: gold; border: none; padding: 12px 30px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; }
-        .toggle { color: gold; cursor: pointer; margin-top: 15px; display: block; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -23,13 +22,24 @@
     <input type="tel" id="wa" placeholder="WhatsApp Number">
     <input type="password" id="pass" placeholder="4 Digit Password" maxlength="4">
     <button id="mainBtn" onclick="process()">REGISTER</button>
-    <span class="toggle" id="toggleBtn" onclick="toggleForm()">Already have account? Login</span>
+    <p id="toggleBtn" onclick="toggleForm()" style="color:gold; cursor:pointer; margin-top:15px;">Already have account? Login</p>
 </div>
 
 <script>
-    // Firebase Config (येथे तुझी Firebase Config टाक)
-    const firebaseConfig = { /* तुझी Config इथे येइल */ };
-    firebase.initializeApp(firebaseConfig);
+    // Firebase Config (महत्त्वाचे: इथे तुमची माहिती टाका)
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+        databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_PROJECT_ID.appspot.com",
+        messagingSenderId: "YOUR_SENDER_ID",
+        appId: "YOUR_APP_ID"
+    };
+
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
     const db = firebase.database();
 
     let isLogin = false;
@@ -47,26 +57,28 @@
         let pass = document.getElementById('pass').value;
         let name = document.getElementById('name').value;
 
+        if (!wa || !pass) { alert("Please fill all details"); return; }
+
         if (isLogin) {
-            // LOGIN LOGIC
-            db.ref('users/' + wa).once('value', (snap) => {
+            db.ref('users/' + wa).once('value').then((snap) => {
                 if(snap.exists() && snap.val().password == pass) {
                     window.location.href = "home.html";
                 } else {
-                    alert("Wrong Number or Password!");
+                    alert("Invalid WhatsApp or Password!");
                 }
-            });
+            }).catch(e => alert("Error: " + e.message));
         } else {
-            // REGISTER LOGIC
-            db.ref('users/' + wa).once('value', (snap) => {
+            if (!name) { alert("Name is required"); return; }
+            db.ref('users/' + wa).once('value').then((snap) => {
                 if(snap.exists()) {
                     alert("User Already Registered!");
                 } else {
-                    db.ref('users/' + wa).set({ name: name, password: pass, whatsapp: wa });
-                    alert("Registered Successfully!");
-                    window.location.href = "home.html";
+                    db.ref('users/' + wa).set({ name: name, password: pass, whatsapp: wa }).then(() => {
+                        alert("Registered Successfully!");
+                        window.location.href = "home.html";
+                    });
                 }
-            });
+            }).catch(e => alert("Error: " + e.message));
         }
     }
 </script>
