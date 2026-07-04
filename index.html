@@ -1,90 +1,46 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SARKAR CRACKER</title>
-    <style>
-        body { background: #000; color: #fff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .box { background: #1a1a1a; padding: 30px; border-radius: 20px; border: 1px solid gold; width: 85%; max-width: 400px; text-align: center; }
-        input { width: 90%; padding: 12px; margin: 10px 0; border-radius: 8px; border: none; background: #333; color: white; }
-        button { background: gold; border: none; padding: 12px 30px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; }
-        .toggle { color: gold; cursor: pointer; margin-top: 15px; display: block; font-size: 14px; }
-        
-        /* Advanced Popup Styles */
-        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; }
-        .popup { background: #1a1a1a; padding: 25px; border-radius: 15px; border: 1px solid gold; text-align: center; width: 70%; }
-        .popup button { background: gold; color: #000; width: 100px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bharat Share's</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-slate-900 text-white">
 
-<div class="box">
-    <h2 id="formTitle">REGISTER</h2>
-    <input type="text" id="name" placeholder="Full Name">
-    <input type="tel" id="wa" placeholder="WhatsApp Number">
-    <input type="password" id="pass" placeholder="4 Digit Password" maxlength="4">
-    <button id="mainBtn" onclick="process()">REGISTER</button>
-    <span class="toggle" id="toggleBtn" onclick="toggleForm()">Already have account? Login</span>
+<div class="max-w-md mx-auto p-5">
+
+<h1 class="text-3xl font-bold text-center mb-8">
+Bharat Share's
+</h1>
+
+<input id="mobile"
+class="w-full p-3 rounded mb-3 text-black"
+placeholder="Mobile Number">
+
+<input id="password"
+type="password"
+class="w-full p-3 rounded mb-3 text-black"
+placeholder="Password">
+
+<button
+id="registerBtn"
+class="w-full bg-green-600 p-3 rounded mb-3">
+Register
+</button>
+
+<button
+id="loginBtn"
+class="w-full bg-blue-600 p-3 rounded">
+Login
+</button>
+
+<p id="msg" class="mt-5 text-center"></p>
+
 </div>
 
-<div id="popupOverlay" class="overlay">
-    <div class="popup">
-        <h3 id="popupTitle">Message</h3>
-        <p id="popupMsg"></p>
-        <button onclick="closePopup()">OK</button>
-    </div>
-</div>
+<script type="module" src="./js/auth.js"></script>
 
-<script>
-    let isLogin = false;
-
-    function showPopup(title, msg) {
-        document.getElementById('popupTitle').innerText = title;
-        document.getElementById('popupMsg').innerText = msg;
-        document.getElementById('popupOverlay').style.display = 'flex';
-    }
-
-    function closePopup() {
-        document.getElementById('popupOverlay').style.display = 'none';
-    }
-
-    function toggleForm() {
-        isLogin = !isLogin;
-        document.getElementById('formTitle').innerText = isLogin ? "LOGIN" : "REGISTER";
-        document.getElementById('mainBtn').innerText = isLogin ? "LOGIN" : "REGISTER";
-        document.getElementById('name').style.display = isLogin ? "none" : "block";
-        document.getElementById('toggleBtn').innerText = isLogin ? "New user? Register" : "Already have account? Login";
-    }
-
-    function process() {
-        let wa = document.getElementById('wa').value;
-        let pass = document.getElementById('pass').value;
-        let name = document.getElementById('name').value;
-
-        if (isLogin) {
-            let storedUser = localStorage.getItem(wa);
-            if (storedUser) {
-                let userData = JSON.parse(storedUser);
-                if (userData.pass === pass) {
-                    window.location.href = "home.html";
-                } else {
-                    showPopup("ERROR", "Wrong Password!");
-                }
-            } else {
-                showPopup("ERROR", "Account not found. Please Register!");
-            }
-        } else {
-            if (localStorage.getItem(wa)) {
-                showPopup("WARNING", "Account Already Exists!");
-            } else {
-                let userData = { name: name, pass: pass };
-                localStorage.setItem(wa, JSON.stringify(userData));
-                showPopup("SUCCESS", "Registered Successfully!");
-                toggleForm();
-            }
-        }
-    }
-</script>
 </body>
 </html>
