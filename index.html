@@ -1,42 +1,131 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bharat Share's</title>
 
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
 <script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+body{
+font-family:'Poppins',sans-serif;
+background:#07142e;
+}
+
+.card{
+background:#fff;
+border-radius:28px;
+box-shadow:0 20px 50px rgba(0,0,0,.25);
+}
+
+.input{
+width:100%;
+padding:14px;
+border:1px solid #d8d8d8;
+border-radius:14px;
+outline:none;
+}
+
+.input:focus{
+border-color:#0f766e;
+}
+
+.btn{
+width:100%;
+padding:14px;
+border-radius:14px;
+font-weight:600;
+}
+
+.logo{
+font-size:38px;
+font-weight:700;
+color:white;
+text-align:center;
+margin-bottom:30px;
+}
+</style>
+
 </head>
-<body class="bg-slate-900 text-white">
+<body>
 
-<div class="max-w-md mx-auto p-5">
+<div class="max-w-md mx-auto min-h-screen flex items-center p-5">
 
-<h1 class="text-3xl font-bold text-center mb-8">
+<div class="w-full">
+
+<div class="logo">
 Bharat Share's
-</h1>
+</div>
 
-<input id="mobile"
-class="w-full p-3 rounded mb-3 text-black"
-placeholder="Mobile Number">
+<div class="card p-6">
 
-<input id="password"
+<h2 class="text-2xl font-bold mb-1">
+Create Account
+</h2>
+
+<p class="text-gray-500 mb-5">
+Start investing with Bharat Share's
+</p>
+
+<input
+id="mobile"
+class="input mb-4"
+placeholder="Mobile Number"
+maxlength="10"
+inputmode="numeric">
+
+<input
+id="password"
 type="password"
-class="w-full p-3 rounded mb-3 text-black"
-placeholder="Password">
+class="input mb-4"
+placeholder="4 Digit PIN"
+maxlength="4"
+inputmode="numeric">
+
+<input
+id="confirmPassword"
+type="password"
+class="input mb-4"
+placeholder="Confirm 4 Digit PIN"
+maxlength="4"
+inputmode="numeric">
+
+<label class="flex items-center mb-5">
+
+<input
+id="agree"
+type="checkbox"
+class="mr-3">
+
+<span class="text-sm">
+I agree to Terms & Conditions
+</span>
+
+</label>
 
 <button
 id="registerBtn"
-class="w-full bg-green-600 p-3 rounded mb-3">
+class="btn bg-emerald-600 text-white mb-3">
 Register
 </button>
 
 <button
 id="loginBtn"
-class="w-full bg-blue-600 p-3 rounded">
+class="btn bg-slate-900 text-white">
 Login
 </button>
 
-<p id="msg" class="mt-5 text-center"></p>
+<p
+id="msg"
+class="text-center mt-5 text-red-500">
+</p>
+
+</div>
+
+</div>
 
 </div>
 
