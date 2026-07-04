@@ -2,125 +2,167 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bharat Share's</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
 
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<title>Bharat Share's</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
 <style>
 body{
-font-family:'Poppins',sans-serif;
-background:#07142e;
+font-family:'Inter',sans-serif;
+background:#f5f7fb;
 }
 
 .card{
 background:#fff;
-border-radius:28px;
-box-shadow:0 20px 50px rgba(0,0,0,.25);
+border-radius:22px;
+box-shadow:0 8px 35px rgba(0,0,0,.08);
 }
 
 .input{
 width:100%;
-padding:14px;
-border:1px solid #d8d8d8;
+padding:15px;
+border:1px solid #dfe3ea;
 border-radius:14px;
 outline:none;
+margin-bottom:14px;
+font-size:15px;
 }
 
 .input:focus{
-border-color:#0f766e;
+border-color:#0f172a;
 }
 
-.btn{
+.primary-btn{
 width:100%;
-padding:14px;
+padding:15px;
+background:#0f172a;
+color:#fff;
 border-radius:14px;
 font-weight:600;
 }
 
-.logo{
-font-size:38px;
-font-weight:700;
-color:white;
-text-align:center;
-margin-bottom:30px;
+.secondary-btn{
+width:100%;
+padding:15px;
+background:#2563eb;
+color:#fff;
+border-radius:14px;
+font-weight:600;
+}
+
+.tab{
+padding:12px 25px;
+border-radius:12px;
+font-weight:600;
+cursor:pointer;
+}
+
+.active{
+background:#0f172a;
+color:#fff;
 }
 </style>
-
 </head>
 <body>
 
-<div class="max-w-md mx-auto min-h-screen flex items-center p-5">
+<div class="max-w-md mx-auto min-h-screen p-5 flex items-center">
 
 <div class="w-full">
 
-<div class="logo">
+<div class="text-center mb-8">
+<h1 class="text-4xl font-bold text-slate-900">
 Bharat Share's
+</h1>
+
+<p class="text-slate-500 mt-2">
+Smart Investing Platform
+</p>
 </div>
 
 <div class="card p-6">
 
-<h2 class="text-2xl font-bold mb-1">
-Create Account
-</h2>
-
-<p class="text-gray-500 mb-5">
-Start investing with Bharat Share's
-</p>
-
-<input
-id="mobile"
-class="input mb-4"
-placeholder="Mobile Number"
-maxlength="10"
-inputmode="numeric">
-
-<input
-id="password"
-type="password"
-class="input mb-4"
-placeholder="4 Digit PIN"
-maxlength="4"
-inputmode="numeric">
-
-<input
-id="confirmPassword"
-type="password"
-class="input mb-4"
-placeholder="Confirm 4 Digit PIN"
-maxlength="4"
-inputmode="numeric">
-
-<label class="flex items-center mb-5">
-
-<input
-id="agree"
-type="checkbox"
-class="mr-3">
-
-<span class="text-sm">
-I agree to Terms & Conditions
-</span>
-
-</label>
+<div class="flex gap-3 mb-6">
 
 <button
-id="registerBtn"
-class="btn bg-emerald-600 text-white mb-3">
+id="registerTab"
+class="tab active">
 Register
 </button>
 
 <button
-id="loginBtn"
-class="btn bg-slate-900 text-white">
+id="loginTab"
+class="tab">
 Login
 </button>
 
+</div>
+
+<!-- REGISTER -->
+
+<div id="registerBox">
+
+<input
+id="rMobile"
+class="input"
+placeholder="Mobile Number">
+
+<input
+id="rPassword"
+type="password"
+class="input"
+placeholder="Password">
+
+<input
+id="rConfirm"
+type="password"
+class="input"
+placeholder="Confirm Password">
+
+<input
+id="rReferral"
+class="input"
+placeholder="Referral Code (Optional)">
+
+<button
+id="registerBtn"
+class="primary-btn">
+Create Account
+</button>
+
+</div>
+
+<!-- LOGIN -->
+
+<div
+id="loginBox"
+style="display:none;">
+
+<input
+id="lMobile"
+class="input"
+placeholder="Mobile Number">
+
+<input
+id="lPassword"
+type="password"
+class="input"
+placeholder="Password">
+
+<button
+id="loginBtn"
+class="secondary-btn">
+Login
+</button>
+
+</div>
+
 <p
 id="msg"
-class="text-center mt-5 text-red-500">
+class="text-center mt-5 text-slate-500">
 </p>
 
 </div>
@@ -128,6 +170,42 @@ class="text-center mt-5 text-red-500">
 </div>
 
 </div>
+
+<script>
+
+const registerTab =
+document.getElementById("registerTab");
+
+const loginTab =
+document.getElementById("loginTab");
+
+const registerBox =
+document.getElementById("registerBox");
+
+const loginBox =
+document.getElementById("loginBox");
+
+registerTab.onclick = () => {
+
+registerBox.style.display = "block";
+loginBox.style.display = "none";
+
+registerTab.classList.add("active");
+loginTab.classList.remove("active");
+
+};
+
+loginTab.onclick = () => {
+
+registerBox.style.display = "none";
+loginBox.style.display = "block";
+
+loginTab.classList.add("active");
+registerTab.classList.remove("active");
+
+};
+
+</script>
 
 <script type="module" src="./js/auth.js"></script>
 
