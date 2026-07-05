@@ -1,34 +1,44 @@
-<div class="auth-container">
+<div class="auth-page">
+
+<div class="auth-box">
 
 <div class="logo">
 Bharat Share's
 </div>
 
-<div class="card">
+<div class="subtitle">
+Welcome back
+</div>
 
-<h2>Welcome Back</h2>
-
+<div class="input-group">
+<label>Mobile Number</label>
 <input
 id="loginMobile"
-placeholder="Mobile Number">
+placeholder="Enter mobile number">
+</div>
 
+<div class="input-group">
+<label>Password</label>
 <input
 id="loginPassword"
 type="password"
-placeholder="Password">
+placeholder="Enter password">
+</div>
 
-<button id="loginBtn">
+<button
+id="loginBtn"
+class="primary-btn">
 Login
 </button>
 
-<p>
-No account?
-<a onclick="loadPage('register')">
+<div class="secondary-link">
+Don't have an account?
+<span onclick="loadPage('register')">
 Register
-</a>
-</p>
+</span>
+</div>
 
-<p id="loginMsg"></p>
+<div id="loginMsg" class="message"></div>
 
 </div>
 
