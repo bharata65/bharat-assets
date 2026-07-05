@@ -7,13 +7,14 @@
 <p>Investment Platform</p>
 </div>
 
-<div class="wallet-box">
+<div class="wallet-box" id="walletBalance">
 ₹0
 </div>
 
 </header>
 
-<div class="banner-slider">
+<div id="bannerContainer"
+class="banner-slider">
 
 <div class="banner-card">
 Welcome To Bharat Share's
@@ -26,42 +27,30 @@ Trending Shares
 </div>
 
 <div id="shareContainer">
-
-<div class="share-card">
-
-<div>
-<h3>Reliance Industries</h3>
-<p>Buy Price ₹1000</p>
-</div>
-
-<button>
-Buy
-</button>
-
-</div>
-
-<div class="share-card">
-
-<div>
-<h3>TCS</h3>
-<p>Buy Price ₹2000</p>
-</div>
-
-<button>
-Buy
-</button>
-
-</div>
-
+Loading...
 </div>
 
 <nav class="bottom-nav">
 
-<button>Home</button>
-<button>My Shares</button>
-<button>Wallet</button>
-<button>Account</button>
+<button onclick="loadPage('home')">
+🏠 Home
+</button>
+
+<button onclick="loadPage('myshares')">
+📈 My Shares
+</button>
+
+<button>
+💳 Wallet
+</button>
+
+<button>
+👤 Account
+</button>
 
 </nav>
 
 </div>
+
+<script type="module" src="./js/banner.js"></script>
+<script type="module" src="./js/shares.js"></script>
