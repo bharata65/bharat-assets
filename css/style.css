@@ -1,0 +1,9 @@
+body{
+  margin:0;
+  background:#f8fafc;
+  font-family:Inter,Arial,sans-serif;
+}
+
+.hidden{
+  display:none;
+}
