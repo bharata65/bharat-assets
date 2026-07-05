@@ -1,15 +1,15 @@
 async function loadPage(page){
 
-  const html = await fetch(
-    `./components/${page}.html`
-  ).then(r=>r.text());
+const html = await fetch(
+`./components/${page}.html`
+).then(r=>r.text());
 
-  document.getElementById("app")
-    .innerHTML = html;
+document.getElementById("app")
+.innerHTML = html;
 
-  if(page==="register" || page==="login"){
-    await import("./auth.js");
-  }
+if(page==="register" || page==="login"){
+await import("./auth.js");
+}
 }
 
 window.loadPage = loadPage;
