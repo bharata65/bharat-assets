@@ -1,43 +1,59 @@
-<div class="auth-container">
+<div class="auth-page">
+
+<div class="auth-box">
 
 <div class="logo">
-  Bharat Share's
+Bharat Share's
 </div>
 
-<div class="card">
+<div class="subtitle">
+Create your investment account
+</div>
 
-<h2>Create Account</h2>
-
+<div class="input-group">
+<label>Mobile Number</label>
 <input
 id="regMobile"
-placeholder="Mobile Number">
+placeholder="Enter mobile number">
+</div>
 
+<div class="input-group">
+<label>Password</label>
 <input
 id="regPassword"
 type="password"
-placeholder="Password">
+placeholder="Enter password">
+</div>
 
+<div class="input-group">
+<label>Confirm Password</label>
 <input
 id="regConfirm"
 type="password"
-placeholder="Confirm Password">
+placeholder="Confirm password">
+</div>
 
+<div class="input-group">
+<label>Referral Code (Optional)</label>
 <input
-id="referralCode"
-placeholder="Referral Code (Optional)">
+id="referral"
+placeholder="Referral code">
+</div>
 
-<button id="registerBtn">
+<button
+id="registerBtn"
+class="primary-btn">
 Create Account
 </button>
 
-<p>
-Already have account?
-<a onclick="loadPage('login')">
+<div class="secondary-link">
+Already have an account?
+<span onclick="loadPage('login')">
 Login
-</a>
-</p>
+</span>
+</div>
 
-<p id="regMsg"></p>
+<div id="regMsg" class="message"></div>
 
 </div>
 
