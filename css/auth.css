@@ -1,46 +1,83 @@
-.auth-container{
-  max-width:420px;
-  margin:auto;
-  padding:30px 20px;
+.auth-page{
+min-height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+padding:30px;
+}
+
+.auth-box{
+width:100%;
+max-width:430px;
+background:#fff;
+border-radius:32px;
+padding:35px;
+box-shadow:
+0 15px 50px rgba(15,23,42,.08);
 }
 
 .logo{
-  text-align:center;
-  font-size:42px;
-  font-weight:800;
-  color:#0f172a;
-  margin-top:60px;
+font-size:34px;
+font-weight:800;
+text-align:center;
+color:#0f172a;
+margin-bottom:8px;
 }
 
-.card{
-  background:white;
-  margin-top:40px;
-  border-radius:30px;
-  padding:30px;
-  box-shadow:0 10px 40px rgba(0,0,0,.08);
+.subtitle{
+text-align:center;
+color:#64748b;
+margin-bottom:35px;
 }
 
-.card h2{
-  text-align:center;
-  margin-bottom:30px;
+.input-group{
+margin-bottom:18px;
 }
 
-.card input{
-  width:100%;
-  box-sizing:border-box;
-  padding:18px;
-  border-radius:18px;
-  border:1px solid #e2e8f0;
-  margin-bottom:16px;
+.input-group label{
+display:block;
+font-size:14px;
+font-weight:600;
+margin-bottom:8px;
 }
 
-.card button{
-  width:100%;
-  padding:18px;
-  border:none;
-  border-radius:18px;
-  background:#0f172a;
-  color:white;
-  font-weight:700;
-  cursor:pointer;
+.input-group input{
+width:100%;
+padding:17px;
+border:1px solid #e2e8f0;
+border-radius:18px;
+outline:none;
+font-size:15px;
+}
+
+.input-group input:focus{
+border-color:#2563eb;
+}
+
+.primary-btn{
+width:100%;
+padding:18px;
+background:#2563eb;
+color:white;
+border-radius:18px;
+font-size:16px;
+font-weight:700;
+}
+
+.secondary-link{
+margin-top:22px;
+text-align:center;
+font-size:14px;
+color:#64748b;
+}
+
+.secondary-link span{
+color:#2563eb;
+font-weight:600;
+}
+
+.message{
+margin-top:18px;
+text-align:center;
+font-size:14px;
 }
