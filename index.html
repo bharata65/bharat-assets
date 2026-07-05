@@ -278,82 +278,213 @@ class="page">
 
 </div>
 
-<script>
-function showPage(page){
+<script type="module">
 
-document
-.querySelectorAll(".page")
-.forEach(p=>{
-p.classList.remove("active");
-});
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
 
-document
-.getElementById(page)
-.classList.add("active");
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut
 }
+from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
 
-function toast(msg){
-
-const t =
-document.getElementById("toast");
-
-t.innerText = msg;
-t.classList.add("show");
-
-setTimeout(()=>{
-t.classList.remove("show");
-},2500);
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  getDoc
 }
+from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
-document
-.getElementById("registerBtn")
-.onclick = ()=>{
-
-const mobile =
-document.getElementById("regMobile").value;
-
-const password =
-document.getElementById("regPassword").value;
-
-const confirm =
-document.getElementById("regConfirm").value;
-
-const agree =
-document.getElementById("agree").checked;
-
-if(mobile.length!==10){
-toast("Enter valid mobile number");
-return;
-}
-
-if(password.length<6){
-toast("Password minimum 6 characters");
-return;
-}
-
-if(password!==confirm){
-toast("Passwords do not match");
-return;
-}
-
-if(!agree){
-toast("Please accept terms");
-return;
-}
-
-toast("Validation Success");
+const firebaseConfig = {
+  apiKey: "AIzaSyCbIlBvIUi7dxKNZ4E6uqJOl51T4UDKpnI",
+  authDomain: "bharatshares-4a126.firebaseapp.com",
+  projectId: "bharatshares-4a126",
+  storageBucket: "bharatshares-4a126.firebasestorage.app",
+  messagingSenderId: "658412327508",
+  appId: "1:658412327508:web:212fd41fd2e1dfbdb853c1",
+  measurementId: "G-9KDCMFJQ3S"
 };
 
-document
-.getElementById("loginBtn")
-.onclick = ()=>{
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-toast(
-"Firebase Login will be added in Step 2"
+window.showPage = function(page) {
+  document.querySelectorAll(".page")
+    .forEach(p => p.classList.remove("active"));
+
+  document.getElementById(page)
+    .classList.add("active");
+};
+
+window.toast = function(msg) {
+  const t = document.getElementById("toast");
+
+  t.innerText = msg;
+  t.classList.add("show");
+
+  setTimeout(() => {
+    t.classList.remove("show");
+  }, 2500);
+};
+
+document.getElementById("registerBtn").onclick =
+async () => {
+
+  const mobile =
+    document.getElementById("regMobile")
+      .value.trim();
+
+  const password =
+    document.getElementById("regPassword")
+      .value;
+
+  const confirm =
+    document.getElementById("regConfirm")
+      .value;
+
+  const agree =
+    document.getElementById("agree")
+      .checked;
+
+  if (mobile.length !== 10) {
+    toast("Enter valid mobile number");
+    return;
+  }
+
+  if (password.length < 6) {
+    toast("Password minimum 6 characters");
+    return;
+  }
+
+  if (password !== confirm) {
+    toast("Passwords do not match");
+    return;
+  }
+
+  if (!agree) {
+    toast("Please accept terms");
+    return;
+  }
+
+  const email =
+    mobile + "@bharatshares.app";
+
+  try {
+
+    const userCred =
+      await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+    await setDoc(
+      doc(
+        db,
+        "users",
+        userCred.user.uid
+      ),
+      {
+        uid: userCred.user.uid,
+        mobile: mobile,
+        balance: 0,
+        status: "active",
+        createdAt: Date.now()
+      }
+    );
+
+    toast(
+      "Account Created Successfully"
+    );
+
+  } catch (e) {
+
+    if (
+      e.code ===
+      "auth/email-already-in-use"
+    ) {
+      toast("Account already exists");
+    } else {
+      toast(e.message);
+    }
+
+  }
+};
+
+document.getElementById("loginBtn").onclick =
+async () => {
+
+  const mobile =
+    document.getElementById("loginMobile")
+      .value.trim();
+
+  const password =
+    document.getElementById("loginPassword")
+      .value;
+
+  const email =
+    mobile + "@bharatshares.app";
+
+  try {
+
+    await signInWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+
+  } catch (e) {
+    toast(
+      "Invalid Mobile Or Password"
+    );
+  }
+};
+
+onAuthStateChanged(
+  auth,
+  async (user) => {
+
+    if (!user) return;
+
+    const snap =
+      await getDoc(
+        doc(
+          db,
+          "users",
+          user.uid
+        )
+      );
+
+    if (!snap.exists()) return;
+
+    const data =
+      snap.data();
+
+    const header =
+      document.querySelector(
+        "#homePage .header p"
+      );
+
+    header.innerHTML =
+      "Welcome, " +
+      data.mobile;
+
+    showPage("homePage");
+  }
 );
 
+window.logout =
+async function () {
+  await signOut(auth);
+  showPage("loginPage");
 };
-</script>
 
+      </script>
 </body>
 </html>
