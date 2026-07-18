@@ -1,0 +1,26 @@
+name: Run Telegram Bot
+on:
+  schedule:
+    - cron: '*/30 * * * *' # दर ३० मिनिटांनी बोट चेक करेल
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: pip install python-telegram-bot
+
+      - name: Run Bot
+        env:
+          TOKEN: ${{ secrets.TOKEN }}
+        run: python bot.py
+
