@@ -1,1736 +1,1450 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Wallet, 
-  QrCode, 
-  ShieldCheck, 
-  Clock, 
-  CheckCircle2, 
-  XCircle, 
-  History, 
-  LogOut, 
-  Menu, 
-  X, 
-  Copy, 
-  Check, 
-  ArrowUpRight, 
-  ArrowDownRight, 
-  User, 
-  CreditCard, 
-  AlertCircle,
-  BarChart2,
-  LineChart,
-  Download,
-  Upload,
-  Activity,
-  Eye,
-  EyeOff,
-  Search,
-  DollarSign,
-  Briefcase
-} from 'lucide-react';
-
-export default function App() {
-  // Local storage management helpers
-  const getStorage = (key, defaultVal) => {
-    try {
-      const saved = localStorage.getItem(key);
-      return saved ? JSON.parse(saved) : defaultVal;
-    } catch (e) {
-      return defaultVal;
-    }
-  };
-
-  const setStorage = (key, val) => {
-    try {
-      localStorage.setItem(key, JSON.stringify(val));
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  // Persistent States
-  const [users, setUsers] = useState(() => getStorage('fx_users', []));
-  const [currentUser, setCurrentUser] = useState(() => getStorage('fx_current_user', null));
-  const [deposits, setDeposits] = useState(() => getStorage('fx_deposits', []));
-  const [withdrawals, setWithdrawals] = useState(() => getStorage('fx_withdrawals', []));
-  const [trades, setTrades] = useState(() => getStorage('fx_trades', []));
-
-  // Navigation State
-  const [activeTab, setActiveTab] = useState('trade'); // 'trade', 'deposit', 'withdraw', 'history', 'admin', 'auth'
-  const [authMode, setAuthMode] = useState('login'); // 'login', 'register'
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  // Auth Inputs
-  const [phoneInput, setPhoneInput] = useState('');
-  const [passwordInput, setPasswordInput] = useState('');
-  const [nameInput, setNameInput] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [authError, setAuthError] = useState('');
-
-  // Deposit Form
-  const [depositAmount, setDepositAmount] = useState(500);
-  const [customDepositAmt, setCustomDepositAmt] = useState('');
-  const [utrNumber, setUtrNumber] = useState('');
-  const [copiedUpi, setCopiedUpi] = useState(false);
-  const [depositNotice, setDepositNotice] = useState(null);
-
-  // Withdrawal Form
-  const [withdrawAmount, setWithdrawAmount] = useState('');
-  const [withdrawUpi, setWithdrawUpi] = useState('');
-  const [withdrawNotice, setWithdrawNotice] = useState(null);
-
-  // Trading Console States
-  const [selectedAsset, setSelectedAsset] = useState({ 
-    id: 'eurusd', name: 'EUR/USD', price: 1.0850, payout: 88, volatility: 0.0006, type: 'Forex' 
-  });
-  const [chartType, setChartType] = useState('candlestick'); // 'candlestick' or 'line'
-  const [showIndicators, setShowIndicators] = useState({ ma: true });
-  const [tradeAmount, setTradeAmount] = useState(200);
-  const [tradeDuration, setTradeDuration] = useState(30); // seconds
-  
-  // Market Engine Rigging (Admin Controlled)
-  const [adminRigMode, setAdminRigMode] = useState('FAIR'); // 'FAIR', 'FORCE_WIN', 'FORCE_LOSS'
-
-  // Real-Time Chart Data
-  const [priceHistory, setPriceHistory] = useState([]);
-  const [candles, setCandles] = useState([]);
-  const [currentPrice, setCurrentPrice] = useState(1.0850);
-
-  // Admin Controls
-  const [selectedUserPhone, setSelectedUserPhone] = useState(null);
-  const [balanceAdjustAmt, setBalanceAdjustAmt] = useState('');
-  const [adminSearch, setAdminSearch] = useState('');
-
-  const canvasRef = useRef(null);
-
-  // Auto Sync State to Storage
-  useEffect(() => setStorage('fx_users', users), [users]);
-  useEffect(() => setStorage('fx_deposits', deposits), [deposits]);
-  useEffect(() => setStorage('fx_withdrawals', withdrawals), [withdrawals]);
-  useEffect(() => setStorage('fx_trades', trades), [trades]);
-
-  useEffect(() => {
-    if (currentUser) {
-      setStorage('fx_current_user', currentUser);
-      // Synchronize latest user balance from master array
-      const latest = users.find(u => u.phone === currentUser.phone);
-      if (latest && latest.balance !== currentUser.balance) {
-        setCurrentUser(latest);
-      }
-    } else {
-      localStorage.removeItem('fx_current_user');
-    }
-  }, [currentUser, users]);
-
-  // Asset Pair List
-  const assetsCatalog = [
-    { id: 'eurusd', name: 'EUR/USD', price: 1.0850, payout: 88, volatility: 0.0005, type: 'Forex' },
-    { id: 'gbpusd', name: 'GBP/USD', price: 1.2720, payout: 85, volatility: 0.0007, type: 'Forex' },
-    { id: 'btcinr', name: 'BTC/INR', price: 5980000, payout: 92, volatility: 380.0, type: 'Crypto' },
-    { id: 'ethusd', name: 'ETH/USD', price: 3450.00, payout: 89, volatility: 2.50, type: 'Crypto' },
-    { id: 'xauusd', name: 'XAU/USD (Gold)', price: 2410.50, payout: 86, volatility: 1.20, type: 'Commodity' },
-    { id: 'usdinr', name: 'USD/INR', price: 83.72, payout: 82, volatility: 0.04, type: 'Forex' }
-  ];
-
-  // High-Precision Candlestick & Price Engine
-  useEffect(() => {
-    let base = selectedAsset.price;
-    const history = [];
-    const candleList = [];
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>FOREXAAA | Professional Trading Terminal</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap');
     
-    // Generate initial historical candles
-    for (let i = 0; i < 45; i++) {
-      const open = base;
-      const delta = (Math.random() - 0.495) * selectedAsset.volatility * 8;
-      const close = parseFloat((open + delta).toFixed(2));
-      const high = Math.max(open, close) + Math.abs((Math.random() * selectedAsset.volatility * 2.5));
-      const low = Math.min(open, close) - Math.abs((Math.random() * selectedAsset.volatility * 2.5));
-      
-      candleList.push({ open, high, low, close });
-      history.push(close);
-      base = close;
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    setCandles(candleList);
-    setPriceHistory(history);
-    setCurrentPrice(base);
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+      touch-action: manipulation;
+    }
+    
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
 
-    // Live price tick simulator
-    const interval = setInterval(() => {
-      setCandles(prevCandles => {
-        if (prevCandles.length === 0) return prevCandles;
-        const lastCandle = { ...prevCandles[prevCandles.length - 1] };
+    /* Modern Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 99px;
+    }
+
+    .pulse-glow {
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.25);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col bg-slate-50 text-slate-900 pb-16 md:pb-0 selection:bg-emerald-100 selection:text-emerald-900">
+
+  <!-- TOP HEADER NAVBAR -->
+  <header class="bg-white border-b border-slate-200/80 sticky top-0 z-40 shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between relative">
+      
+      <!-- Left: Wallet Pill / Profile Badge -->
+      <div id="headerLeftUserBadge" class="flex items-center space-x-2">
+        <!-- JS Populated -->
+      </div>
+
+      <!-- Center: Prominent Brand Logo -->
+      <div onclick="switchTab('trade')" class="absolute left-1/2 -translate-x-1/2 flex items-center space-x-2 cursor-pointer group">
+        <div class="w-9 h-9 rounded-xl bg-slate-900 flex items-center justify-center text-emerald-400 font-black shadow-md group-hover:scale-105 transition">
+          <i data-lucide="trending-up" class="w-5 h-5 stroke-[2.5]"></i>
+        </div>
+        <div class="flex flex-col items-center">
+          <span class="text-xl sm:text-2xl font-black tracking-tight text-slate-900 leading-none">
+            FOREX<span class="text-emerald-600">AAA</span>
+          </span>
+          <span class="text-[9px] bg-emerald-50 text-emerald-700 border border-emerald-200/80 px-1.5 py-0.2 rounded font-mono font-bold uppercase tracking-wider mt-0.5">
+            PRO TERMINAL
+          </span>
+        </div>
+      </div>
+
+      <!-- Right: Desktop Nav & User Auth -->
+      <div class="flex items-center space-x-3">
+        
+        <!-- Desktop Nav Items -->
+        <nav class="hidden md:flex items-center space-x-1" id="desktopNav">
+          <button onclick="switchTab('trade')" id="nav-trade" class="nav-btn px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 bg-slate-900 text-white shadow-sm">
+            <i data-lucide="activity" class="w-4 h-4"></i>
+            <span>Trading Desk</span>
+          </button>
+          <button onclick="switchTab('deposit')" id="nav-deposit" class="nav-btn px-3.5 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition flex items-center space-x-1.5">
+            <i data-lucide="arrow-down-left" class="w-4 h-4 text-emerald-600"></i>
+            <span>Deposit</span>
+          </button>
+          <button onclick="switchTab('withdraw')" id="nav-withdraw" class="nav-btn px-3.5 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition flex items-center space-x-1.5">
+            <i data-lucide="arrow-up-right" class="w-4 h-4 text-blue-600"></i>
+            <span>Withdraw</span>
+          </button>
+          <button onclick="switchTab('history')" id="nav-history" class="nav-btn px-3.5 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition flex items-center space-x-1.5">
+            <i data-lucide="history" class="w-4 h-4"></i>
+            <span>Logs</span>
+          </button>
+          <button onclick="switchTab('admin')" id="nav-admin" class="nav-btn hidden px-3.5 py-2 rounded-xl text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 transition flex items-center space-x-1.5">
+            <i data-lucide="shield-check" class="w-4 h-4"></i>
+            <span>Admin</span>
+          </button>
+        </nav>
+
+        <!-- Right Auth Action -->
+        <div id="headerAuthContainer">
+          <!-- JS Populated -->
+        </div>
+
+      </div>
+
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-2.5 sm:p-6">
+
+    <!-- 1. TRADING DESK TAB -->
+    <section id="tab-trade" class="tab-content space-y-3 sm:space-y-4">
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-3 sm:gap-6">
+        
+        <!-- Left: Main Chart Area -->
+        <div class="lg:col-span-3 space-y-3 sm:space-y-4">
+          
+          <!-- Asset Bar & Chart Switcher -->
+          <div class="bg-white border border-slate-200/90 rounded-2xl p-2.5 sm:p-4 flex flex-wrap items-center justify-between gap-2 shadow-xs">
+            
+            <!-- Asset Selector List -->
+            <div class="flex items-center space-x-1.5 overflow-x-auto py-1 scrollbar-none max-w-full" id="assetPillsContainer">
+              <!-- JS Populated -->
+            </div>
+
+            <!-- Chart Type & Price Display -->
+            <div class="flex items-center space-x-2.5 ml-auto">
+              
+              <!-- Style Toggle -->
+              <div class="flex bg-slate-100 p-1 rounded-xl border border-slate-200/80">
+                <button onclick="setChartType('candlestick')" id="btnChartCandle" class="p-1.5 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-xs transition">
+                  <i data-lucide="candlestick-chart" class="w-4 h-4"></i>
+                </button>
+                <button onclick="setChartType('line')" id="btnChartLine" class="p-1.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-900 transition">
+                  <i data-lucide="line-chart" class="w-4 h-4"></i>
+                </button>
+              </div>
+
+              <!-- Price Box -->
+              <div class="pl-2 border-l border-slate-200 text-right">
+                <span class="text-[9px] text-slate-400 block font-semibold uppercase tracking-wider">Spot Price</span>
+                <span id="livePriceDisplay" class="text-sm sm:text-base font-black font-mono text-emerald-600">₹0.00</span>
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- TradingView Style Canvas Container -->
+          <div class="bg-white border border-slate-200/90 rounded-2xl p-3 sm:p-4 relative overflow-hidden shadow-xs h-[380px] sm:h-[450px] flex flex-col justify-between">
+            
+            <!-- Floating Feed Badge -->
+            <div class="absolute top-4 left-4 flex items-center space-x-2 bg-slate-900/90 text-white px-3 py-1 rounded-full z-10 shadow-sm backdrop-blur">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span id="chartFeedLabel" class="text-[11px] font-bold font-mono tracking-wide">EUR/USD REALTIME ENGINE</span>
+            </div>
+
+            <div class="w-full flex-1 relative mt-6">
+              <canvas id="tradingCanvas" class="w-full h-full block"></canvas>
+            </div>
+
+            <div class="flex items-center justify-between text-[11px] text-slate-500 border-t border-slate-100 pt-2 font-mono">
+              <span>Latency: <span class="text-emerald-600 font-bold">&lt; 8ms</span></span>
+              <span>Yield Payout: <span id="payoutRateLabel" class="text-emerald-600 font-bold">+88%</span></span>
+            </div>
+          </div>
+
+          <!-- Open Trade Orders Table -->
+          <div class="bg-white border border-slate-200/90 rounded-2xl p-3.5 sm:p-4 shadow-xs">
+            <h3 class="text-xs font-extrabold text-slate-800 mb-2.5 uppercase tracking-wider flex items-center space-x-2">
+              <i data-lucide="clock" class="w-4 h-4 text-emerald-600"></i>
+              <span>Active Market Positions</span>
+            </h3>
+
+            <div id="activeTradesList" class="space-y-2">
+              <!-- JS Populated -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right: Execution Panel -->
+        <div class="lg:col-span-1 space-y-3 sm:space-y-4">
+          <div class="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
+            
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <span class="text-xs font-extrabold text-slate-800 uppercase tracking-wider">Trading Desk</span>
+              <span class="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                Binary High/Low
+              </span>
+            </div>
+
+            <!-- Investment Amount -->
+            <div>
+              <label class="text-xs font-semibold text-slate-600 block mb-1">Trade Stake (₹)</label>
+              <input type="number" id="tradeStakeInput" value="200" min="10" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 font-mono font-bold focus:outline-none focus:border-emerald-600 text-sm">
+              
+              <div class="grid grid-cols-4 gap-1 mt-2">
+                <button onclick="setStakePreset(100)" class="py-1 text-[11px] font-bold rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700">₹100</button>
+                <button onclick="setStakePreset(200)" class="py-1 text-[11px] font-bold rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700">₹200</button>
+                <button onclick="setStakePreset(500)" class="py-1 text-[11px] font-bold rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700">₹500</button>
+                <button onclick="setStakePreset(1000)" class="py-1 text-[11px] font-bold rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700">₹1000</button>
+              </div>
+            </div>
+
+            <!-- Duration Selection -->
+            <div>
+              <label class="text-xs font-semibold text-slate-600 block mb-1">Expiration Timer</label>
+              <div class="grid grid-cols-3 gap-1.5">
+                <button onclick="setDurationPreset(15)" id="dur-15" class="dur-btn py-2 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 text-slate-700">15 Sec</button>
+                <button onclick="setDurationPreset(30)" id="dur-30" class="dur-btn py-2 text-xs font-bold rounded-xl border border-emerald-600 bg-emerald-50 text-emerald-800">30 Sec</button>
+                <button onclick="setDurationPreset(60)" id="dur-60" class="dur-btn py-2 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 text-slate-700">60 Sec</button>
+              </div>
+            </div>
+
+            <!-- Return Calculator -->
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1">
+              <div class="flex justify-between text-xs text-slate-500">
+                <span>Profit Yield</span>
+                <span id="orderPayoutRate" class="text-emerald-700 font-bold font-mono">+88%</span>
+              </div>
+              <div class="flex justify-between text-xs font-semibold text-slate-700">
+                <span>Net Profit</span>
+                <span id="orderNetProfit" class="text-emerald-600 font-bold font-mono">+₹176</span>
+              </div>
+              <div class="flex justify-between text-sm font-extrabold text-slate-900 pt-1.5 border-t border-slate-200">
+                <span>Total Return</span>
+                <span id="orderTotalReturn" class="text-emerald-600 font-mono">₹376</span>
+              </div>
+            </div>
+
+            <!-- CALL / PUT Buttons -->
+            <div class="grid grid-cols-2 lg:grid-cols-1 gap-2 pt-1">
+              <button onclick="placeTrade('CALL')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3 rounded-xl transition flex items-center justify-center space-x-1.5 shadow-sm active:scale-[0.98]">
+                <i data-lucide="arrow-up-right" class="w-5 h-5 stroke-[3]"></i>
+                <span class="text-sm tracking-wide uppercase">CALL (HIGHER)</span>
+              </button>
+
+              <button onclick="placeTrade('PUT')" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-black py-3 rounded-xl transition flex items-center justify-center space-x-1.5 shadow-sm active:scale-[0.98]">
+                <i data-lucide="arrow-down-right" class="w-5 h-5 stroke-[3]"></i>
+                <span class="text-sm tracking-wide uppercase">PUT (LOWER)</span>
+              </button>
+            </div>
+
+            <div id="unauthNotice" class="hidden text-[11px] text-center text-amber-800 bg-amber-50 p-2 rounded-xl border border-amber-200">
+              Please sign in to execute live market trades.
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 2. MANUAL DEPOSIT TAB -->
+    <section id="tab-deposit" class="tab-content hidden max-w-2xl mx-auto space-y-6">
+      <div class="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-8 shadow-xs space-y-6">
+        
+        <div class="text-center space-y-1">
+          <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-2 border border-emerald-200">
+            <i data-lucide="qr-code" class="w-6 h-6"></i>
+          </div>
+          <h2 class="text-2xl font-black text-slate-900">Instant UPI Deposit</h2>
+          <p class="text-xs text-slate-500">Scan QR Code or pay directly to official Merchant UPI ID</p>
+        </div>
+
+        <!-- Presets -->
+        <div>
+          <label class="text-xs font-semibold text-slate-700 block mb-2">Select Deposit Amount:</label>
+          <div class="grid grid-cols-3 sm:grid-cols-5 gap-2">
+            <button onclick="selectDepositPreset(200)" class="dep-preset-btn py-2 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 text-slate-800">₹200</button>
+            <button onclick="selectDepositPreset(500)" class="dep-preset-btn py-2 text-xs font-bold rounded-xl border border-emerald-600 bg-emerald-50 text-emerald-800">₹500</button>
+            <button onclick="selectDepositPreset(1000)" class="dep-preset-btn py-2 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 text-slate-800">₹1000</button>
+            <button onclick="selectDepositPreset(2000)" class="dep-preset-btn py-2 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 text-slate-800">₹2000</button>
+            <button onclick="selectDepositPreset(5000)" class="dep-preset-btn py-2 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 text-slate-800">₹5000</button>
+          </div>
+
+          <div class="mt-3">
+            <input type="number" id="customDepositInput" oninput="updateDepositQR()" placeholder="Or enter custom amount (Min ₹100)" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-600">
+          </div>
+        </div>
+
+        <!-- QR Display -->
+        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 text-center space-y-3">
+          <div class="inline-block bg-white p-3 rounded-2xl shadow-sm border border-slate-200">
+            <img id="upiQrImage" src="" alt="Paytm QR Code" class="w-48 h-48 mx-auto rounded-lg object-contain">
+          </div>
+
+          <div>
+            <span class="text-xs text-slate-500 block mb-1">Merchant VPA Handle</span>
+            <div class="inline-flex items-center space-x-2 bg-white border border-slate-300 px-3.5 py-1.5 rounded-xl shadow-xs">
+              <span class="text-xs sm:text-sm font-bold font-mono text-slate-900">paytmqr6n4gde@ptys</span>
+              <button onclick="copyUpiId()" class="text-slate-400 hover:text-slate-700 transition">
+                <i data-lucide="copy" class="w-4 h-4"></i>
+              </button>
+            </div>
+            <div class="text-[11px] text-slate-500 mt-1">Gurudatt Kirana Store (9552928816)</div>
+          </div>
+
+          <div class="text-xs bg-emerald-50 text-emerald-800 py-2 px-3 rounded-xl border border-emerald-200 font-semibold">
+            Generated QR for Amount: <span id="qrAmountDisplay" class="font-bold font-mono text-emerald-900">₹500</span>
+          </div>
+        </div>
+
+        <!-- Submit UTR -->
+        <form onsubmit="handleDepositSubmit(event)" class="space-y-4">
+          <div>
+            <label class="text-xs font-semibold text-slate-700 block mb-1">Enter 12-Digit Payment Ref / UTR Number *</label>
+            <input type="text" id="utrInput" required placeholder="e.g. 423985710293" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-emerald-600 font-mono">
+          </div>
+
+          <div id="depositNoticeBox" class="hidden p-3 rounded-xl text-xs"></div>
+
+          <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3.5 rounded-xl transition shadow-xs">
+            Submit Deposit Request
+          </button>
+        </form>
+
+      </div>
+    </section>
+
+    <!-- 3. WITHDRAWAL TAB -->
+    <section id="tab-withdraw" class="tab-content hidden max-w-2xl mx-auto space-y-6">
+      <div class="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-8 shadow-xs space-y-6">
+        
+        <div class="text-center space-y-1">
+          <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-2 border border-blue-200">
+            <i data-lucide="arrow-up-right" class="w-6 h-6"></i>
+          </div>
+          <h2 class="text-2xl font-black text-slate-900">Withdraw Funds</h2>
+          <p class="text-xs text-slate-500">Request payout directly to your UPI ID or Bank account</p>
+        </div>
+
+        <form onsubmit="handleWithdrawSubmit(event)" class="space-y-4">
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex justify-between items-center">
+            <span class="text-xs font-semibold text-slate-600">Available Balance:</span>
+            <span id="withdrawAvailBalance" class="text-base font-extrabold font-mono text-emerald-600">₹0.00</span>
+          </div>
+
+          <div>
+            <label class="text-xs font-semibold text-slate-700 block mb-1">Withdrawal Amount (₹) *</label>
+            <input type="number" id="withdrawAmountInput" required placeholder="Min ₹300" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-blue-600 font-mono">
+          </div>
+
+          <div>
+            <label class="text-xs font-semibold text-slate-700 block mb-1">UPI ID or Bank Details *</label>
+            <input type="text" id="withdrawUpiInput" required placeholder="e.g. mobile@upi or Account + IFSC" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-blue-600">
+          </div>
+
+          <div id="withdrawNoticeBox" class="hidden p-3 rounded-xl text-xs"></div>
+
+          <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3.5 rounded-xl transition shadow-xs">
+            Request Payout
+          </button>
+        </form>
+
+      </div>
+    </section>
+
+    <!-- 4. TRADE LOGS TAB -->
+    <section id="tab-history" class="tab-content hidden max-w-4xl mx-auto space-y-4">
+      <div class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs space-y-4">
+        <h2 class="text-lg font-black text-slate-900 flex items-center space-x-2">
+          <i data-lucide="history" class="w-5 h-5 text-emerald-600"></i>
+          <span>Trade Execution Logs</span>
+        </h2>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider">
+                <th class="py-3 px-2">Asset</th>
+                <th class="py-3 px-2">Type</th>
+                <th class="py-3 px-2">Stake</th>
+                <th class="py-3 px-2">Strike Price</th>
+                <th class="py-3 px-2">Close Price</th>
+                <th class="py-3 px-2">Outcome</th>
+              </tr>
+            </thead>
+            <tbody id="tradeLogsTableBody" class="divide-y divide-slate-100 text-xs font-medium">
+              <!-- JS Populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. MASTER ADMIN CONSOLE TAB -->
+    <section id="tab-admin" class="tab-content hidden space-y-5">
+      
+      <div class="bg-slate-900 text-white rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+        <div>
+          <span class="text-xs font-bold text-amber-400 uppercase tracking-widest block">Master Terminal</span>
+          <h2 class="text-xl sm:text-2xl font-black">Forexaaa Administration</h2>
+          <p class="text-xs text-slate-400">Manage deposits, withdrawal payouts, user accounts & market outcome overrides.</p>
+        </div>
+
+        <div class="bg-slate-800 p-2.5 rounded-xl border border-slate-700 space-y-1">
+          <span class="text-[11px] font-semibold text-slate-300 block">Settlement Rigging Mode:</span>
+          <div class="flex space-x-1">
+            <button onclick="setAdminRigMode('FAIR')" id="rig-FAIR" class="rig-btn px-2.5 py-1 rounded text-xs font-bold bg-slate-700 text-white">Fair Market</button>
+            <button onclick="setAdminRigMode('FORCE_WIN')" id="rig-FORCE_WIN" class="rig-btn px-2.5 py-1 rounded text-xs font-bold text-slate-400">Force Win</button>
+            <button onclick="setAdminRigMode('FORCE_LOSS')" id="rig-FORCE_LOSS" class="rig-btn px-2.5 py-1 rounded text-xs font-bold text-slate-400">Force Loss</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Counts -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div class="bg-white border border-slate-200/90 p-4 rounded-2xl shadow-xs">
+          <span class="text-xs text-slate-500 block">Total Registered Users</span>
+          <span id="adminTotalUsersCount" class="text-2xl font-black font-mono text-slate-900">0</span>
+        </div>
+        <div class="bg-white border border-slate-200/90 p-4 rounded-2xl shadow-xs">
+          <span class="text-xs text-slate-500 block">Pending Deposits</span>
+          <span id="adminPendingDepositsCount" class="text-2xl font-black font-mono text-amber-600">0</span>
+        </div>
+        <div class="bg-white border border-slate-200/90 p-4 rounded-2xl shadow-xs">
+          <span class="text-xs text-slate-500 block">Pending Withdrawals</span>
+          <span id="adminPendingWithdrawalsCount" class="text-2xl font-black font-mono text-blue-600">0</span>
+        </div>
+      </div>
+
+      <!-- Pending Deposits -->
+      <div class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs space-y-3">
+        <h3 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+          <i data-lucide="credit-card" class="w-4 h-4 text-amber-600"></i>
+          <span>Pending Manual Deposits</span>
+        </h3>
+
+        <div id="adminPendingDepositsList" class="space-y-2.5">
+          <!-- JS Populated -->
+        </div>
+      </div>
+
+      <!-- Pending Withdrawals -->
+      <div class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs space-y-3">
+        <h3 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+          <i data-lucide="arrow-up-right" class="w-4 h-4 text-blue-600"></i>
+          <span>Pending Withdrawal Payouts</span>
+        </h3>
+
+        <div id="adminPendingWithdrawalsList" class="space-y-2.5">
+          <!-- JS Populated -->
+        </div>
+      </div>
+
+      <!-- User Accounts Table -->
+      <div class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs space-y-3">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          <h3 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+            <i data-lucide="users" class="w-4 h-4 text-emerald-600"></i>
+            <span>User Accounts & Wallet Control</span>
+          </h3>
+
+          <input type="text" id="adminUserSearchInput" oninput="renderAdminUsers()" placeholder="Search user..." class="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-slate-800 w-full sm:w-60">
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead>
+              <tr class="border-b border-slate-200 text-slate-500 uppercase tracking-wider">
+                <th class="py-2">User Name</th>
+                <th class="py-2">Phone</th>
+                <th class="py-2">Role</th>
+                <th class="py-2">Wallet Balance</th>
+                <th class="py-2">Action</th>
+              </tr>
+            </thead>
+            <tbody id="adminUserTableBody" class="divide-y divide-slate-100 font-medium">
+              <!-- JS Populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- 6. AUTH TAB -->
+    <section id="tab-auth" class="tab-content hidden max-w-md mx-auto my-6">
+      <div class="bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-8 shadow-xs space-y-6">
+        
+        <div class="text-center space-y-1">
+          <h2 id="authTitle" class="text-2xl font-black text-slate-900">Sign In to Forexaaa</h2>
+          <p id="authSubtitle" class="text-xs text-slate-500">Enter your mobile number & password to continue</p>
+        </div>
+
+        <div id="authErrorBox" class="hidden p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-semibold"></div>
+
+        <form onsubmit="handleAuthSubmit(event)" class="space-y-4">
+          <div id="authNameGroup" class="hidden">
+            <label class="text-xs font-semibold text-slate-700 block mb-1">Full Name</label>
+            <input type="text" id="authNameInput" placeholder="e.g. Rahul Sharma" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-emerald-600">
+          </div>
+
+          <div>
+            <label class="text-xs font-semibold text-slate-700 block mb-1">Mobile Number</label>
+            <input type="text" id="authPhoneInput" required placeholder="Enter mobile number" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-emerald-600 font-mono">
+          </div>
+
+          <div>
+            <label class="text-xs font-semibold text-slate-700 block mb-1">Password</label>
+            <input type="password" id="authPasswordInput" required placeholder="••••••••" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-emerald-600 font-mono">
+          </div>
+
+          <button type="submit" id="authSubmitBtn" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3.5 rounded-xl transition shadow-xs">
+            Sign In
+          </button>
+        </form>
+
+        <div class="pt-4 border-t border-slate-100 text-center">
+          <p id="authToggleText" class="text-xs text-slate-500">
+            Don't have an account? 
+            <button onclick="toggleAuthMode('register')" class="text-emerald-700 font-bold hover:underline">Register Now</button>
+          </p>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MOBILE BOTTOM NAVIGATION BAR -->
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur border-t border-slate-200 flex justify-around py-2 z-40 shadow-lg">
+    <button onclick="switchTab('trade')" id="m-nav-trade" class="mobile-nav-item flex flex-col items-center text-emerald-600">
+      <i data-lucide="activity" class="w-5 h-5"></i>
+      <span class="text-[10px] font-extrabold mt-0.5">Desk</span>
+    </button>
+    <button onclick="switchTab('deposit')" id="m-nav-deposit" class="mobile-nav-item flex flex-col items-center text-slate-500">
+      <i data-lucide="arrow-down-left" class="w-5 h-5"></i>
+      <span class="text-[10px] font-extrabold mt-0.5">Deposit</span>
+    </button>
+    <button onclick="switchTab('withdraw')" id="m-nav-withdraw" class="mobile-nav-item flex flex-col items-center text-slate-500">
+      <i data-lucide="arrow-up-right" class="w-5 h-5"></i>
+      <span class="text-[10px] font-extrabold mt-0.5">Withdraw</span>
+    </button>
+    <button onclick="switchTab('history')" id="m-nav-history" class="mobile-nav-item flex flex-col items-center text-slate-500">
+      <i data-lucide="history" class="w-5 h-5"></i>
+      <span class="text-[10px] font-extrabold mt-0.5">Logs</span>
+    </button>
+    <button onclick="switchTab('admin')" id="m-nav-admin" class="mobile-nav-item hidden flex flex-col items-center text-amber-700">
+      <i data-lucide="shield-check" class="w-5 h-5"></i>
+      <span class="text-[10px] font-extrabold mt-0.5">Admin</span>
+    </button>
+  </nav>
+
+  <!-- FOOTER -->
+  <footer class="hidden md:block border-t border-slate-200 bg-white py-5 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <span>© 2026 FOREXAAA Terminal. All rights reserved.</span>
+      <div class="flex space-x-4 text-slate-600 font-medium">
+        <span>UPI: paytmqr6n4gde@ptys</span>
+        <span>Low Latency Execution Engine</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- CORE SCRIPT ENGINE -->
+  <script>
+    // Storage Utilities
+    function getStore(key, defaultVal) {
+      try {
+        const item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : defaultVal;
+      } catch (e) { return defaultVal; }
+    }
+
+    function setStore(key, val) {
+      try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { console.error(e); }
+    }
+
+    // App Global State
+    let users = getStore('fx_users', []);
+    let currentUser = getStore('fx_current_user', null);
+    let deposits = getStore('fx_deposits', []);
+    let withdrawals = getStore('fx_withdrawals', []);
+    let trades = getStore('fx_trades', []);
+
+    let activeTab = 'trade';
+    let authMode = 'login';
+    let selectedAsset = { id: 'eurusd', name: 'EUR/USD', price: 1.0850, payout: 88, volatility: 0.0005 };
+    let chartType = 'candlestick';
+    let selectedDuration = 30;
+    let selectedDepositAmount = 500;
+    let adminRigMode = 'FAIR';
+    let editingUserPhone = null;
+
+    const assetsCatalog = [
+      { id: 'eurusd', name: 'EUR/USD', price: 1.0850, payout: 88, volatility: 0.0005 },
+      { id: 'gbpusd', name: 'GBP/USD', price: 1.2720, payout: 85, volatility: 0.0007 },
+      { id: 'btcinr', name: 'BTC/INR', price: 5980000, payout: 92, volatility: 380.0 },
+      { id: 'ethusd', name: 'ETH/USD', price: 3450.00, payout: 89, volatility: 2.50 },
+      { id: 'xauusd', name: 'XAU/USD (Gold)', price: 2410.50, payout: 86, volatility: 1.20 },
+      { id: 'usdinr', name: 'USD/INR', price: 83.72, payout: 82, volatility: 0.04 }
+    ];
+
+    let priceHistory = [];
+    let candles = [];
+    let currentPrice = 1.0850;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      initChartData();
+      renderAssetPills();
+      updateDepositQR();
+      startPriceLoop();
+      startTradeEngineLoop();
+      window.addEventListener('resize', resizeCanvas);
+      setTimeout(resizeCanvas, 100);
+      renderUI();
+    });
+
+    // Navigation Switch
+    function switchTab(tabId) {
+      activeTab = tabId;
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      const activeEl = document.getElementById(`tab-${tabId}`);
+      if (activeEl) activeEl.classList.remove('hidden');
+
+      // Desktop Nav Styling
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('bg-slate-900', 'text-white', 'shadow-sm');
+        btn.classList.add('text-slate-600', 'hover:text-slate-900', 'hover:bg-slate-100');
+      });
+      const currentNavBtn = document.getElementById(`nav-${tabId}`);
+      if (currentNavBtn && tabId !== 'admin') {
+        currentNavBtn.classList.remove('text-slate-600', 'hover:text-slate-900', 'hover:bg-slate-100');
+        currentNavBtn.classList.add('bg-slate-900', 'text-white', 'shadow-sm');
+      }
+
+      // Mobile Nav Styling
+      document.querySelectorAll('.mobile-nav-item').forEach(b => {
+        b.classList.remove('text-emerald-600');
+        b.classList.add('text-slate-500');
+      });
+      const mBtn = document.getElementById(`m-nav-${tabId}`);
+      if (mBtn) {
+        mBtn.classList.remove('text-slate-500');
+        mBtn.classList.add('text-emerald-600');
+      }
+
+      if (tabId === 'trade') {
+        setTimeout(resizeCanvas, 50);
+      }
+
+      renderUI();
+    }
+
+    // Chart Engine
+    function initChartData() {
+      let base = selectedAsset.price;
+      priceHistory = [];
+      candles = [];
+
+      for (let i = 0; i < 40; i++) {
+        const open = base;
+        const delta = (Math.random() - 0.495) * selectedAsset.volatility * 8;
+        const close = parseFloat((open + delta).toFixed(2));
+        const high = Math.max(open, close) + Math.abs(Math.random() * selectedAsset.volatility * 2.5);
+        const low = Math.min(open, close) - Math.abs(Math.random() * selectedAsset.volatility * 2.5);
+
+        candles.push({ open, high, low, close });
+        priceHistory.push(close);
+        base = close;
+      }
+      currentPrice = base;
+    }
+
+    function startPriceLoop() {
+      setInterval(() => {
+        if (candles.length === 0) return;
+        const lastCandle = { ...candles[candles.length - 1] };
         const tickChange = (Math.random() - 0.49) * selectedAsset.volatility * 3.5;
         const nextPrice = parseFloat((lastCandle.close + tickChange).toFixed(2));
 
-        setCurrentPrice(nextPrice);
-
-        // Update active bar high/low/close
+        currentPrice = nextPrice;
         lastCandle.close = nextPrice;
         lastCandle.high = Math.max(lastCandle.high, nextPrice);
         lastCandle.low = Math.min(lastCandle.low, nextPrice);
 
-        const updatedCandles = [...prevCandles.slice(0, prevCandles.length - 1), lastCandle];
+        candles[candles.length - 1] = lastCandle;
 
-        // Append new candle periodically
-        if (Math.random() > 0.65 && updatedCandles.length < 55) {
-          updatedCandles.push({
-            open: nextPrice,
-            high: nextPrice,
-            low: nextPrice,
-            close: nextPrice
-          });
+        if (Math.random() > 0.65 && candles.length < 50) {
+          candles.push({ open: nextPrice, high: nextPrice, low: nextPrice, close: nextPrice });
         }
 
-        setPriceHistory(updatedCandles.map(c => c.close));
-        return updatedCandles.slice(-45);
-      });
-    }, 1000);
+        if (candles.length > 40) candles.shift();
+        priceHistory = candles.map(c => c.close);
 
-    return () => clearInterval(interval);
-  }, [selectedAsset]);
-
-  // Clean Professional White Chart Renderer (HTML5 Canvas)
-  useEffect(() => {
-    if (!canvasRef.current || priceHistory.length === 0) return;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    const width = canvas.width;
-    const height = canvas.height;
-
-    // Fill Crisp White Background
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, width, height);
-
-    // Dynamic Price Range
-    const prices = priceHistory;
-    const minPrice = Math.min(...prices) * 0.9992;
-    const maxPrice = Math.max(...prices) * 1.0008;
-    const priceRange = maxPrice - minPrice || 1;
-
-    // Technical Chart Grid lines (Subtle Gray)
-    ctx.strokeStyle = '#f1f5f9';
-    ctx.lineWidth = 1;
-    for (let y = 0; y < height; y += 35) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(width, y);
-      ctx.stroke();
-    }
-    for (let x = 0; x < width; x += 55) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, height);
-      ctx.stroke();
+        document.getElementById('livePriceDisplay').innerText = `₹${currentPrice.toFixed(2)}`;
+        renderCanvasChart();
+      }, 1000);
     }
 
-    if (chartType === 'candlestick' && candles.length > 0) {
-      const candleWidth = Math.max(4, (width / candles.length) - 3.5);
+    function setChartType(type) {
+      chartType = type;
+      document.getElementById('btnChartCandle').className = type === 'candlestick' ? 'p-1.5 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-xs transition' : 'p-1.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-900 transition';
+      document.getElementById('btnChartLine').className = type === 'line' ? 'p-1.5 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-xs transition' : 'p-1.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-900 transition';
+      renderCanvasChart();
+    }
 
-      candles.forEach((candle, i) => {
-        const x = i * (width / candles.length) + candleWidth / 2;
-        const openY = height - ((candle.open - minPrice) / priceRange) * height;
-        const closeY = height - ((candle.close - minPrice) / priceRange) * height;
-        const highY = height - ((candle.high - minPrice) / priceRange) * height;
-        const lowY = height - ((candle.low - minPrice) / priceRange) * height;
+    function resizeCanvas() {
+      const canvas = document.getElementById('tradingCanvas');
+      if (!canvas) return;
+      const rect = canvas.parentElement.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+      renderCanvasChart();
+    }
 
-        const isGreen = candle.close >= candle.open;
-        const color = isGreen ? '#10b981' : '#ef4444';
+    function renderCanvasChart() {
+      const canvas = document.getElementById('tradingCanvas');
+      if (!canvas || priceHistory.length === 0) return;
+      
+      const dpr = window.devicePixelRatio || 1;
+      const width = canvas.width / dpr;
+      const height = canvas.height / dpr;
+      const ctx = canvas.getContext('2d');
 
-        // Draw Candle Wick
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 1.5;
+      ctx.clearRect(0, 0, width, height);
+
+      const minPrice = Math.min(...priceHistory) * 0.9992;
+      const maxPrice = Math.max(...priceHistory) * 1.0008;
+      const priceRange = maxPrice - minPrice || 1;
+
+      // Draw Gridlines
+      ctx.strokeStyle = '#f1f5f9';
+      ctx.lineWidth = 1;
+      for (let y = 0; y < height; y += 35) {
         ctx.beginPath();
-        ctx.moveTo(x + candleWidth / 2, highY);
-        ctx.lineTo(x + candleWidth / 2, lowY);
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+      for (let x = 0; x < width; x += 55) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+      }
+
+      if (chartType === 'candlestick') {
+        const candleWidth = Math.max(5, (width / candles.length) - 4);
+        candles.forEach((candle, i) => {
+          const x = i * (width / candles.length) + candleWidth / 2;
+          const openY = height - ((candle.open - minPrice) / priceRange) * height;
+          const closeY = height - ((candle.close - minPrice) / priceRange) * height;
+          const highY = height - ((candle.high - minPrice) / priceRange) * height;
+          const lowY = height - ((candle.low - minPrice) / priceRange) * height;
+
+          const isGreen = candle.close >= candle.open;
+          const color = isGreen ? '#059669' : '#e11d48';
+
+          // Wick
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(x + candleWidth / 2, highY);
+          ctx.lineTo(x + candleWidth / 2, lowY);
+          ctx.stroke();
+
+          // Body
+          ctx.fillStyle = color;
+          const bodyY = Math.min(openY, closeY);
+          const bodyHeight = Math.max(Math.abs(closeY - openY), 2.5);
+          ctx.fillRect(x, bodyY, candleWidth, bodyHeight);
+        });
+      } else {
+        // Line Chart
+        ctx.beginPath();
+        priceHistory.forEach((price, i) => {
+          const x = (i / (priceHistory.length - 1)) * width;
+          const y = height - ((price - minPrice) / priceRange) * height;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+
+        const isUp = priceHistory[priceHistory.length - 1] >= priceHistory[0];
+        const themeColor = isUp ? '#059669' : '#e11d48';
+
+        ctx.strokeStyle = themeColor;
+        ctx.lineWidth = 2.5;
         ctx.stroke();
 
-        // Draw Candle Body
-        ctx.fillStyle = color;
-        const bodyY = Math.min(openY, closeY);
-        const bodyHeight = Math.max(Math.abs(closeY - openY), 2);
-        ctx.fillRect(x, bodyY, candleWidth, bodyHeight);
-      });
-
-    } else {
-      // Line Chart Rendering
-      ctx.beginPath();
-      priceHistory.forEach((price, i) => {
-        const x = (i / (priceHistory.length - 1)) * width;
-        const y = height - ((price - minPrice) / priceRange) * height;
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      });
-
-      const isUp = priceHistory[priceHistory.length - 1] >= priceHistory[0];
-      const themeColor = isUp ? '#10b981' : '#ef4444';
-
-      ctx.strokeStyle = themeColor;
-      ctx.lineWidth = 2.5;
-      ctx.stroke();
-
-      // Soft Subtle Chart Gradient Fill
-      const gradient = ctx.createLinearGradient(0, 0, 0, height);
-      gradient.addColorStop(0, isUp ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)');
-      gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      
-      ctx.lineTo(width, height);
-      ctx.lineTo(0, height);
-      ctx.closePath();
-      ctx.fillStyle = gradient;
-      ctx.fill();
-    }
-
-    // Moving Average Overlay Indicator (MA-7)
-    if (showIndicators.ma && priceHistory.length > 7) {
-      ctx.beginPath();
-      ctx.strokeStyle = '#d97706'; // Amber line
-      ctx.lineWidth = 1.5;
-      
-      const period = 7;
-      for (let i = period; i < priceHistory.length; i++) {
-        const slice = priceHistory.slice(i - period, i);
-        const avg = slice.reduce((a, b) => a + b, 0) / period;
-        const x = (i / (priceHistory.length - 1)) * width;
-        const y = height - ((avg - minPrice) / priceRange) * height;
-
-        if (i === period) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+        const gradient = ctx.createLinearGradient(0, 0, 0, height);
+        gradient.addColorStop(0, isUp ? 'rgba(5, 150, 105, 0.15)' : 'rgba(225, 29, 72, 0.15)');
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        
+        ctx.lineTo(width, height);
+        ctx.lineTo(0, height);
+        ctx.closePath();
+        ctx.fillStyle = gradient;
+        ctx.fill();
       }
-      ctx.stroke();
-    }
 
-    // Render Active Trades Strike Lines on Canvas
-    const activeUserTrades = trades.filter(t => t.userPhone === currentUser?.phone && t.status === 'ACTIVE');
-    activeUserTrades.forEach(trade => {
-      const strikeY = height - ((trade.strikePrice - minPrice) / priceRange) * height;
-      ctx.strokeStyle = trade.type === 'CALL' ? '#10b981' : '#ef4444';
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([5, 3]);
+      // Active User Strike Target Lines
+      const activeUserTrades = trades.filter(t => t.userPhone === currentUser?.phone && t.status === 'ACTIVE');
+      activeUserTrades.forEach(trade => {
+        const strikeY = height - ((trade.strikePrice - minPrice) / priceRange) * height;
+        ctx.strokeStyle = trade.type === 'CALL' ? '#059669' : '#e11d48';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([5, 3]);
+        ctx.beginPath();
+        ctx.moveTo(0, strikeY);
+        ctx.lineTo(width, strikeY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      });
+
+      // Price Ticker Line & Y-Axis Badge
+      const lastY = height - ((currentPrice - minPrice) / priceRange) * height;
+      ctx.strokeStyle = '#2563eb';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
       ctx.beginPath();
-      ctx.moveTo(0, strikeY);
-      ctx.lineTo(width, strikeY);
+      ctx.moveTo(0, lastY);
+      ctx.lineTo(width, lastY);
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Strike Badge
-      ctx.fillStyle = trade.type === 'CALL' ? '#10b981' : '#ef4444';
-      ctx.fillRect(5, strikeY - 10, 65, 18);
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 9px sans-serif';
-      ctx.fillText(`${trade.type} @ ${trade.strikePrice}`, 8, strikeY + 2);
-    });
+      ctx.beginPath();
+      ctx.arc(width - 4, lastY, 4.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#2563eb';
+      ctx.fill();
+    }
 
-    // Current Market Price Ticker Line
-    const lastY = height - ((currentPrice - minPrice) / priceRange) * height;
-    ctx.strokeStyle = '#2563eb';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([3, 3]);
-    ctx.beginPath();
-    ctx.moveTo(0, lastY);
-    ctx.lineTo(width, lastY);
-    ctx.stroke();
-    ctx.setLineDash([]);
+    // Trade Engine & Settlement
+    function startTradeEngineLoop() {
+      setInterval(() => {
+        const now = Date.now();
+        let stateChanged = false;
 
-    // Live Price Dot
-    ctx.beginPath();
-    ctx.arc(width - 3, lastY, 4.5, 0, Math.PI * 2);
-    ctx.fillStyle = '#2563eb';
-    ctx.fill();
-
-  }, [priceHistory, candles, chartType, showIndicators, currentPrice, trades, currentUser]);
-
-  // Robust Settlement Loop for Active Positions & Immediate Wallet Credit
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const now = Date.now();
-
-      setTrades(prevTrades => {
-        let updated = false;
-
-        const processed = prevTrades.map(trade => {
+        trades.forEach(trade => {
           if (trade.status === 'ACTIVE' && now >= trade.expiryTime) {
-            updated = true;
-            let win = false;
+            stateChanged = true;
+            let isWin = false;
 
-            // Apply Rigging or Natural Market Rules
             if (adminRigMode === 'FORCE_WIN') {
-              win = true;
+              isWin = true;
             } else if (adminRigMode === 'FORCE_LOSS') {
-              win = false;
+              isWin = false;
             } else {
               if (trade.type === 'CALL') {
-                win = currentPrice > trade.strikePrice;
+                isWin = currentPrice > trade.strikePrice;
               } else {
-                win = currentPrice < trade.strikePrice;
+                isWin = currentPrice < trade.strikePrice;
               }
             }
 
-            const payoutAmount = win ? Math.round(trade.amount * (1 + trade.payout / 100)) : 0;
+            trade.closePrice = currentPrice;
 
-            // Immediate Wallet Update when Trade is Won
-            if (win && payoutAmount > 0) {
-              setUsers(allUsers => {
-                const updatedUsers = allUsers.map(u => {
-                  if (u.phone === trade.userPhone) {
-                    const newBal = u.balance + payoutAmount;
-                    // If current logged in user, update state directly
-                    if (currentUser && currentUser.phone === u.phone) {
-                      setCurrentUser(curr => ({ ...curr, balance: newBal }));
-                    }
-                    return { ...u, balance: newBal };
-                  }
-                  return u;
-                });
-                return updatedUsers;
-              });
+            if (isWin) {
+              trade.status = 'WON';
+              trade.payoutAmount = Math.round(trade.amount * (1 + trade.payout / 100));
+
+              // INSTANT WALLET CREDIT
+              const targetUser = users.find(u => u.phone === trade.userPhone);
+              if (targetUser) {
+                targetUser.balance += trade.payoutAmount;
+                setStore('fx_users', users);
+
+                if (currentUser && currentUser.phone === targetUser.phone) {
+                  currentUser.balance = targetUser.balance;
+                  setStore('fx_current_user', currentUser);
+                }
+              }
+            } else {
+              trade.status = 'LOST';
+              trade.payoutAmount = 0;
             }
-
-            return {
-              ...trade,
-              status: win ? 'WON' : 'LOST',
-              closePrice: currentPrice,
-              payoutAmount
-            };
           }
-          return trade;
         });
 
-        return updated ? processed : prevTrades;
+        if (stateChanged) {
+          setStore('fx_trades', trades);
+          renderUI();
+        } else {
+          renderActiveTradesList();
+        }
+      }, 1000);
+    }
+
+    function placeTrade(type) {
+      if (!currentUser) {
+        switchTab('auth');
+        return;
+      }
+
+      const stake = parseFloat(document.getElementById('tradeStakeInput').value) || 0;
+      if (stake < 10) {
+        alert('Minimum trade stake is ₹10.');
+        return;
+      }
+
+      if (currentUser.balance < stake) {
+        alert('Insufficient wallet balance! Please deposit funds to continue.');
+        switchTab('deposit');
+        return;
+      }
+
+      // Deduct balance
+      currentUser.balance -= stake;
+      const userObj = users.find(u => u.phone === currentUser.phone);
+      if (userObj) userObj.balance = currentUser.balance;
+
+      setStore('fx_users', users);
+      setStore('fx_current_user', currentUser);
+
+      const newTrade = {
+        id: 'TRD-' + Math.floor(100000 + Math.random() * 900000),
+        userPhone: currentUser.phone,
+        assetName: selectedAsset.name,
+        amount: stake,
+        type: type,
+        strikePrice: currentPrice,
+        closePrice: null,
+        duration: selectedDuration,
+        payout: selectedAsset.payout,
+        status: 'ACTIVE',
+        startTime: Date.now(),
+        expiryTime: Date.now() + (selectedDuration * 1000)
+      };
+
+      trades.unshift(newTrade);
+      setStore('fx_trades', trades);
+
+      renderUI();
+    }
+
+    function renderAssetPills() {
+      const container = document.getElementById('assetPillsContainer');
+      container.innerHTML = assetsCatalog.map(asset => `
+        <button onclick="selectAsset('${asset.id}')" class="px-3 py-1 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 whitespace-nowrap ${
+          selectedAsset.id === asset.id ? 'bg-slate-900 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
+        }">
+          <span>${asset.name}</span>
+          <span class="text-[10px] text-emerald-600 font-mono">+${asset.payout}%</span>
+        </button>
+      `).join('');
+    }
+
+    function selectAsset(id) {
+      selectedAsset = assetsCatalog.find(a => a.id === id);
+      document.getElementById('chartFeedLabel').innerText = `${selectedAsset.name} REALTIME ENGINE`;
+      document.getElementById('payoutRateLabel').innerText = `+${selectedAsset.payout}%`;
+      document.getElementById('orderPayoutRate').innerText = `+${selectedAsset.payout}%`;
+      initChartData();
+      renderAssetPills();
+      calculateOrderReturns();
+    }
+
+    function setStakePreset(val) {
+      document.getElementById('tradeStakeInput').value = val;
+      calculateOrderReturns();
+    }
+
+    function setDurationPreset(sec) {
+      selectedDuration = sec;
+      document.querySelectorAll('.dur-btn').forEach(b => {
+        b.className = 'dur-btn py-2 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 text-slate-700';
       });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [currentPrice, adminRigMode, currentUser]);
-
-  // Authentication Execution
-  const handleAuth = (e) => {
-    e.preventDefault();
-    setAuthError('');
-
-    if (!phoneInput || !passwordInput) {
-      setAuthError('Please fill in all required fields.');
-      return;
+      document.getElementById(`dur-${sec}`).className = 'dur-btn py-2 text-xs font-bold rounded-xl border border-emerald-600 bg-emerald-50 text-emerald-800';
     }
 
-    // Discreet Admin Validation Check (Completely Private Credentials)
-    if (phoneInput === '9529951116' && passwordInput === 'Ritesh555') {
-      const adminAcc = {
-        name: 'Master Admin',
-        phone: '9529951116',
-        role: 'ADMIN',
-        balance: 999999,
-        joinedAt: new Date().toLocaleDateString()
-      };
-      setCurrentUser(adminAcc);
-      setActiveTab('admin');
-      setPhoneInput('');
-      setPasswordInput('');
-      return;
+    document.getElementById('tradeStakeInput')?.addEventListener('input', calculateOrderReturns);
+
+    function calculateOrderReturns() {
+      const stake = parseFloat(document.getElementById('tradeStakeInput').value) || 0;
+      const profit = Math.round(stake * (selectedAsset.payout / 100));
+      const total = stake + profit;
+
+      document.getElementById('orderNetProfit').innerText = `+₹${profit}`;
+      document.getElementById('orderTotalReturn').innerText = `₹${total}`;
     }
 
-    if (authMode === 'register') {
-      if (!nameInput) {
-        setAuthError('Please enter your full name.');
+    function renderActiveTradesList() {
+      const container = document.getElementById('activeTradesList');
+      const active = trades.filter(t => t.userPhone === currentUser?.phone && t.status === 'ACTIVE');
+
+      if (active.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 italic py-2">No active market positions currently running.</p>`;
         return;
       }
 
-      const existing = users.find(u => u.phone === phoneInput);
-      if (existing) {
-        setAuthError('An account with this phone number already exists.');
+      container.innerHTML = active.map(t => {
+        const remaining = Math.max(0, Math.ceil((t.expiryTime - Date.now()) / 1000));
+        return `
+          <div class="bg-slate-50 border border-slate-200 p-2.5 rounded-xl flex items-center justify-between text-xs">
+            <div class="flex items-center space-x-2">
+              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold ${t.type === 'CALL' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">${t.type}</span>
+              <span class="font-bold text-slate-800">${t.assetName}</span>
+              <span class="text-slate-500 font-mono">@ ₹${t.strikePrice}</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <span class="font-mono text-emerald-700 font-bold">₹${t.amount}</span>
+              <span class="bg-white px-2 py-0.5 rounded-lg text-amber-700 font-mono font-extrabold animate-pulse border border-slate-200">${remaining}s</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Deposit Logic
+    function selectDepositPreset(amt) {
+      selectedDepositAmount = amt;
+      document.getElementById('customDepositInput').value = '';
+      updateDepositQR();
+    }
+
+    function updateDepositQR() {
+      const customVal = parseFloat(document.getElementById('customDepositInput').value);
+      const effectiveAmt = customVal && customVal > 0 ? customVal : selectedDepositAmount;
+
+      document.getElementById('qrAmountDisplay').innerText = `₹${effectiveAmt}`;
+
+      const upiHandle = 'paytmqr6n4gde@ptys';
+      const payeeName = 'Gurudatt Kirana Store';
+      const upiURI = `upi://pay?pa=${upiHandle}&pn=${encodeURIComponent(payeeName)}&am=${effectiveAmt}&cu=INR`;
+
+      document.getElementById('upiQrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiURI)}`;
+    }
+
+    function copyUpiId() {
+      navigator.clipboard.writeText('paytmqr6n4gde@ptys');
+      alert('Merchant UPI ID copied: paytmqr6n4gde@ptys');
+    }
+
+    function handleDepositSubmit(e) {
+      e.preventDefault();
+      if (!currentUser) {
+        switchTab('auth');
         return;
       }
 
-      // REGISTER WITH EXACTLY ₹0 BALANCE (NO BONUS)
-      const newUser = {
-        name: nameInput,
-        phone: phoneInput,
-        password: passwordInput,
-        role: 'USER',
-        balance: 0,
-        joinedAt: new Date().toLocaleDateString()
+      const customVal = parseFloat(document.getElementById('customDepositInput').value);
+      const amt = customVal && customVal > 0 ? customVal : selectedDepositAmount;
+      const utr = document.getElementById('utrInput').value.trim();
+
+      if (utr.length < 8) {
+        showNotice('depositNoticeBox', 'Please enter a valid 12-digit UTR/Ref ID.', 'error');
+        return;
+      }
+
+      const newDep = {
+        id: 'DEP-' + Math.floor(100000 + Math.random() * 900000),
+        userPhone: currentUser.phone,
+        userName: currentUser.name,
+        amount: amt,
+        utr: utr,
+        gateway: 'paytmqr6n4gde@ptys',
+        status: 'PENDING',
+        timestamp: new Date().toLocaleString()
       };
 
-      setUsers([...users, newUser]);
-      setCurrentUser(newUser);
-      setActiveTab('deposit');
-      setPhoneInput('');
-      setPasswordInput('');
-      setNameInput('');
-    } else {
-      // Standard User Login
-      const user = users.find(u => u.phone === phoneInput && u.password === passwordInput);
-      if (user) {
-        setCurrentUser(user);
-        setActiveTab('trade');
-        setPhoneInput('');
-        setPasswordInput('');
+      deposits.unshift(newDep);
+      setStore('fx_deposits', deposits);
+
+      document.getElementById('utrInput').value = '';
+      showNotice('depositNoticeBox', 'Deposit request submitted! Balance will update after admin approval.', 'success');
+      renderAdmin();
+    }
+
+    // Withdrawal Logic
+    function handleWithdrawSubmit(e) {
+      e.preventDefault();
+      if (!currentUser) return;
+
+      const amt = parseFloat(document.getElementById('withdrawAmountInput').value);
+      const targetUpi = document.getElementById('withdrawUpiInput').value.trim();
+
+      if (amt < 300) {
+        showNotice('withdrawNoticeBox', 'Minimum withdrawal is ₹300.', 'error');
+        return;
+      }
+
+      if (amt > currentUser.balance) {
+        showNotice('withdrawNoticeBox', 'Insufficient wallet balance.', 'error');
+        return;
+      }
+
+      currentUser.balance -= amt;
+      const userObj = users.find(u => u.phone === currentUser.phone);
+      if (userObj) userObj.balance = currentUser.balance;
+
+      setStore('fx_users', users);
+      setStore('fx_current_user', currentUser);
+
+      const newWd = {
+        id: 'WD-' + Math.floor(100000 + Math.random() * 900000),
+        userPhone: currentUser.phone,
+        userName: currentUser.name,
+        amount: amt,
+        targetUpi: targetUpi,
+        status: 'PENDING',
+        timestamp: new Date().toLocaleString()
+      };
+
+      withdrawals.unshift(newWd);
+      setStore('fx_withdrawals', withdrawals);
+
+      document.getElementById('withdrawAmountInput').value = '';
+      document.getElementById('withdrawUpiInput').value = '';
+      showNotice('withdrawNoticeBox', 'Payout request submitted successfully!', 'success');
+      renderUI();
+    }
+
+    function showNotice(boxId, text, type) {
+      const box = document.getElementById(boxId);
+      box.classList.remove('hidden', 'bg-rose-50', 'border-rose-200', 'text-rose-700', 'bg-emerald-50', 'border-emerald-200', 'text-emerald-800');
+      if (type === 'error') {
+        box.classList.add('bg-rose-50', 'border', 'border-rose-200', 'text-rose-700');
       } else {
-        setAuthError('Invalid phone number or password.');
+        box.classList.add('bg-emerald-50', 'border', 'border-emerald-200', 'text-emerald-800');
       }
-    }
-  };
-
-  const handleLogout = () => {
-    setCurrentUser(null);
-    setActiveTab('trade');
-    setMobileMenuOpen(false);
-  };
-
-  // Deposit Handler
-  const handleDepositSubmit = (e) => {
-    e.preventDefault();
-    const finalAmt = customDepositAmt ? parseFloat(customDepositAmt) : depositAmount;
-
-    if (!finalAmt || finalAmt < 100) {
-      setDepositNotice({ type: 'error', text: 'Minimum deposit amount is ₹100.' });
-      return;
+      box.innerText = text;
     }
 
-    if (!utrNumber || utrNumber.trim().length < 8) {
-      setDepositNotice({ type: 'error', text: 'Please enter a valid 12-digit UTR/Ref Number.' });
-      return;
+    // Auth Logic
+    function toggleAuthMode(mode) {
+      authMode = mode;
+      document.getElementById('authTitle').innerText = mode === 'login' ? 'Sign In to Forexaaa' : 'Create Account';
+      document.getElementById('authSubtitle').innerText = mode === 'login' ? 'Enter your mobile number & password to continue' : 'Register your account to begin trading';
+      document.getElementById('authNameGroup').className = mode === 'register' ? 'block' : 'hidden';
+      document.getElementById('authSubmitBtn').innerText = mode === 'login' ? 'Sign In' : 'Create Account';
+      document.getElementById('authToggleText').innerHTML = mode === 'login' 
+        ? `Don't have an account? <button onclick="toggleAuthMode('register')" class="text-emerald-700 font-bold hover:underline">Register Now</button>`
+        : `Already registered? <button onclick="toggleAuthMode('login')" class="text-emerald-700 font-bold hover:underline">Sign In</button>`;
     }
 
-    const newDep = {
-      id: 'DEP-' + Math.floor(100000 + Math.random() * 900000),
-      userPhone: currentUser.phone,
-      userName: currentUser.name,
-      amount: finalAmt,
-      utr: utrNumber.trim(),
-      gateway: 'UPI (paytmqr6n4gde@ptys)',
-      status: 'PENDING',
-      timestamp: new Date().toLocaleString()
-    };
+    function handleAuthSubmit(e) {
+      e.preventDefault();
+      const phone = document.getElementById('authPhoneInput').value.trim();
+      const pass = document.getElementById('authPasswordInput').value.trim();
+      const name = document.getElementById('authNameInput').value.trim();
+      const errBox = document.getElementById('authErrorBox');
 
-    setDeposits([newDep, ...deposits]);
-    setUtrNumber('');
-    setCustomDepositAmt('');
-    setDepositNotice({ type: 'success', text: 'Deposit request submitted! Wallet will update upon Admin confirmation.' });
-  };
+      errBox.classList.add('hidden');
 
-  // Withdrawal Request Handler
-  const handleWithdrawSubmit = (e) => {
-    e.preventDefault();
-    const amt = parseFloat(withdrawAmount);
+      // Private Admin Validation
+      if (phone === '9529951116' && pass === 'Ritesh555') {
+        currentUser = { name: 'Master Admin', phone: '9529951116', role: 'ADMIN', balance: 999999 };
+        setStore('fx_current_user', currentUser);
+        switchTab('admin');
+        renderUI();
+        return;
+      }
 
-    if (!amt || amt < 300) {
-      setWithdrawNotice({ type: 'error', text: 'Minimum withdrawal amount is ₹300.' });
-      return;
-    }
-
-    if (amt > currentUser.balance) {
-      setWithdrawNotice({ type: 'error', text: 'Insufficient account balance.' });
-      return;
-    }
-
-    if (!withdrawUpi) {
-      setWithdrawNotice({ type: 'error', text: 'Please enter valid UPI ID or Bank details.' });
-      return;
-    }
-
-    // Deduct user balance immediately
-    const updatedUser = { ...currentUser, balance: currentUser.balance - amt };
-    setCurrentUser(updatedUser);
-    setUsers(users.map(u => u.phone === currentUser.phone ? updatedUser : u));
-
-    const newWd = {
-      id: 'WD-' + Math.floor(100000 + Math.random() * 900000),
-      userPhone: currentUser.phone,
-      userName: currentUser.name,
-      amount: amt,
-      targetUpi: withdrawUpi,
-      status: 'PENDING',
-      timestamp: new Date().toLocaleString()
-    };
-
-    setWithdrawals([newWd, ...withdrawals]);
-    setWithdrawAmount('');
-    setWithdrawUpi('');
-    setWithdrawNotice({ type: 'success', text: 'Payout request submitted! Processing within 2 hours.' });
-  };
-
-  // Order Placement
-  const handlePlaceTrade = (type) => {
-    if (!currentUser) {
-      setActiveTab('auth');
-      return;
-    }
-
-    if (currentUser.balance < tradeAmount) {
-      alert('Insufficient wallet balance! Please deposit funds first.');
-      setActiveTab('deposit');
-      return;
-    }
-
-    // Deduct trade stake from user wallet
-    const updatedUser = { ...currentUser, balance: currentUser.balance - tradeAmount };
-    setCurrentUser(updatedUser);
-    setUsers(users.map(u => u.phone === currentUser.phone ? updatedUser : u));
-
-    const newTrade = {
-      id: 'TRD-' + Math.floor(100000 + Math.random() * 900000),
-      userPhone: currentUser.phone,
-      assetName: selectedAsset.name,
-      amount: tradeAmount,
-      type: type, // 'CALL' or 'PUT'
-      strikePrice: currentPrice,
-      closePrice: null,
-      duration: tradeDuration,
-      payout: selectedAsset.payout,
-      status: 'ACTIVE',
-      startTime: Date.now(),
-      expiryTime: Date.now() + (tradeDuration * 1000)
-    };
-
-    setTrades([newTrade, ...trades]);
-  };
-
-  // Admin Actions
-  const handleApproveDeposit = (id) => {
-    const dep = deposits.find(d => d.id === id);
-    if (!dep || dep.status !== 'PENDING') return;
-
-    setUsers(users.map(u => {
-      if (u.phone === dep.userPhone) {
-        const newBal = u.balance + dep.amount;
-        if (currentUser && currentUser.phone === u.phone) {
-          setCurrentUser(curr => ({ ...curr, balance: newBal }));
+      if (authMode === 'register') {
+        if (!name) {
+          errBox.innerText = 'Please enter your full name.';
+          errBox.classList.remove('hidden');
+          return;
         }
-        return { ...u, balance: newBal };
-      }
-      return u;
-    }));
 
-    setDeposits(deposits.map(d => d.id === id ? { ...d, status: 'APPROVED' } : d));
-  };
-
-  const handleRejectDeposit = (id) => {
-    setDeposits(deposits.map(d => d.id === id ? { ...d, status: 'REJECTED' } : d));
-  };
-
-  const handleApproveWithdrawal = (id) => {
-    setWithdrawals(withdrawals.map(w => w.id === id ? { ...w, status: 'APPROVED' } : w));
-  };
-
-  const handleRejectWithdrawal = (id) => {
-    const wd = withdrawals.find(w => w.id === id);
-    if (!wd || wd.status !== 'PENDING') return;
-
-    // Refund Balance to user
-    setUsers(users.map(u => {
-      if (u.phone === wd.userPhone) {
-        const newBal = u.balance + wd.amount;
-        if (currentUser && currentUser.phone === u.phone) {
-          setCurrentUser(curr => ({ ...curr, balance: newBal }));
+        if (users.find(u => u.phone === phone)) {
+          errBox.innerText = 'An account with this phone number already exists.';
+          errBox.classList.remove('hidden');
+          return;
         }
-        return { ...u, balance: newBal };
-      }
-      return u;
-    }));
 
-    setWithdrawals(withdrawals.map(w => w.id === id ? { ...w, status: 'REJECTED' } : w));
-  };
+        // NO SIGNUP BONUS (₹0)
+        const newUser = { name, phone, password: pass, role: 'USER', balance: 0, joinedAt: new Date().toLocaleDateString() };
+        users.push(newUser);
+        currentUser = newUser;
 
-  const handleUpdateUserBalance = (phone) => {
-    const amt = parseFloat(balanceAdjustAmt);
-    if (isNaN(amt)) return;
+        setStore('fx_users', users);
+        setStore('fx_current_user', currentUser);
 
-    setUsers(users.map(u => {
-      if (u.phone === phone) {
-        const newBal = Math.max(0, u.balance + amt);
-        if (currentUser && currentUser.phone === u.phone) {
-          setCurrentUser(curr => ({ ...curr, balance: newBal }));
+        switchTab('deposit');
+      } else {
+        const u = users.find(x => x.phone === phone && x.password === pass);
+        if (u) {
+          currentUser = u;
+          setStore('fx_current_user', currentUser);
+          switchTab('trade');
+        } else {
+          errBox.innerText = 'Invalid phone number or password.';
+          errBox.classList.remove('hidden');
         }
-        return { ...u, balance: newBal };
       }
-      return u;
-    }));
 
-    setBalanceAdjustAmt('');
-    setSelectedUserPhone(null);
-  };
+      renderUI();
+    }
 
-  // Exact Paytm QR / Gurudatt Kirana Store UPI Handle Details
-  const activeDepositAmount = customDepositAmt ? parseFloat(customDepositAmt) || 0 : depositAmount;
-  const upiURI = `upi://pay?pa=paytmqr6n4gde@ptys&pn=Gurudatt%20Kirana%20Store&am=${activeDepositAmount}&cu=INR`;
-  const qrCodeImage = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiURI)}`;
+    function handleLogout() {
+      currentUser = null;
+      localStorage.removeItem('fx_current_user');
+      switchTab('trade');
+      renderUI();
+    }
 
-  const copyUpiToClipboard = () => {
-    navigator.clipboard.writeText('paytmqr6n4gde@ptys');
-    setCopiedUpi(true);
-    setTimeout(() => setCopiedUpi(false), 2000);
-  };
+    // Admin Controls
+    function setAdminRigMode(mode) {
+      adminRigMode = mode;
+      document.querySelectorAll('.rig-btn').forEach(b => b.className = 'rig-btn px-2.5 py-1 rounded text-xs font-bold text-slate-400');
+      document.getElementById(`rig-${mode}`).className = mode === 'FORCE_WIN' ? 'rig-btn px-2.5 py-1 rounded text-xs font-bold bg-emerald-600 text-white' : mode === 'FORCE_LOSS' ? 'rig-btn px-2.5 py-1 rounded text-xs font-bold bg-rose-600 text-white' : 'rig-btn px-2.5 py-1 rounded text-xs font-bold bg-slate-700 text-white';
+    }
 
-  // Filtered Users for Admin
-  const filteredUsers = users.filter(u => 
-    u.name?.toLowerCase().includes(adminSearch.toLowerCase()) || 
-    u.phone?.includes(adminSearch)
-  );
+    function approveDeposit(id) {
+      const dep = deposits.find(d => d.id === id);
+      if (!dep || dep.status !== 'PENDING') return;
 
-  return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans flex flex-col selection:bg-emerald-500 selection:text-white">
+      const user = users.find(u => u.phone === dep.userPhone);
+      if (user) {
+        user.balance += dep.amount;
+        if (currentUser && currentUser.phone === user.phone) {
+          currentUser.balance = user.balance;
+          setStore('fx_current_user', currentUser);
+        }
+      }
+
+      dep.status = 'APPROVED';
+      setStore('fx_users', users);
+      setStore('fx_deposits', deposits);
+      renderUI();
+    }
+
+    function rejectDeposit(id) {
+      const dep = deposits.find(d => d.id === id);
+      if (dep) dep.status = 'REJECTED';
+      setStore('fx_deposits', deposits);
+      renderUI();
+    }
+
+    function approveWithdrawal(id) {
+      const wd = withdrawals.find(w => w.id === id);
+      if (wd) wd.status = 'APPROVED';
+      setStore('fx_withdrawals', withdrawals);
+      renderUI();
+    }
+
+    function rejectWithdrawal(id) {
+      const wd = withdrawals.find(w => w.id === id);
+      if (wd && wd.status === 'PENDING') {
+        wd.status = 'REJECTED';
+        const user = users.find(u => u.phone === wd.userPhone);
+        if (user) user.balance += wd.amount;
+        setStore('fx_users', users);
+        setStore('fx_withdrawals', withdrawals);
+      }
+      renderUI();
+    }
+
+    function saveUserBalance(phone) {
+      const input = document.getElementById(`editBal_${phone}`);
+      const amt = parseFloat(input.value);
+      if (isNaN(amt)) return;
+
+      const user = users.find(u => u.phone === phone);
+      if (user) {
+        user.balance = Math.max(0, user.balance + amt);
+        if (currentUser && currentUser.phone === phone) {
+          currentUser.balance = user.balance;
+          setStore('fx_current_user', currentUser);
+        }
+      }
+      editingUserPhone = null;
+      setStore('fx_users', users);
+      renderUI();
+    }
+
+    // Master Render Routine
+    function renderUI() {
+      renderHeaderLeft();
+      renderAuthContainer();
+      renderTradeLogs();
+      renderAdmin();
       
-      {/* PROFESSIONAL WHITE HEADER BAR */}
-      <header className="border-b border-slate-200 bg-white sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          
-          {/* Logo & Brand */}
-          <div 
-            onClick={() => setActiveTab('trade')} 
-            className="flex items-center space-x-3 cursor-pointer group"
-          >
-            <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-emerald-400 shadow-md group-hover:bg-emerald-600 group-hover:text-white transition">
-              <TrendingUp className="w-6 h-6 font-black" />
-            </div>
+      if (currentUser) {
+        document.getElementById('unauthNotice').classList.add('hidden');
+        document.getElementById('withdrawAvailBalance').innerText = `₹${currentUser.balance.toLocaleString('en-IN')}`;
+      } else {
+        document.getElementById('unauthNotice').classList.remove('hidden');
+      }
+
+      calculateOrderReturns();
+      lucide.createIcons();
+    }
+
+    function renderHeaderLeft() {
+      const container = document.getElementById('headerLeftUserBadge');
+      if (currentUser) {
+        container.innerHTML = `
+          <div class="bg-slate-100 border border-slate-200/80 px-2.5 py-1 rounded-xl text-left">
+            <span class="text-[9px] text-slate-400 block font-bold leading-none">Wallet</span>
+            <span class="text-xs font-extrabold text-emerald-700 font-mono">₹${currentUser.balance.toLocaleString('en-IN')}</span>
+          </div>
+        `;
+      } else {
+        container.innerHTML = `
+          <span class="text-[10px] bg-slate-100 border border-slate-200 px-2 py-1 rounded-lg font-bold text-slate-500">
+            GUEST
+          </span>
+        `;
+      }
+    }
+
+    function renderAuthContainer() {
+      const container = document.getElementById('headerAuthContainer');
+      const mAdminBtn = document.getElementById('m-nav-admin');
+
+      if (currentUser) {
+        container.innerHTML = `
+          <button onclick="handleLogout()" class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-rose-600 rounded-xl transition shadow-xs" title="Logout (${currentUser.name})">
+            <i data-lucide="log-out" class="w-4 h-4"></i>
+          </button>
+        `;
+
+        if (currentUser.role === 'ADMIN') {
+          document.getElementById('nav-admin').classList.remove('hidden');
+          if (mAdminBtn) mAdminBtn.classList.remove('hidden');
+        } else {
+          document.getElementById('nav-admin').classList.add('hidden');
+          if (mAdminBtn) mAdminBtn.classList.add('hidden');
+        }
+      } else {
+        container.innerHTML = `
+          <button onclick="switchTab('auth'); toggleAuthMode('login');" class="px-3 py-1.5 bg-slate-900 text-white rounded-xl text-xs font-bold shadow-xs hover:bg-slate-800 transition">
+            Sign In
+          </button>
+        `;
+        document.getElementById('nav-admin').classList.add('hidden');
+        if (mAdminBtn) mAdminBtn.classList.add('hidden');
+      }
+    }
+
+    function renderTradeLogs() {
+      const tbody = document.getElementById('tradeLogsTableBody');
+      const userTrades = trades.filter(t => t.userPhone === currentUser?.phone);
+
+      if (!currentUser || userTrades.length === 0) {
+        tbody.innerHTML = `<tr><td colSpan="6" class="py-6 text-center text-slate-400 italic">No executed trades on record.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = userTrades.map(t => `
+        <tr class="hover:bg-slate-50">
+          <td class="py-3 px-2 font-bold text-slate-900">${t.assetName}</td>
+          <td class="py-3 px-2">
+            <span class="px-2 py-0.5 rounded text-[10px] font-extrabold ${t.type === 'CALL' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">${t.type}</span>
+          </td>
+          <td class="py-3 px-2 font-mono font-semibold">₹${t.amount}</td>
+          <td class="py-3 px-2 font-mono text-slate-500">₹${t.strikePrice}</td>
+          <td class="py-3 px-2 font-mono text-slate-500">${t.closePrice ? `₹${t.closePrice}` : 'In Progress'}</td>
+          <td class="py-3 px-2 font-mono font-bold">
+            ${t.status === 'ACTIVE' ? '<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-[10px]">Running</span>' : ''}
+            ${t.status === 'WON' ? `<span class="text-emerald-600">+₹${t.payoutAmount} WIN</span>` : ''}
+            ${t.status === 'LOST' ? `<span class="text-rose-600">-₹${t.amount} LOSS</span>` : ''}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function renderAdmin() {
+      if (currentUser?.role !== 'ADMIN') return;
+
+      document.getElementById('adminTotalUsersCount').innerText = users.length;
+      document.getElementById('adminPendingDepositsCount').innerText = deposits.filter(d => d.status === 'PENDING').length;
+      document.getElementById('adminPendingWithdrawalsCount').innerText = withdrawals.filter(w => w.status === 'PENDING').length;
+
+      const depContainer = document.getElementById('adminPendingDepositsList');
+      const pendingDeps = deposits.filter(d => d.status === 'PENDING');
+
+      if (pendingDeps.length === 0) {
+        depContainer.innerHTML = `<p class="text-xs text-slate-400 italic py-2">No pending deposit requests.</p>`;
+      } else {
+        depContainer.innerHTML = pendingDeps.map(d => `
+          <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-xl flex flex-wrap items-center justify-between gap-2">
             <div>
-              <span className="text-xl sm:text-2xl font-black tracking-tight text-slate-900">
-                FOREX<span className="text-emerald-600">AAA</span>
-              </span>
-              <span className="hidden sm:inline-block ml-2 text-[10px] bg-slate-100 text-slate-600 border border-slate-200 px-2 py-0.5 rounded font-mono font-semibold uppercase">
-                Institutional Terminal
-              </span>
+              <div class="text-xs font-bold text-slate-900">${d.userName} (${d.userPhone})</div>
+              <div class="text-sm font-mono font-extrabold text-emerald-700 mt-0.5">Amount: ₹${d.amount}</div>
+              <div class="text-xs text-slate-500 font-mono">UTR / Ref: <span class="text-slate-900 font-bold">${d.utr}</span></div>
+            </div>
+            <div class="flex space-x-1.5">
+              <button onclick="approveDeposit('${d.id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition">Approve</button>
+              <button onclick="rejectDeposit('${d.id}')" class="px-3 py-1.5 bg-rose-100 text-rose-700 text-xs font-bold rounded-lg transition">Reject</button>
             </div>
           </div>
+        `).join('');
+      }
 
-          {/* Navigation Links */}
-          <nav className="hidden md:flex items-center space-x-1">
-            <button 
-              onClick={() => setActiveTab('trade')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-2 ${
-                activeTab === 'trade' 
-                  ? 'bg-slate-900 text-white shadow-sm' 
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-            >
-              <Activity className="w-4 h-4" />
-              <span>Trading Terminal</span>
-            </button>
+      const wdContainer = document.getElementById('adminPendingWithdrawalsList');
+      const pendingWds = withdrawals.filter(w => w.status === 'PENDING');
 
-            <button 
-              onClick={() => setActiveTab('deposit')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-2 ${
-                activeTab === 'deposit' 
-                  ? 'bg-slate-900 text-white shadow-sm' 
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-            >
-              <Upload className="w-4 h-4" />
-              <span>Deposit</span>
-            </button>
-
-            <button 
-              onClick={() => setActiveTab('withdraw')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-2 ${
-                activeTab === 'withdraw' 
-                  ? 'bg-slate-900 text-white shadow-sm' 
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-            >
-              <Download className="w-4 h-4" />
-              <span>Withdraw</span>
-            </button>
-
-            <button 
-              onClick={() => setActiveTab('history')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-2 ${
-                activeTab === 'history' 
-                  ? 'bg-slate-900 text-white shadow-sm' 
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-            >
-              <History className="w-4 h-4" />
-              <span>Trade Logs</span>
-            </button>
-
-            {currentUser?.role === 'ADMIN' && (
-              <button 
-                onClick={() => setActiveTab('admin')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-2 ${
-                  activeTab === 'admin' 
-                    ? 'bg-amber-500 text-white shadow-sm' 
-                    : 'text-amber-700 bg-amber-50 hover:bg-amber-100'
-                }`}
-              >
-                <ShieldCheck className="w-4 h-4" />
-                <span>Admin Console</span>
-              </button>
-            )}
-          </nav>
-
-          {/* User Account Bar */}
-          <div className="hidden md:flex items-center space-x-3">
-            {currentUser ? (
-              <div className="flex items-center space-x-3 bg-slate-100 border border-slate-200 px-3.5 py-1.5 rounded-xl">
-                <div className="text-right">
-                  <div className="text-[11px] font-semibold text-slate-500">{currentUser.name}</div>
-                  <div className="text-xs font-extrabold text-emerald-700 font-mono">
-                    ₹{currentUser.balance?.toLocaleString('en-IN')}
-                  </div>
-                </div>
-                <button 
-                  onClick={handleLogout}
-                  className="p-1.5 hover:bg-slate-200 text-slate-500 hover:text-rose-600 rounded-lg transition"
-                  title="Logout"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-2">
-                <button 
-                  onClick={() => { setActiveTab('auth'); setAuthMode('login'); }}
-                  className="px-4 py-2 text-xs font-bold text-slate-700 hover:text-slate-900 transition"
-                >
-                  Sign In
-                </button>
-                <button 
-                  onClick={() => { setActiveTab('auth'); setAuthMode('register'); }}
-                  className="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition shadow-md"
-                >
-                  Create Account
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Mobile Navigation Toggle */}
-          <div className="md:hidden flex items-center space-x-2">
-            {currentUser && (
-              <div className="bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200 text-right">
-                <span className="text-[10px] text-slate-500 block">Balance</span>
-                <span className="text-xs font-bold text-emerald-700 font-mono">₹{currentUser.balance?.toLocaleString('en-IN')}</span>
-              </div>
-            )}
-            <button 
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 text-slate-700 bg-slate-100 rounded-lg border border-slate-200"
-            >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
-          </div>
-
-        </div>
-
-        {/* Mobile Dropdown Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden bg-white border-b border-slate-200 px-4 py-3 space-y-2 shadow-lg">
-            <button 
-              onClick={() => { setActiveTab('trade'); setMobileMenuOpen(false); }}
-              className="w-full text-left py-2.5 px-3 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center space-x-2"
-            >
-              <Activity className="w-4 h-4 text-emerald-600" />
-              <span>Trading Terminal</span>
-            </button>
-
-            <button 
-              onClick={() => { setActiveTab('deposit'); setMobileMenuOpen(false); }}
-              className="w-full text-left py-2.5 px-3 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center space-x-2"
-            >
-              <Upload className="w-4 h-4 text-emerald-600" />
-              <span>Deposit Funds</span>
-            </button>
-
-            <button 
-              onClick={() => { setActiveTab('withdraw'); setMobileMenuOpen(false); }}
-              className="w-full text-left py-2.5 px-3 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center space-x-2"
-            >
-              <Download className="w-4 h-4 text-emerald-600" />
-              <span>Withdraw Funds</span>
-            </button>
-
-            <button 
-              onClick={() => { setActiveTab('history'); setMobileMenuOpen(false); }}
-              className="w-full text-left py-2.5 px-3 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center space-x-2"
-            >
-              <History className="w-4 h-4 text-emerald-600" />
-              <span>Trade Logs</span>
-            </button>
-
-            {currentUser?.role === 'ADMIN' && (
-              <button 
-                onClick={() => { setActiveTab('admin'); setMobileMenuOpen(false); }}
-                className="w-full text-left py-2.5 px-3 rounded-xl text-xs font-bold text-amber-800 bg-amber-50 flex items-center space-x-2"
-              >
-                <ShieldCheck className="w-4 h-4 text-amber-600" />
-                <span>Admin Console</span>
-              </button>
-            )}
-
-            <div className="pt-2 border-t border-slate-200">
-              {currentUser ? (
-                <button 
-                  onClick={handleLogout}
-                  className="w-full text-left py-2.5 px-3 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-bold flex items-center space-x-2"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span>Logout ({currentUser.name})</span>
-                </button>
-              ) : (
-                <div className="grid grid-cols-2 gap-2 pt-1">
-                  <button 
-                    onClick={() => { setActiveTab('auth'); setAuthMode('login'); setMobileMenuOpen(false); }}
-                    className="py-2 text-center text-xs font-bold bg-slate-100 text-slate-800 rounded-xl"
-                  >
-                    Sign In
-                  </button>
-                  <button 
-                    onClick={() => { setActiveTab('auth'); setAuthMode('register'); setMobileMenuOpen(false); }}
-                    className="py-2 text-center text-xs font-bold bg-emerald-600 text-white rounded-xl"
-                  >
-                    Register
-                  </button>
-                </div>
-              )}
+      if (pendingWds.length === 0) {
+        wdContainer.innerHTML = `<p class="text-xs text-slate-400 italic py-2">No pending withdrawal requests.</p>`;
+      } else {
+        wdContainer.innerHTML = pendingWds.map(w => `
+          <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-xl flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <div class="text-xs font-bold text-slate-900">${w.userName} (${w.userPhone})</div>
+              <div class="text-sm font-mono font-extrabold text-blue-700 mt-0.5">Payout: ₹${w.amount}</div>
+              <div class="text-xs text-slate-500 font-mono">Target UPI/Bank: <span class="text-slate-900 font-bold">${w.targetUpi}</span></div>
+            </div>
+            <div class="flex space-x-1.5">
+              <button onclick="approveWithdrawal('${w.id}')" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition">Mark Paid</button>
+              <button onclick="rejectWithdrawal('${w.id}')" class="px-3 py-1.5 bg-rose-100 text-rose-700 text-xs font-bold rounded-lg transition">Reject</button>
             </div>
           </div>
-        )}
-      </header>
+        `).join('');
+      }
 
-      {/* MAIN CONTAINER */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6">
+      renderAdminUsers();
+    }
 
-        {/* 1. TRADING TERMINAL VIEW */}
-        {activeTab === 'trade' && (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
-            
-            {/* Chart Column */}
-            <div className="lg:col-span-3 space-y-4">
-              
-              {/* Asset Bar */}
-              <div className="bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 flex flex-wrap items-center justify-between gap-3 shadow-sm">
-                
-                {/* Asset Pills */}
-                <div className="flex items-center space-x-2 overflow-x-auto py-1 scrollbar-none max-w-full">
-                  {assetsCatalog.map(asset => (
-                    <button
-                      key={asset.id}
-                      onClick={() => setSelectedAsset(asset)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 whitespace-nowrap ${
-                        selectedAsset.id === asset.id 
-                          ? 'bg-slate-900 text-white shadow' 
-                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
-                      }`}
-                    >
-                      <span>{asset.name}</span>
-                      <span className="text-[10px] opacity-80 font-mono">+{asset.payout}%</span>
-                    </button>
-                  ))}
-                </div>
+    function renderAdminUsers() {
+      const search = document.getElementById('adminUserSearchInput')?.value.toLowerCase() || '';
+      const tbody = document.getElementById('adminUserTableBody');
+      const filtered = users.filter(u => u.name?.toLowerCase().includes(search) || u.phone?.includes(search));
 
-                {/* Chart Controls & Live Price Ticker */}
-                <div className="flex items-center space-x-3 ml-auto">
-                  
-                  {/* Candlestick / Line Chart Toggle */}
-                  <div className="flex bg-slate-100 border border-slate-200 rounded-xl p-1">
-                    <button 
-                      onClick={() => setChartType('candlestick')}
-                      className={`p-1.5 rounded-lg transition ${chartType === 'candlestick' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
-                      title="Candlestick Chart"
-                    >
-                      <BarChart2 className="w-4 h-4" />
-                    </button>
-                    <button 
-                      onClick={() => setChartType('line')}
-                      className={`p-1.5 rounded-lg transition ${chartType === 'line' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
-                      title="Line Chart"
-                    >
-                      <LineChart className="w-4 h-4" />
-                    </button>
-                  </div>
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colSpan="5" class="py-4 text-center text-slate-400">No matching user accounts.</td></tr>`;
+        return;
+      }
 
-                  {/* MA Indicator Toggle */}
-                  <button 
-                    onClick={() => setShowIndicators(prev => ({ ...prev, ma: !prev.ma }))}
-                    className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-bold transition ${
-                      showIndicators.ma ? 'bg-amber-50 border-amber-300 text-amber-800' : 'bg-slate-100 border-slate-200 text-slate-500'
-                    }`}
-                  >
-                    MA (7)
-                  </button>
-
-                  <div className="pl-2 text-right border-l border-slate-200">
-                    <span className="text-[10px] text-slate-400 block uppercase tracking-wider font-semibold">Rate</span>
-                    <span className="text-base font-extrabold font-mono text-emerald-700">
-                      ₹{currentPrice.toFixed(2)}
-                    </span>
-                  </div>
-
-                </div>
-
+      tbody.innerHTML = filtered.map(u => `
+        <tr class="hover:bg-slate-50">
+          <td class="py-3 font-semibold text-slate-900">${u.name}</td>
+          <td class="py-3 text-slate-600 font-mono">${u.phone}</td>
+          <td class="py-3">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${u.role === 'ADMIN' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'}">${u.role}</span>
+          </td>
+          <td class="py-3 font-mono font-bold text-emerald-700">₹${u.balance?.toLocaleString('en-IN')}</td>
+          <td class="py-3">
+            ${editingUserPhone === u.phone ? `
+              <div class="flex items-center space-x-1">
+                <input type="number" id="editBal_${u.phone}" placeholder="+/- Amt" class="w-20 border border-slate-300 rounded px-1.5 py-1 text-xs font-mono">
+                <button onclick="saveUserBalance('${u.phone}')" class="px-2 py-1 bg-emerald-600 text-white font-bold text-[10px] rounded">Save</button>
+                <button onclick="editingUserPhone=null; renderUI();" class="px-2 py-1 bg-slate-200 text-slate-600 font-bold text-[10px] rounded">Cancel</button>
               </div>
+            ` : `
+              <button onclick="editingUserPhone='${u.phone}'; renderUI();" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded font-semibold text-[11px]">Edit Balance</button>
+            `}
+          </td>
+        </tr>
+      `).join('');
+    }
+  </script>
 
-              {/* White Canvas Screen */}
-              <div className="bg-white border border-slate-200 rounded-2xl p-4 relative overflow-hidden shadow-sm min-h-[390px] sm:min-h-[450px] flex flex-col justify-between">
-                
-                {/* Live Feed Status Pill */}
-                <div className="absolute top-6 left-6 flex items-center space-x-2 bg-slate-900 text-white px-3 py-1 rounded-full shadow z-10">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span className="text-[11px] font-bold font-mono tracking-wide">
-                    {selectedAsset.name} REALTIME FEED
-                  </span>
-                </div>
-
-                <div className="w-full flex-1 pt-8 pb-2">
-                  <canvas 
-                    ref={canvasRef} 
-                    width={750} 
-                    height={350} 
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between text-[11px] text-slate-500 border-t border-slate-100 pt-2 font-mono">
-                  <span>Execution Speed: <span className="text-emerald-700 font-bold">&lt; 10ms</span></span>
-                  <span>Payout Rate: <span className="text-emerald-700 font-bold">+{selectedAsset.payout}% Profit</span></span>
-                </div>
-              </div>
-
-              {/* Running Positions Box */}
-              <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
-                <h3 className="text-xs font-extrabold text-slate-700 mb-3 uppercase tracking-wider flex items-center space-x-2">
-                  <Clock className="w-4 h-4 text-emerald-600" />
-                  <span>Open Market Positions</span>
-                </h3>
-
-                {trades.filter(t => t.userPhone === currentUser?.phone && t.status === 'ACTIVE').length === 0 ? (
-                  <p className="text-xs text-slate-400 italic py-2">No active market positions currently running.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {trades.filter(t => t.userPhone === currentUser?.phone && t.status === 'ACTIVE').map(t => {
-                      const remainingSecs = Math.max(0, Math.ceil((t.expiryTime - Date.now()) / 1000));
-                      return (
-                        <div key={t.id} className="bg-slate-50 border border-slate-200 p-3 rounded-xl flex items-center justify-between text-xs">
-                          <div className="flex items-center space-x-2">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold ${t.type === 'CALL' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
-                              {t.type}
-                            </span>
-                            <span className="font-bold text-slate-900">{t.assetName}</span>
-                            <span className="text-slate-500 font-mono">@ ₹{t.strikePrice}</span>
-                          </div>
-                          <div className="flex items-center space-x-4">
-                            <span className="font-mono text-emerald-700 font-bold">₹{t.amount}</span>
-                            <span className="bg-amber-100 border border-amber-300 px-2.5 py-1 rounded-lg text-amber-800 font-mono font-extrabold animate-pulse">
-                              {remainingSecs}s
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-            </div>
-
-            {/* Right Side: Order Desk */}
-            <div className="lg:col-span-1 space-y-4">
-              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-5">
-                
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                  <span className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">Trading Desk</span>
-                  <span className="text-[10px] text-emerald-800 font-bold bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                    High/Low Option
-                  </span>
-                </div>
-
-                {/* Investment Stake */}
-                <div>
-                  <label className="text-xs font-semibold text-slate-600 block mb-1.5">Trade Stake (₹)</label>
-                  <input 
-                    type="number" 
-                    value={tradeAmount}
-                    onChange={(e) => setTradeAmount(Math.max(10, parseInt(e.target.value) || 0))}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 font-mono font-bold focus:outline-none focus:border-emerald-600 text-sm"
-                  />
-                  {/* Preset Buttons */}
-                  <div className="grid grid-cols-4 gap-1.5 mt-2">
-                    {[100, 200, 500, 1000].map(val => (
-                      <button
-                        key={val}
-                        onClick={() => setTradeAmount(val)}
-                        className={`py-1 text-[11px] font-bold rounded-lg border transition ${
-                          tradeAmount === val 
-                            ? 'bg-slate-900 border-slate-900 text-white' 
-                            : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900'
-                        }`}
-                      >
-                        ₹{val}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Duration Picker */}
-                <div>
-                  <label className="text-xs font-semibold text-slate-600 block mb-1.5">Expiry Duration</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[15, 30, 60].map(s => (
-                      <button
-                        key={s}
-                        onClick={() => setTradeDuration(s)}
-                        className={`py-2 text-xs font-bold rounded-xl border transition ${
-                          tradeDuration === s 
-                            ? 'bg-emerald-50 border-emerald-500 text-emerald-800' 
-                            : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900'
-                        }`}
-                      >
-                        {s} Sec
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Return Calculation */}
-                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-1.5">
-                  <div className="flex justify-between text-xs text-slate-500">
-                    <span>Yield Rate</span>
-                    <span className="text-emerald-700 font-bold font-mono">+{selectedAsset.payout}%</span>
-                  </div>
-                  <div className="flex justify-between text-xs font-semibold text-slate-700">
-                    <span>Net Profit</span>
-                    <span className="text-emerald-700 font-bold font-mono">
-                      +₹{Math.round(tradeAmount * (selectedAsset.payout / 100))}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm font-extrabold text-slate-900 pt-2 border-t border-slate-200">
-                    <span>Total Return</span>
-                    <span className="text-emerald-700 font-mono">
-                      ₹{Math.round(tradeAmount * (1 + selectedAsset.payout / 100))}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Order Execution Buttons */}
-                <div className="space-y-3 pt-1">
-                  <button 
-                    onClick={() => handlePlaceTrade('CALL')}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3.5 rounded-xl transition flex items-center justify-center space-x-2 shadow-md active:scale-[0.98]"
-                  >
-                    <ArrowUpRight className="w-5 h-5 stroke-[3]" />
-                    <span className="text-sm tracking-wider uppercase">Call (Higher)</span>
-                  </button>
-
-                  <button 
-                    onClick={() => handlePlaceTrade('PUT')}
-                    className="w-full bg-rose-600 hover:bg-rose-700 text-white font-black py-3.5 rounded-xl transition flex items-center justify-center space-x-2 shadow-md active:scale-[0.98]"
-                  >
-                    <ArrowDownRight className="w-5 h-5 stroke-[3]" />
-                    <span className="text-sm tracking-wider uppercase">Put (Lower)</span>
-                  </button>
-                </div>
-
-                {!currentUser && (
-                  <p className="text-[11px] text-center text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200">
-                    Please Sign In or Register to execute real trades.
-                  </p>
-                )}
-
-              </div>
-            </div>
-
-          </div>
-        )}
-
-        {/* 2. MANUAL UPI DEPOSIT VIEW */}
-        {activeTab === 'deposit' && (
-          <div className="max-w-2xl mx-auto space-y-6">
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
-              
-              <div className="text-center space-y-1">
-                <div className="w-12 h-12 bg-emerald-50 text-emerald-700 rounded-2xl flex items-center justify-center mx-auto mb-2 border border-emerald-200">
-                  <QrCode className="w-6 h-6" />
-                </div>
-                <h2 className="text-2xl font-black text-slate-900">Instant Deposit via UPI</h2>
-                <p className="text-xs text-slate-500">Scan QR Code or pay directly to the Paytm UPI handle below</p>
-              </div>
-
-              {/* Amount Selection Presets */}
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-2">Select Deposit Amount:</label>
-                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                  {[200, 500, 1000, 2000, 5000].map(val => (
-                    <button
-                      key={val}
-                      onClick={() => { setDepositAmount(val); setCustomDepositAmt(''); }}
-                      className={`py-2 text-xs font-bold rounded-xl border transition ${
-                        depositAmount === val && !customDepositAmt
-                          ? 'bg-slate-900 border-slate-900 text-white shadow-sm' 
-                          : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
-                      }`}
-                    >
-                      ₹{val}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="mt-3">
-                  <input 
-                    type="number"
-                    placeholder="Or enter custom amount (Min ₹100)"
-                    value={customDepositAmt}
-                    onChange={(e) => setCustomDepositAmt(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600"
-                  />
-                </div>
-              </div>
-
-              {/* Paytm QR Display */}
-              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 text-center space-y-4">
-                <div className="inline-block bg-white p-3 rounded-2xl shadow border-2 border-emerald-500">
-                  <img 
-                    src={qrCodeImage} 
-                    alt="Gurudatt Kirana Store UPI QR" 
-                    className="w-48 h-48 mx-auto rounded-lg object-contain"
-                  />
-                </div>
-
-                <div>
-                  <span className="text-xs text-slate-500 block mb-1">Payee Name: <strong className="text-slate-800">Gurudatt Kirana Store</strong></span>
-                  <div className="inline-flex items-center space-x-2 bg-white border border-slate-300 px-4 py-2 rounded-xl shadow-sm">
-                    <span className="text-sm font-bold font-mono text-emerald-700">paytmqr6n4gde@ptys</span>
-                    <button 
-                      onClick={copyUpiToClipboard}
-                      className="text-slate-400 hover:text-slate-800 transition"
-                      title="Copy UPI ID"
-                    >
-                      {copiedUpi ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="text-xs bg-emerald-50 text-emerald-800 py-2 px-3 rounded-xl border border-emerald-200 font-semibold">
-                  Selected Amount for QR Code: <span className="font-bold text-slate-900 font-mono">₹{activeDepositAmount}</span>
-                </div>
-              </div>
-
-              {/* Payment UTR Form */}
-              <form onSubmit={handleDepositSubmit} className="space-y-4">
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">
-                    Enter 12-Digit Payment UTR / Ref Number *
-                  </label>
-                  <input 
-                    type="text" 
-                    required
-                    placeholder="e.g. 423985710293"
-                    value={utrNumber}
-                    onChange={(e) => setUtrNumber(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 font-mono"
-                  />
-                </div>
-
-                {depositNotice && (
-                  <div className={`p-3 rounded-xl text-xs flex items-center space-x-2 ${
-                    depositNotice.type === 'error' 
-                      ? 'bg-rose-50 border border-rose-200 text-rose-700' 
-                      : 'bg-emerald-50 border border-emerald-200 text-emerald-700'
-                  }`}>
-                    {depositNotice.type === 'error' ? <AlertCircle className="w-4 h-4 flex-shrink-0" /> : <CheckCircle2 className="w-4 h-4 flex-shrink-0" />}
-                    <span>{depositNotice.text}</span>
-                  </div>
-                )}
-
-                <button 
-                  type="submit"
-                  disabled={!currentUser}
-                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3.5 rounded-xl transition shadow disabled:opacity-50"
-                >
-                  {currentUser ? 'Submit Deposit Request' : 'Sign In to Deposit'}
-                </button>
-              </form>
-
-            </div>
-          </div>
-        )}
-
-        {/* 3. WITHDRAWAL VIEW */}
-        {activeTab === 'withdraw' && (
-          <div className="max-w-2xl mx-auto space-y-6">
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
-              
-              <div className="text-center space-y-1">
-                <div className="w-12 h-12 bg-emerald-50 text-emerald-700 rounded-2xl flex items-center justify-center mx-auto mb-2 border border-emerald-200">
-                  <Download className="w-6 h-6" />
-                </div>
-                <h2 className="text-2xl font-black text-slate-900">Withdraw Funds</h2>
-                <p className="text-xs text-slate-500">Payout directly to your UPI ID or Bank Account</p>
-              </div>
-
-              {!currentUser ? (
-                <p className="text-center text-xs text-slate-500 py-4">Please sign in to request withdrawals.</p>
-              ) : (
-                <form onSubmit={handleWithdrawSubmit} className="space-y-4">
-                  
-                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex justify-between items-center">
-                    <span className="text-xs font-semibold text-slate-600">Available Balance:</span>
-                    <span className="text-base font-extrabold font-mono text-emerald-700">
-                      ₹{currentUser.balance?.toLocaleString('en-IN')}
-                    </span>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-semibold text-slate-700 block mb-1">Withdrawal Amount (₹) *</label>
-                    <input 
-                      type="number" 
-                      required
-                      placeholder="Min ₹300"
-                      value={withdrawAmount}
-                      onChange={(e) => setWithdrawAmount(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 font-mono"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-semibold text-slate-700 block mb-1">UPI ID or Bank Details *</label>
-                    <input 
-                      type="text" 
-                      required
-                      placeholder="e.g. mobile@upi or Account + IFSC"
-                      value={withdrawUpi}
-                      onChange={(e) => setWithdrawUpi(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600"
-                    />
-                  </div>
-
-                  {withdrawNotice && (
-                    <div className={`p-3 rounded-xl text-xs flex items-center space-x-2 ${
-                      withdrawNotice.type === 'error' 
-                        ? 'bg-rose-50 border border-rose-200 text-rose-700' 
-                        : 'bg-emerald-50 border border-emerald-200 text-emerald-700'
-                    }`}>
-                      {withdrawNotice.type === 'error' ? <AlertCircle className="w-4 h-4 flex-shrink-0" /> : <CheckCircle2 className="w-4 h-4 flex-shrink-0" />}
-                      <span>{withdrawNotice.text}</span>
-                    </div>
-                  )}
-
-                  <button 
-                    type="submit"
-                    className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3.5 rounded-xl transition shadow"
-                  >
-                    Request Payout
-                  </button>
-                </form>
-              )}
-
-            </div>
-          </div>
-        )}
-
-        {/* 4. TRADE LOGS VIEW */}
-        {activeTab === 'history' && (
-          <div className="max-w-4xl mx-auto space-y-4">
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <h2 className="text-lg font-black text-slate-900 flex items-center space-x-2">
-                <History className="w-5 h-5 text-emerald-600" />
-                <span>Trade Execution Logs</span>
-              </h2>
-
-              {!currentUser ? (
-                <p className="text-slate-500 text-xs">Please sign in to view your execution logs.</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider">
-                        <th className="py-3 px-2">Asset</th>
-                        <th className="py-3 px-2">Type</th>
-                        <th className="py-3 px-2">Stake</th>
-                        <th className="py-3 px-2">Strike</th>
-                        <th className="py-3 px-2">Close</th>
-                        <th className="py-3 px-2">Result</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-xs">
-                      {trades.filter(t => t.userPhone === currentUser.phone).length === 0 ? (
-                        <tr>
-                          <td colSpan="6" className="py-6 text-center text-slate-400 italic">
-                            No executed trades on record.
-                          </td>
-                        </tr>
-                      ) : (
-                        trades.filter(t => t.userPhone === currentUser.phone).map(t => (
-                          <tr key={t.id} className="hover:bg-slate-50">
-                            <td className="py-3 px-2 font-bold text-slate-900">{t.assetName}</td>
-                            <td className="py-3 px-2">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold ${t.type === 'CALL' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
-                                {t.type}
-                              </span>
-                            </td>
-                            <td className="py-3 px-2 font-mono font-semibold">₹{t.amount}</td>
-                            <td className="py-3 px-2 font-mono text-slate-500">₹{t.strikePrice}</td>
-                            <td className="py-3 px-2 font-mono text-slate-500">{t.closePrice ? `₹${t.closePrice}` : 'In Progress'}</td>
-                            <td className="py-3 px-2">
-                              {t.status === 'ACTIVE' && (
-                                <span className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-[10px] font-extrabold">
-                                  Running
-                                </span>
-                              )}
-                              {t.status === 'WON' && (
-                                <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-[10px] font-extrabold font-mono">
-                                  +₹{t.payoutAmount} WIN
-                                </span>
-                              )}
-                              {t.status === 'LOST' && (
-                                <span className="bg-rose-100 text-rose-800 px-2 py-0.5 rounded text-[10px] font-extrabold font-mono">
-                                  -₹{t.amount} LOSS
-                                </span>
-                              )}
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* 5. PROTECTED MASTER ADMIN CONSOLE */}
-        {activeTab === 'admin' && currentUser?.role === 'ADMIN' && (
-          <div className="space-y-6">
-            
-            {/* Header Banner */}
-            <div className="bg-gradient-to-r from-amber-50 to-white border border-amber-200 rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4 shadow-sm">
-              <div>
-                <span className="text-xs font-bold text-amber-800 uppercase tracking-widest block">Master Control</span>
-                <h2 className="text-2xl font-black text-slate-900">Administrator Terminal</h2>
-                <p className="text-xs text-slate-500">Manage manual deposits, withdrawal payouts, user accounts & trade outcome overrides.</p>
-              </div>
-
-              {/* Trade Outcome Rigging Controls */}
-              <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm space-y-1">
-                <span className="text-[11px] font-semibold text-slate-600 block">Market Settlement Rigging:</span>
-                <div className="flex space-x-1">
-                  <button
-                    onClick={() => setAdminRigMode('FAIR')}
-                    className={`px-3 py-1 rounded text-xs font-bold transition ${adminRigMode === 'FAIR' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
-                  >
-                    Fair Market
-                  </button>
-                  <button
-                    onClick={() => setAdminRigMode('FORCE_WIN')}
-                    className={`px-3 py-1 rounded text-xs font-bold transition ${adminRigMode === 'FORCE_WIN' ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
-                  >
-                    Force Win
-                  </button>
-                  <button
-                    onClick={() => setAdminRigMode('FORCE_LOSS')}
-                    className={`px-3 py-1 rounded text-xs font-bold transition ${adminRigMode === 'FORCE_LOSS' ? 'bg-rose-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
-                  >
-                    Force Loss
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Platform Metrics */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm">
-                <span className="text-xs text-slate-500 block">Total Registered Users</span>
-                <span className="text-2xl font-bold font-mono text-slate-900">{users.length}</span>
-              </div>
-              <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm">
-                <span className="text-xs text-slate-500 block">Pending Deposit Approvals</span>
-                <span className="text-2xl font-bold font-mono text-amber-600">
-                  {deposits.filter(d => d.status === 'PENDING').length}
-                </span>
-              </div>
-              <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm">
-                <span className="text-xs text-slate-500 block">Pending Withdrawals</span>
-                <span className="text-2xl font-bold font-mono text-emerald-600">
-                  {withdrawals.filter(w => w.status === 'PENDING').length}
-                </span>
-              </div>
-            </div>
-
-            {/* Pending Deposits Queue */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
-                <CreditCard className="w-4 h-4 text-amber-600" />
-                <span>Pending Deposits Queue (Manual UPI)</span>
-              </h3>
-
-              {deposits.filter(d => d.status === 'PENDING').length === 0 ? (
-                <p className="text-xs text-slate-400 italic py-2">No pending deposit requests.</p>
-              ) : (
-                <div className="space-y-3">
-                  {deposits.filter(d => d.status === 'PENDING').map(dep => (
-                    <div key={dep.id} className="bg-slate-50 border border-slate-200 p-4 rounded-xl flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <div className="text-sm font-bold text-slate-900">{dep.userName} ({dep.userPhone})</div>
-                        <div className="text-sm font-mono font-extrabold text-emerald-700 mt-0.5">Amount: ₹{dep.amount}</div>
-                        <div className="text-xs text-slate-500 font-mono">UTR / Ref: <span className="text-slate-900 font-bold">{dep.utr}</span></div>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => handleApproveDeposit(dep.id)}
-                          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition"
-                        >
-                          Approve & Credit Balance
-                        </button>
-                        <button
-                          onClick={() => handleRejectDeposit(dep.id)}
-                          className="px-4 py-2 bg-rose-100 hover:bg-rose-200 text-rose-800 text-xs font-bold rounded-lg transition"
-                        >
-                          Reject
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Pending Withdrawals Queue */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
-                <Download className="w-4 h-4 text-emerald-600" />
-                <span>Pending Payout Requests</span>
-              </h3>
-
-              {withdrawals.filter(w => w.status === 'PENDING').length === 0 ? (
-                <p className="text-xs text-slate-400 italic py-2">No pending withdrawal requests.</p>
-              ) : (
-                <div className="space-y-3">
-                  {withdrawals.filter(w => w.status === 'PENDING').map(wd => (
-                    <div key={wd.id} className="bg-slate-50 border border-slate-200 p-4 rounded-xl flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <div className="text-sm font-bold text-slate-900">{wd.userName} ({wd.userPhone})</div>
-                        <div className="text-sm font-mono font-extrabold text-rose-700 mt-0.5">Payout: ₹{wd.amount}</div>
-                        <div className="text-xs text-slate-500 font-mono">Target UPI/Bank: <span className="text-slate-900 font-bold">{wd.targetUpi}</span></div>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => handleApproveWithdrawal(wd.id)}
-                          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition"
-                        >
-                          Mark Paid
-                        </button>
-                        <button
-                          onClick={() => handleRejectWithdrawal(wd.id)}
-                          className="px-4 py-2 bg-rose-100 hover:bg-rose-200 text-rose-800 text-xs font-bold rounded-lg transition"
-                        >
-                          Reject & Refund
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* User Account Table */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
-                  <User className="w-4 h-4 text-emerald-600" />
-                  <span>User Accounts & Manual Balance Control</span>
-                </h3>
-
-                <div className="relative w-full sm:w-64">
-                  <input 
-                    type="text" 
-                    placeholder="Search by name or phone..."
-                    value={adminSearch}
-                    onChange={(e) => setAdminSearch(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 pl-8 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600"
-                  />
-                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
-                </div>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider">
-                      <th className="py-2">Name</th>
-                      <th className="py-2">Phone</th>
-                      <th className="py-2">Role</th>
-                      <th className="py-2">Wallet Balance</th>
-                      <th className="py-2">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {filteredUsers.length === 0 ? (
-                      <tr>
-                        <td colSpan="5" className="py-4 text-center text-slate-400">No registered users found.</td>
-                      </tr>
-                    ) : (
-                      filteredUsers.map(u => (
-                        <tr key={u.phone} className="hover:bg-slate-50">
-                          <td className="py-3 font-semibold text-slate-900">{u.name}</td>
-                          <td className="py-3 text-slate-600 font-mono">{u.phone}</td>
-                          <td className="py-3">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${u.role === 'ADMIN' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'}`}>
-                              {u.role}
-                            </span>
-                          </td>
-                          <td className="py-3 font-mono font-bold text-emerald-700">₹{u.balance?.toLocaleString('en-IN')}</td>
-                          <td className="py-3">
-                            {selectedUserPhone === u.phone ? (
-                              <div className="flex items-center space-x-2">
-                                <input 
-                                  type="number" 
-                                  placeholder="+/- Amount"
-                                  value={balanceAdjustAmt}
-                                  onChange={(e) => setBalanceAdjustAmt(e.target.value)}
-                                  className="w-24 bg-slate-50 border border-slate-300 px-2 py-1 rounded text-slate-900 font-mono text-xs"
-                                />
-                                <button 
-                                  onClick={() => handleUpdateUserBalance(u.phone)}
-                                  className="px-2 py-1 bg-emerald-600 text-white text-[10px] font-bold rounded"
-                                >
-                                  Save
-                                </button>
-                                <button 
-                                  onClick={() => setSelectedUserPhone(null)}
-                                  className="px-2 py-1 bg-slate-200 text-slate-600 text-[10px] font-bold rounded"
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-                            ) : (
-                              <button 
-                                onClick={() => setSelectedUserPhone(u.phone)}
-                                className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded font-semibold text-[11px]"
-                              >
-                                Edit Balance
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-          </div>
-        )}
-
-        {/* 6. AUTHENTICATION VIEW */}
-        {activeTab === 'auth' && (
-          <div className="max-w-md mx-auto my-8">
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
-              
-              <div className="text-center space-y-1">
-                <h2 className="text-2xl font-black text-slate-900">
-                  {authMode === 'login' ? 'Sign In to Forexaaa' : 'Create Account'}
-                </h2>
-                <p className="text-xs text-slate-500">
-                  {authMode === 'login' ? 'Enter your credentials to access your trading desk' : 'Register your account to begin trading'}
-                </p>
-              </div>
-
-              {authError && (
-                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-center space-x-2">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  <span>{authError}</span>
-                </div>
-              )}
-
-              <form onSubmit={handleAuth} className="space-y-4">
-                {authMode === 'register' && (
-                  <div>
-                    <label className="text-xs font-semibold text-slate-700 block mb-1">Full Name</label>
-                    <input 
-                      type="text" 
-                      placeholder="e.g. Rahul Sharma"
-                      value={nameInput}
-                      onChange={(e) => setNameInput(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600"
-                    />
-                  </div>
-                )}
-
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Mobile Number</label>
-                  <input 
-                    type="text" 
-                    placeholder="Enter phone number"
-                    value={phoneInput}
-                    onChange={(e) => setPhoneInput(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Password</label>
-                  <div className="relative">
-                    <input 
-                      type={showPassword ? 'text' : 'password'} 
-                      placeholder="••••••••"
-                      value={passwordInput}
-                      onChange={(e) => setPasswordInput(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 font-mono"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-800"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-
-                <button 
-                  type="submit"
-                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3.5 rounded-xl transition shadow"
-                >
-                  {authMode === 'login' ? 'Sign In' : 'Create Account'}
-                </button>
-              </form>
-
-              <div className="pt-4 border-t border-slate-100 text-center">
-                {authMode === 'login' ? (
-                  <p className="text-xs text-slate-500">
-                    Don't have an account?{' '}
-                    <button 
-                      onClick={() => setAuthMode('register')} 
-                      className="text-emerald-700 font-bold hover:underline"
-                    >
-                      Register Now
-                    </button>
-                  </p>
-                ) : (
-                  <p className="text-xs text-slate-500">
-                    Already registered?{' '}
-                    <button 
-                      onClick={() => setAuthMode('login')} 
-                      className="text-emerald-700 font-bold hover:underline"
-                    >
-                      Sign In
-                    </button>
-                  </p>
-                )}
-              </div>
-
-            </div>
-          </div>
-        )}
-
-      </main>
-
-      {/* FOOTER */}
-      <footer className="border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>© 2026 FOREXAAA Terminal. All rights reserved.</span>
-          <div className="flex space-x-4 text-slate-600 font-medium">
-            <span>Verified UPI Gateway (`paytmqr6n4gde@ptys`)</span>
-            <span>Fast Execution Engine</span>
-          </div>
-        </div>
-      </footer>
-    </div>
-  );
-}
+</body>
+</html>
 
