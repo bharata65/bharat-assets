@@ -55,7 +55,7 @@
     </div>
   </div>
 
-  <!-- EDIT NAME MODAL POPUP (PROFESSIONAL) -->
+  <!-- EDIT NAME MODAL POPUP -->
   <div id="editNameModal" class="hidden fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl w-full max-w-sm flex flex-col shadow-2xl overflow-hidden modal-enter">
       <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
@@ -114,7 +114,7 @@
     </div>
   </header>
 
-  <!-- AUTH LOGO (Visible only when logged out) -->
+  <!-- AUTH LOGO -->
   <div id="authLogoHeader" class="py-6 flex flex-col items-center justify-center hidden">
     <div class="w-12 h-12 rounded-xl bg-slate-900 flex items-center justify-center text-emerald-400 font-black shadow-lg mb-2">
       <i data-lucide="trending-up" class="w-6 h-6 stroke-[2.5]"></i>
@@ -126,7 +126,7 @@
   <!-- MAIN WORKSPACE -->
   <main class="flex-1 max-w-7xl w-full mx-auto p-2.5 sm:p-6 pb-24">
 
-    <!-- 1. AUTH TAB (Login/Register) -->
+    <!-- 1. AUTH TAB -->
     <section id="tab-auth" class="tab-content max-w-md mx-auto my-6">
       <div class="bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-8 shadow-md space-y-6">
         <div class="text-center space-y-1">
@@ -1064,9 +1064,11 @@
         document.getElementById('newNameInput').value = currentUser.name;
         document.getElementById('editNameModal').classList.remove('hidden');
     }
+    
     function closeEditNameModal() {
         document.getElementById('editNameModal').classList.add('hidden');
     }
+    
     function saveNewName() {
         const newName = document.getElementById('newNameInput').value.trim();
         if(newName) {
@@ -1096,8 +1098,8 @@
       if (!currentUser) return;
       document.getElementById('accFullName').innerText = currentUser.name; 
       
-      let maskedPhone = currentUser.phone.length > 5 ? currentUser.phone.substring(0, 5) + 'xxxxx' : 'xxxxx';
-      document.getElementById('accPhone').innerText = '+91 ' + maskedPhone;
+      // FULL MOBILE NUMBER FIX
+      document.getElementById('accPhone').innerText = '+91 ' + currentUser.phone;
       
       document.getElementById('accInitials').innerText = currentUser.name.charAt(0).toUpperCase(); 
       document.getElementById('accBalance').innerText = `₹${currentUser.balance.toLocaleString('en-IN')}`;
@@ -1113,6 +1115,28 @@
       else tbody.innerHTML = txns.map(t => {
         let stColor = t.status==='APPROVED'?'text-emerald-600':t.status==='REJECTED'?'text-rose-600':'text-amber-600';
         return `<tr class="hover:bg-slate-50"><td class="py-2.5 px-2"><span class="bg-slate-100 font-bold px-2 py-0.5 rounded text-[10px] ${t.type==='Deposit'?'text-emerald-700':'text-blue-700'}">${t.type}</span></td><td class="py-2.5 px-2 font-mono font-bold text-slate-800">₹${t.amount}</td><td class="py-2.5 px-2 text-[10px] text-slate-500">${t.timestamp}</td><td class="py-2.5 px-2 font-mono text-[10px]">${t.utr || t.targetUpi}</td><td class="py-2.5 px-2 font-bold text-[10px] ${stColor}">${t.status}</td></tr>`;
+      }).join('');
+    }
+
+    // --- TRADE LOGS TAB FIX ---
+    function renderTradeLogs() {
+      const tbody = document.getElementById('tradeLogsTableBody');
+      if (!tbody) return;
+      const myTrades = trades.filter(t => t.userPhone === currentUser?.phone).sort((a, b) => b.startTime - a.startTime);
+      if (myTrades.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-400 text-xs">No trading history found.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = myTrades.map(t => {
+        let statusColor = t.status === 'WON' ? 'text-emerald-600' : t.status === 'LOST' ? 'text-rose-600' : 'text-amber-600';
+        return `<tr class="hover:bg-slate-50 border-b border-slate-50 last:border-0">
+          <td class="py-3 px-2 font-bold text-slate-800">${t.assetName}</td>
+          <td class="py-3 px-2"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${t.type === 'CALL' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">${t.type}</span></td>
+          <td class="py-3 px-2 font-mono font-bold text-slate-700">₹${t.amount}</td>
+          <td class="py-3 px-2 font-mono text-slate-500">₹${t.strikePrice}</td>
+          <td class="py-3 px-2 font-mono text-slate-500">${t.closePrice ? '₹' + t.closePrice : '-'}</td>
+          <td class="py-3 px-2 font-bold text-[11px] ${statusColor}">${t.status === 'WON' ? '+₹' + t.payoutAmount : t.status}</td>
+        </tr>`;
       }).join('');
     }
 
@@ -1238,7 +1262,20 @@
     function rejectDeposit(id) { syncData(); const d = deposits.find(x => x.id === id); if(d) { d.status = 'REJECTED'; setStore('fx_deposits', deposits); renderUI(); } }
     function approveWithdrawal(id) { syncData(); const w = withdrawals.find(x => x.id === id); if(w) { w.status = 'APPROVED'; setStore('fx_withdrawals', withdrawals); renderUI(); } }
     function rejectWithdrawal(id) { syncData(); const w = withdrawals.find(x => x.id === id); if(w && w.status === 'PENDING') { w.status = 'REJECTED'; const u = users.find(x => x.phone === w.userPhone); if(u) u.balance += w.amount; setStore('fx_users', users); setStore('fx_withdrawals', withdrawals); renderUI(); } }
-    function saveUserBalance(phone) { syncData(); const amt = parseFloat(document.getElementById(`editBal_${phone}`).value); if(isNaN(amt)) return; const u = users.find(x => x.phone === phone); if(u) { u.balance = Math.max(0, u.balance + amt); if(currentUser?.phone === phone) currentUser.balance = u.balance; } editingUserPhone = null; setStore('fx_users', users); setStore('fx_current_user', currentUser); renderUI(); }
+    function saveUserBalance(phone) { 
+      syncData(); 
+      const amt = parseFloat(document.getElementById(`editBal_${phone}`).value); 
+      if(isNaN(amt)) return; 
+      const u = users.find(x => x.phone === phone); 
+      if(u) { 
+        u.balance = Math.max(0, amt); 
+        if(currentUser?.phone === phone) currentUser.balance = u.balance; 
+      } 
+      editingUserPhone = null; 
+      setStore('fx_users', users); 
+      setStore('fx_current_user', currentUser); 
+      renderUI(); 
+    }
 
     function renderUI() {
       syncData();
@@ -1249,24 +1286,29 @@
       document.getElementById('nav-admin').classList.toggle('hidden', currentUser.role !== 'ADMIN');
       document.getElementById('withdrawAvailBalance').innerText = `₹${currentUser.balance.toLocaleString('en-IN')}`;
 
-      renderTradeLogs(); renderAccountTab();
+      // CRITICAL FIX: The missing renderTradeLogs function is now successfully called here, avoiding JavaScript crash.
+      renderTradeLogs(); 
+      renderAccountTab();
+      
       if(currentUser.role === 'ADMIN') {
         document.getElementById('adminTotalUsersCount').innerText = users.length;
         document.getElementById('adminPendingDepositsCount').innerText = deposits.filter(d => d.status === 'PENDING').length;
         document.getElementById('adminPendingWithdrawalsCount').innerText = withdrawals.filter(w => w.status === 'PENDING').length;
         
-        document.getElementById('adminPendingDepositsList').innerHTML = deposits.filter(d => d.status === 'PENDING').map(d => `<div class="bg-slate-50 border border-slate-200 p-3 rounded-xl flex justify-between items-center text-xs"><div><b>${d.userName}</b><br><span class="text-emerald-600 font-bold">₹${d.amount}</span><br>UTR: ${d.utr}</div><div><button onclick="approveDeposit('${d.id}')" class="px-2 py-1 bg-emerald-600 text-white rounded font-bold mr-1">OK</button><button onclick="rejectDeposit('${d.id}')" class="px-2 py-1 bg-rose-100 text-rose-600 rounded font-bold">X</button></div></div>`).join('') || '<p class="text-xs text-slate-400">None</p>';
-        document.getElementById('adminPendingWithdrawalsList').innerHTML = withdrawals.filter(w => w.status === 'PENDING').map(w => `<div class="bg-slate-50 border border-slate-200 p-3 rounded-xl flex justify-between items-center text-xs"><div><b>${w.userName}</b><br><span class="text-blue-600 font-bold">₹${w.amount}</span><br>To: ${w.targetUpi}</div><div><button onclick="approveWithdrawal('${w.id}')" class="px-2 py-1 bg-blue-600 text-white rounded font-bold mr-1">OK</button><button onclick="rejectWithdrawal('${w.id}')" class="px-2 py-1 bg-rose-100 text-rose-600 rounded font-bold">X</button></div></div>`).join('') || '<p class="text-xs text-slate-400">None</p>';
+        document.getElementById('adminPendingDepositsList').innerHTML = deposits.filter(d => d.status === 'PENDING').map(d => `<div class="bg-slate-50 border border-slate-200 p-3 rounded-xl flex justify-between items-center text-xs"><div><b>${d.userName}</b> (${d.userPhone})<br><span class="text-emerald-600 font-bold">₹${d.amount}</span><br>UTR: ${d.utr}</div><div><button onclick="approveDeposit('${d.id}')" class="px-2 py-1 bg-emerald-600 text-white rounded font-bold mr-1">OK</button><button onclick="rejectDeposit('${d.id}')" class="px-2 py-1 bg-rose-100 text-rose-600 rounded font-bold">X</button></div></div>`).join('') || '<p class="text-xs text-slate-400">None</p>';
+        document.getElementById('adminPendingWithdrawalsList').innerHTML = withdrawals.filter(w => w.status === 'PENDING').map(w => `<div class="bg-slate-50 border border-slate-200 p-3 rounded-xl flex justify-between items-center text-xs"><div><b>${w.userName}</b> (${w.userPhone})<br><span class="text-blue-600 font-bold">₹${w.amount}</span><br>To: ${w.targetUpi}</div><div><button onclick="approveWithdrawal('${w.id}')" class="px-2 py-1 bg-blue-600 text-white rounded font-bold mr-1">OK</button><button onclick="rejectWithdrawal('${w.id}')" class="px-2 py-1 bg-rose-100 text-rose-600 rounded font-bold">X</button></div></div>`).join('') || '<p class="text-xs text-slate-400">None</p>';
         
-        renderAdminUsers(); renderAdminChatConsole();
+        renderAdminUsers(); 
+        renderAdminChatConsole();
       }
       calculateOrderReturns(); lucide.createIcons();
     }
     
     function renderAdminUsers() {
       const search = document.getElementById('adminUserSearchInput')?.value.toLowerCase() || '';
-      document.getElementById('adminUserTableBody').innerHTML = users.filter(u => u.name?.toLowerCase().includes(search) || u.phone?.includes(search)).map(u => `<tr class="hover:bg-slate-50"><td class="py-3 text-slate-900 font-bold">${u.name}</td><td class="py-3 font-mono">${u.phone}</td><td class="py-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${u.role === 'ADMIN' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100'}">${u.role}</span></td><td class="py-3 font-bold text-emerald-600">₹${u.balance?.toLocaleString('en-IN')}</td><td class="py-3">${editingUserPhone === u.phone ? `<input type="number" id="editBal_${u.phone}" class="w-16 border rounded text-xs px-1 py-0.5 mr-1"><button onclick="saveUserBalance('${u.phone}')" class="bg-emerald-600 text-white px-2 py-0.5 rounded text-[10px]">Save</button>` : `<button onclick="editingUserPhone='${u.phone}'; renderUI();" class="bg-slate-200 px-2 py-1 rounded text-[10px] font-bold">Edit</button>`}</td></tr>`).join('') || `<tr><td colspan="5" class="py-4 text-center text-slate-400">No users found.</td></tr>`;
+      document.getElementById('adminUserTableBody').innerHTML = users.filter(u => u.name?.toLowerCase().includes(search) || u.phone?.includes(search)).map(u => `<tr class="hover:bg-slate-50"><td class="py-3 text-slate-900 font-bold">${u.name}</td><td class="py-3 font-mono">${u.phone}</td><td class="py-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${u.role === 'ADMIN' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100'}">${u.role}</span></td><td class="py-3 font-bold text-emerald-600">₹${u.balance?.toLocaleString('en-IN')}</td><td class="py-3">${editingUserPhone === u.phone ? `<input type="number" id="editBal_${u.phone}" value="${u.balance}" class="w-16 border rounded text-xs px-1 py-0.5 mr-1"><button onclick="saveUserBalance('${u.phone}')" class="bg-emerald-600 text-white px-2 py-0.5 rounded text-[10px]">Save</button>` : `<button onclick="editingUserPhone='${u.phone}'; renderUI();" class="bg-slate-200 px-2 py-1 rounded text-[10px] font-bold">Edit</button>`}</td></tr>`).join('') || `<tr><td colspan="5" class="py-4 text-center text-slate-400">No users found.</td></tr>`;
     }
   </script>
 </body>
 </html>
+
