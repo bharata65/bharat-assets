@@ -37,6 +37,22 @@
   <!-- TOAST NOTIFICATION CONTAINER -->
   <div id="toastContainer" class="fixed top-20 right-4 z-50 flex flex-col gap-3 pointer-events-none"></div>
 
+  <!-- HISTORY MODAL POPUP -->
+  <div id="historyModal" class="hidden fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-sm flex flex-col shadow-2xl overflow-hidden animate-[slideIn_0.2s_ease-out]">
+      <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+        <h3 class="font-black text-lg text-slate-900 flex items-center space-x-2" id="historyModalTitle">
+          <i data-lucide="history" class="w-5 h-5 text-indigo-600"></i>
+          <span>History</span>
+        </h3>
+        <button onclick="closeHistoryModal()" class="text-slate-400 hover:text-rose-500 transition bg-white p-1 rounded-lg border border-slate-200"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="p-4 max-h-[60vh] overflow-y-auto space-y-3" id="historyModalContent">
+        <!-- JS Populated -->
+      </div>
+    </div>
+  </div>
+
   <!-- TOP HEADER NAVBAR -->
   <header id="mainHeader" class="bg-white border-b border-slate-200/80 sticky top-0 z-40 shadow-xs hidden">
     <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between relative">
@@ -218,7 +234,7 @@
     <!-- 3. DEPOSIT TAB -->
     <section id="tab-deposit" class="tab-content hidden max-w-2xl mx-auto space-y-6">
       <div class="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-8 shadow-xs space-y-6 relative">
-        <button type="button" onclick="switchTab('account')" class="absolute top-4 right-4 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1 transition">
+        <button type="button" onclick="openHistoryModal('deposit')" class="absolute top-4 right-4 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1 transition shadow-sm border border-slate-200">
           <i data-lucide="history" class="w-3.5 h-3.5"></i><span>History</span>
         </button>
 
@@ -293,14 +309,13 @@
           </form>
           <button type="button" onclick="cancelDeposit()" class="w-full text-xs font-bold text-slate-500 hover:text-slate-800">Cancel & Change Amount</button>
         </div>
-
       </div>
     </section>
 
     <!-- 4. WITHDRAWAL TAB -->
     <section id="tab-withdraw" class="tab-content hidden max-w-2xl mx-auto space-y-6">
       <div class="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-8 shadow-xs space-y-6 relative">
-        <button type="button" onclick="switchTab('account')" class="absolute top-4 right-4 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1 transition">
+        <button type="button" onclick="openHistoryModal('withdraw')" class="absolute top-4 right-4 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1 transition shadow-sm border border-slate-200">
           <i data-lucide="history" class="w-3.5 h-3.5"></i><span>History</span>
         </button>
 
@@ -340,7 +355,7 @@
       <div class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs space-y-4">
         <h2 class="text-lg font-black text-slate-900 flex items-center space-x-2">
           <i data-lucide="history" class="w-5 h-5 text-indigo-600"></i>
-          <span>History & Logs</span>
+          <span>Trading History & Logs</span>
         </h2>
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
@@ -366,7 +381,10 @@
         <div class="flex items-center space-x-4">
           <div class="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-black text-2xl" id="accInitials">G</div>
           <div>
-            <h2 class="text-xl font-black text-slate-900" id="accFullName">Guest User</h2>
+            <h2 class="text-xl font-black text-slate-900 flex items-center space-x-2">
+              <span id="accFullName">Guest User</span>
+              <button onclick="editUserName()" class="text-slate-400 hover:text-indigo-600 transition" title="Edit Name"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+            </h2>
             <p class="text-sm text-slate-500 font-mono" id="accPhone">+91 XXXXX XXXXX</p>
             <div class="mt-1 inline-flex items-center bg-slate-100 border border-slate-200 px-2.5 py-0.5 rounded-lg">
               <span class="text-[10px] text-slate-500 font-bold uppercase mr-2">USER ID:</span>
@@ -429,26 +447,6 @@
           </button>
         </div>
       </div>
-
-      <div class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs space-y-4">
-        <h3 class="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
-          <i data-lucide="arrow-right-left" class="w-4 h-4 text-blue-600"></i><span>Financial Transactions</span>
-        </h3>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr class="border-b border-slate-200 text-slate-500 uppercase tracking-wider">
-                <th class="py-2 px-2">Type</th>
-                <th class="py-2 px-2">Amount</th>
-                <th class="py-2 px-2">Date/Time</th>
-                <th class="py-2 px-2">Ref / UTR</th>
-                <th class="py-2 px-2">Status</th>
-              </tr>
-            </thead>
-            <tbody id="accTransactionsBody" class="divide-y divide-slate-100 font-medium"></tbody>
-          </table>
-        </div>
-      </div>
     </section>
 
     <!-- 7. MASTER ADMIN CONSOLE TAB -->
@@ -467,11 +465,11 @@
             </label>
           </div>
           <div class="bg-slate-800 p-2.5 rounded-xl border border-slate-700 space-y-1">
-            <span class="text-[11px] font-semibold text-slate-300 block">Rigging Mode:</span>
+            <span class="text-[11px] font-semibold text-slate-300 block">Graph Control (Trade Rigging):</span>
             <div class="flex space-x-1">
-              <button type="button" onclick="setAdminRigMode('FAIR')" id="rig-FAIR" class="rig-btn px-2.5 py-1 rounded text-xs font-bold bg-slate-700 text-white">Fair</button>
-              <button type="button" onclick="setAdminRigMode('FORCE_WIN')" id="rig-FORCE_WIN" class="rig-btn px-2.5 py-1 rounded text-xs font-bold text-slate-400">Win</button>
-              <button type="button" onclick="setAdminRigMode('FORCE_LOSS')" id="rig-FORCE_LOSS" class="rig-btn px-2.5 py-1 rounded text-xs font-bold text-slate-400">Loss</button>
+              <button type="button" onclick="setAdminRigMode('UP')" id="rig-UP" class="rig-btn px-2.5 py-1 rounded text-xs font-bold text-slate-400 hover:bg-slate-700">Buy (UP)</button>
+              <button type="button" onclick="setAdminRigMode('DOWN')" id="rig-DOWN" class="rig-btn px-2.5 py-1 rounded text-xs font-bold text-slate-400 hover:bg-slate-700">Sell (DOWN)</button>
+              <button type="button" onclick="setAdminRigMode('AUTO')" id="rig-AUTO" class="rig-btn px-2.5 py-1 rounded text-xs font-bold bg-emerald-600 text-white">Auto (Loss)</button>
             </div>
           </div>
         </div>
@@ -605,7 +603,7 @@
     let authMode = 'login';
     let selectedDuration = 30;
     let selectedDepositAmount = 500;
-    let adminRigMode = 'FAIR';
+    let adminRigMode = 'AUTO'; // Default to AUTO (Loss Bias)
     let editingUserPhone = null;
     let adminSelectedChatPhone = null;
 
@@ -659,6 +657,7 @@
       const activeEl = document.getElementById(`tab-${tabId}`);
       if (activeEl) activeEl.classList.remove('hidden');
 
+      // Setup Headers and Navbars based on Auth State
       if (tabId === 'auth') {
         document.getElementById('mainHeader').classList.add('hidden');
         document.getElementById('mobileBottomNav').classList.add('hidden');
@@ -677,6 +676,7 @@
         botWidget.classList.add('bottom-20');
       }
 
+      // Desktop Nav Selection
       document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.remove('bg-slate-900', 'text-white', 'shadow-sm');
         btn.classList.add('text-slate-600', 'hover:bg-slate-100');
@@ -687,6 +687,7 @@
         currentNavBtn.classList.add('bg-slate-900', 'text-white', 'shadow-sm');
       }
 
+      // Mobile Nav Selection
       document.querySelectorAll('.mobile-nav-item').forEach(b => {
         b.classList.remove('text-emerald-600', 'text-indigo-600');
         b.classList.add('text-slate-500');
@@ -703,6 +704,7 @@
       renderUI();
     }
 
+    // --- CHART ENGINE WITH ADMIN MANIPULATION ---
     function initChartData() {
       let base = selectedAsset.price; priceHistory = []; candles = [];
       for (let i = 0; i < 40; i++) {
@@ -717,7 +719,30 @@
       setInterval(() => {
         if (candles.length === 0) return;
         const lastCandle = { ...candles[candles.length - 1] };
-        const tickChange = (Math.random() - 0.49) * selectedAsset.volatility * 3.5;
+        
+        let tickChange = (Math.random() - 0.49) * selectedAsset.volatility * 3.5;
+        
+        // ADMIN GRAPH RIGGING
+        if (adminRigMode === 'UP') {
+          tickChange = Math.abs((Math.random() * selectedAsset.volatility * 4));
+        } else if (adminRigMode === 'DOWN') {
+          tickChange = -Math.abs((Math.random() * selectedAsset.volatility * 4));
+        } else if (adminRigMode === 'AUTO') {
+          // Find if user has active trades to bias against them
+          if (currentUser) {
+            const activeTrades = trades.filter(t => t.userPhone === currentUser.phone && t.status === 'ACTIVE');
+            if (activeTrades.length > 0) {
+              const hasCall = activeTrades.some(t => t.type === 'CALL');
+              const hasPut = activeTrades.some(t => t.type === 'PUT');
+              if (hasCall && !hasPut) {
+                tickChange = -Math.abs((Math.random() * selectedAsset.volatility * 5)); // Graph goes down
+              } else if (hasPut && !hasCall) {
+                tickChange = Math.abs((Math.random() * selectedAsset.volatility * 5)); // Graph goes up
+              }
+            }
+          }
+        }
+
         const nextPrice = parseFloat((lastCandle.close + tickChange).toFixed(2));
         currentPrice = nextPrice;
         lastCandle.close = nextPrice; lastCandle.high = Math.max(lastCandle.high, nextPrice); lastCandle.low = Math.min(lastCandle.low, nextPrice);
@@ -795,8 +820,15 @@
         const now = Date.now(); let stateChanged = false;
         trades.forEach(trade => {
           if (trade.status === 'ACTIVE' && now >= trade.expiryTime) {
-            stateChanged = true; let isWin = false;
-            if (adminRigMode === 'FORCE_WIN') isWin = true; else if (adminRigMode === 'FORCE_LOSS') isWin = false; else isWin = trade.type === 'CALL' ? currentPrice > trade.strikePrice : currentPrice < trade.strikePrice;
+            stateChanged = true; 
+            
+            // Natural settlement based on rigged graph
+            let isWin = false;
+            if (trade.type === 'CALL') {
+               isWin = currentPrice > trade.strikePrice;
+            } else {
+               isWin = currentPrice < trade.strikePrice;
+            }
             
             trade.closePrice = currentPrice;
             if (isWin) {
@@ -926,8 +958,8 @@
 
       deposits.unshift({ id: 'DEP-' + Math.floor(100000 + Math.random() * 900000), userPhone: currentUser.phone, userName: currentUser.name, amount: amt, utr: utr, status: 'PENDING', timestamp: new Date().toLocaleString() });
       setStore('fx_deposits', deposits); document.getElementById('utrInput').value = ''; cancelDeposit();
-      showToast('Deposit Placed', 'Request sent to Admin. Switching to Account History.', 'success'); 
-      setTimeout(() => switchTab('account'), 800);
+      showToast('Deposit Placed', 'Request sent to Admin.', 'success'); 
+      openHistoryModal('deposit');
     }
 
     function handleWithdrawSubmit(e) {
@@ -940,10 +972,63 @@
       setStore('fx_users', users); setStore('fx_current_user', currentUser);
       withdrawals.unshift({ id: 'WD-' + Math.floor(100000 + Math.random() * 900000), userPhone: currentUser.phone, userName: currentUser.name, amount: amt, targetUpi: upi, status: 'PENDING', timestamp: new Date().toLocaleString() });
       setStore('fx_withdrawals', withdrawals); document.getElementById('withdrawAmountInput').value = ''; document.getElementById('withdrawUpiInput').value = '';
-      showToast('Withdrawal Placed', 'Payout request submitted. Switching to Account History.', 'success'); 
-      setTimeout(() => switchTab('account'), 800);
+      showToast('Withdrawal Placed', 'Payout request submitted.', 'success'); 
+      renderUI();
+      openHistoryModal('withdraw');
+    }
+    
+    // --- HISTORY MODALS ---
+    function openHistoryModal(type) {
+       document.getElementById('historyModal').classList.remove('hidden');
+       document.getElementById('historyModalTitle').innerHTML = `<i data-lucide="history" class="w-5 h-5 text-indigo-600"></i><span>${type === 'deposit' ? 'Deposit History' : 'Withdrawal History'}</span>`;
+       
+       const content = document.getElementById('historyModalContent');
+       let data = type === 'deposit' ? deposits.filter(d => d.userPhone === currentUser.phone) : withdrawals.filter(w => w.userPhone === currentUser.phone);
+       
+       if(data.length === 0) {
+          content.innerHTML = `<p class="text-center text-slate-500 text-xs py-4">No records found.</p>`;
+          lucide.createIcons();
+          return;
+       }
+
+       content.innerHTML = data.map(item => {
+          let statusColor = item.status === 'APPROVED' ? 'text-emerald-600 bg-emerald-50 border-emerald-200' : item.status === 'REJECTED' ? 'text-rose-600 bg-rose-50 border-rose-200' : 'text-amber-600 bg-amber-50 border-amber-200';
+          let statusText = item.status === 'PENDING' ? 'Processing' : item.status;
+          let detailText = type === 'deposit' ? `UTR: ${item.utr}` : `To: ${item.targetUpi}`;
+          
+          return `
+          <div class="border border-slate-200 rounded-xl p-3 flex justify-between items-center bg-white shadow-sm">
+             <div>
+                <div class="font-bold text-slate-800 text-sm">₹${item.amount}</div>
+                <div class="text-[10px] text-slate-500 font-mono mt-0.5">${item.timestamp}</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">${detailText}</div>
+             </div>
+             <div class="px-2.5 py-1 rounded-lg text-[10px] font-bold border ${statusColor}">
+                ${statusText}
+             </div>
+          </div>`;
+       }).join('');
+       lucide.createIcons();
+    }
+    
+    function closeHistoryModal() {
+       document.getElementById('historyModal').classList.add('hidden');
     }
 
+    // --- ACCOUNT PAGE ---
+    function editUserName() {
+       const newName = prompt("Enter your new full name:", currentUser.name);
+       if (newName && newName.trim().length > 0) {
+          currentUser.name = newName.trim();
+          const u = users.find(x => x.phone === currentUser.phone);
+          if (u) u.name = currentUser.name;
+          setStore('fx_users', users);
+          setStore('fx_current_user', currentUser);
+          renderUI();
+          showToast('Updated', 'Profile name updated successfully.', 'success');
+       }
+    }
+    
     function saveBankDetails(e) {
       e.preventDefault();
       currentUser.bankDetails = { holder: document.getElementById('bankHolderInput').value, acc: document.getElementById('bankAccInput').value, ifsc: document.getElementById('bankIfscInput').value, upi: document.getElementById('bankUpiInput').value };
@@ -960,13 +1045,6 @@
         document.getElementById('bankHolderInput').value = currentUser.bankDetails.holder || ''; document.getElementById('bankAccInput').value = currentUser.bankDetails.acc || '';
         document.getElementById('bankIfscInput').value = currentUser.bankDetails.ifsc || ''; document.getElementById('bankUpiInput').value = currentUser.bankDetails.upi || '';
       }
-      const txns = [...deposits.filter(d => d.userPhone === currentUser.phone).map(d => ({ ...d, type: 'Deposit', sortTime: new Date(d.timestamp).getTime() })), ...withdrawals.filter(w => w.userPhone === currentUser.phone).map(w => ({ ...w, type: 'Withdraw', sortTime: new Date(w.timestamp).getTime() }))].sort((a,b) => b.sortTime - a.sortTime);
-      const tbody = document.getElementById('accTransactionsBody');
-      if (txns.length === 0) tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-400">No financial transactions found.</td></tr>`;
-      else tbody.innerHTML = txns.map(t => {
-        let stColor = t.status==='APPROVED'?'text-emerald-600':t.status==='REJECTED'?'text-rose-600':'text-amber-600';
-        return `<tr class="hover:bg-slate-50"><td class="py-2.5 px-2"><span class="bg-slate-100 font-bold px-2 py-0.5 rounded text-[10px] ${t.type==='Deposit'?'text-emerald-700':'text-blue-700'}">${t.type}</span></td><td class="py-2.5 px-2 font-mono font-bold text-slate-800">₹${t.amount}</td><td class="py-2.5 px-2 text-[10px] text-slate-500">${t.timestamp}</td><td class="py-2.5 px-2 font-mono text-[10px]">${t.utr || t.targetUpi}</td><td class="py-2.5 px-2 font-bold text-[10px] ${stColor}">${t.status}</td></tr>`;
-      }).join('');
     }
 
     // --- SUPPORT CHATBOT ---
@@ -1060,7 +1138,15 @@
       if (authMode === 'register') {
         if (!name) return showToast('Error', 'Name required', 'error');
         if (users.find(u => u.phone === phone)) return showToast('Error', 'Phone already registered.', 'error');
-        currentUser = { uid: Math.floor(100000 + Math.random() * 900000).toString(), name, phone, password: pass, role: 'USER', balance: 0 };
+        
+        // Auto Generate Sequential UID starting from 100001
+        let nextUid = 100001;
+        if (users.length > 0) {
+           const maxUid = Math.max(...users.map(u => parseInt(u.uid) || 100000));
+           nextUid = maxUid + 1;
+        }
+
+        currentUser = { uid: nextUid.toString(), name, phone, password: pass, role: 'USER', balance: 0 };
         users.push(currentUser); setStore('fx_users', users); setStore('fx_current_user', currentUser);
         showToast('Registered', 'Account created successfully!', 'success'); switchTab('deposit');
       } else {
@@ -1079,8 +1165,9 @@
 
     // --- ADMIN PANEL ACTIONS ---
     function setAdminRigMode(mode) {
-      adminRigMode = mode; document.querySelectorAll('.rig-btn').forEach(b => b.className = 'rig-btn px-2.5 py-1 rounded text-xs font-bold text-slate-400');
-      document.getElementById(`rig-${mode}`).className = mode === 'FORCE_WIN' ? 'rig-btn px-2.5 py-1 rounded text-xs font-bold bg-emerald-600 text-white' : mode === 'FORCE_LOSS' ? 'rig-btn px-2.5 py-1 rounded text-xs font-bold bg-rose-600 text-white' : 'rig-btn px-2.5 py-1 rounded text-xs font-bold bg-slate-700 text-white';
+      adminRigMode = mode; 
+      document.querySelectorAll('.rig-btn').forEach(b => b.className = 'rig-btn px-2.5 py-1 rounded text-xs font-bold text-slate-400 hover:bg-slate-700');
+      document.getElementById(`rig-${mode}`).className = 'rig-btn px-2.5 py-1 rounded text-xs font-bold bg-emerald-600 text-white';
     }
     function approveDeposit(id) { const d = deposits.find(x => x.id === id); if(d) { d.status = 'APPROVED'; const u = users.find(x => x.phone === d.userPhone); if(u) u.balance += d.amount; if(currentUser?.phone === d.userPhone) currentUser.balance = u.balance; setStore('fx_users', users); setStore('fx_current_user', currentUser); setStore('fx_deposits', deposits); renderUI(); } }
     function rejectDeposit(id) { const d = deposits.find(x => x.id === id); if(d) { d.status = 'REJECTED'; setStore('fx_deposits', deposits); renderUI(); } }
