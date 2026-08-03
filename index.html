@@ -25,11 +25,13 @@
     ::-webkit-scrollbar-track { background: #f1f5f9; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
 
-    /* Animated Toasts */
+    /* Animated Toasts & Modals */
     @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
     @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+    @keyframes popIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     .toast-enter { animation: slideIn 0.3s ease-out forwards; }
     .toast-exit { animation: slideOut 0.3s ease-in forwards; }
+    .modal-enter { animation: popIn 0.2s ease-out forwards; }
   </style>
 </head>
 <body class="min-h-screen flex flex-col bg-slate-50 text-slate-900 pb-16 md:pb-0 selection:bg-emerald-100 selection:text-emerald-900 overflow-x-hidden">
@@ -39,7 +41,7 @@
 
   <!-- HISTORY MODAL POPUP -->
   <div id="historyModal" class="hidden fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl w-full max-w-sm flex flex-col shadow-2xl overflow-hidden animate-[slideIn_0.2s_ease-out]">
+    <div class="bg-white rounded-2xl w-full max-w-sm flex flex-col shadow-2xl overflow-hidden modal-enter">
       <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
         <h3 class="font-black text-lg text-slate-900 flex items-center space-x-2" id="historyModalTitle">
           <i data-lucide="history" class="w-5 h-5 text-indigo-600"></i>
@@ -49,6 +51,28 @@
       </div>
       <div class="p-4 max-h-[60vh] overflow-y-auto space-y-3" id="historyModalContent">
         <!-- JS Populated -->
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT NAME MODAL POPUP (PROFESSIONAL) -->
+  <div id="editNameModal" class="hidden fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-sm flex flex-col shadow-2xl overflow-hidden modal-enter">
+      <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+        <h3 class="font-black text-lg text-slate-900 flex items-center space-x-2">
+          <i data-lucide="user" class="w-5 h-5 text-indigo-600"></i>
+          <span>Edit Profile Name</span>
+        </h3>
+        <button onclick="closeEditNameModal()" class="text-slate-400 hover:text-rose-500 transition bg-white p-1 rounded-lg border border-slate-200"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="p-5 space-y-4">
+        <div>
+          <label class="text-xs font-semibold text-slate-700 block mb-1">New Full Name</label>
+          <input type="text" id="newNameInput" placeholder="Enter your full name" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-600">
+        </div>
+        <button type="button" onclick="saveNewName()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold py-3.5 rounded-xl transition shadow-sm text-sm">
+          Save Changes
+        </button>
       </div>
     </div>
   </div>
@@ -309,6 +333,7 @@
           </form>
           <button type="button" onclick="cancelDeposit()" class="w-full text-xs font-bold text-slate-500 hover:text-slate-800">Cancel & Change Amount</button>
         </div>
+
       </div>
     </section>
 
@@ -347,6 +372,7 @@
             Request Payout
           </button>
         </form>
+
       </div>
     </section>
 
@@ -383,13 +409,9 @@
           <div>
             <h2 class="text-xl font-black text-slate-900 flex items-center space-x-2">
               <span id="accFullName">Guest User</span>
-              <button onclick="editUserName()" class="text-slate-400 hover:text-indigo-600 transition" title="Edit Name"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+              <button onclick="openEditNameModal()" class="text-slate-400 hover:text-indigo-600 transition" title="Edit Name"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
             </h2>
-            <p class="text-sm text-slate-500 font-mono" id="accPhone">+91 XXXXX XXXXX</p>
-            <div class="mt-1 inline-flex items-center bg-slate-100 border border-slate-200 px-2.5 py-0.5 rounded-lg">
-              <span class="text-[10px] text-slate-500 font-bold uppercase mr-2">USER ID:</span>
-              <span class="text-xs font-extrabold font-mono tracking-widest text-slate-800" id="accUid">------</span>
-            </div>
+            <p class="text-sm text-slate-500 font-mono mt-0.5" id="accPhone">+91 xxxxx</p>
           </div>
         </div>
         <div class="text-center sm:text-right bg-slate-50 p-4 rounded-xl border border-slate-200 w-full sm:w-auto">
@@ -445,6 +467,26 @@
           <button type="button" onclick="handleLogout()" class="w-full mt-4 bg-rose-50 text-rose-600 border border-rose-200 text-xs font-bold py-2.5 rounded-lg transition hover:bg-rose-100 flex justify-center items-center space-x-2">
             <i data-lucide="log-out" class="w-4 h-4"></i><span>Secure Logout</span>
           </button>
+        </div>
+      </div>
+
+      <div class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs space-y-4">
+        <h3 class="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+          <i data-lucide="arrow-right-left" class="w-4 h-4 text-blue-600"></i><span>Financial Transactions</span>
+        </h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="border-b border-slate-200 text-slate-500 uppercase tracking-wider">
+                <th class="py-2 px-2">Type</th>
+                <th class="py-2 px-2">Amount</th>
+                <th class="py-2 px-2">Date/Time</th>
+                <th class="py-2 px-2">Ref / UTR</th>
+                <th class="py-2 px-2">Status</th>
+              </tr>
+            </thead>
+            <tbody id="accTransactionsBody" class="divide-y divide-slate-100 font-medium"></tbody>
+          </table>
         </div>
       </div>
     </section>
@@ -525,7 +567,7 @@
           <table class="w-full text-left text-xs">
             <thead>
               <tr class="border-b border-slate-200 text-slate-500 uppercase tracking-wider">
-                <th class="py-2">Name / UID</th>
+                <th class="py-2">Name</th>
                 <th class="py-2">Phone</th>
                 <th class="py-2">Role</th>
                 <th class="py-2">Balance</th>
@@ -576,34 +618,33 @@
 
   <!-- JS ENGINE -->
   <script>
-    // System Helpers
+    // --- STORAGE SYNC ENGINE ---
     function getStore(key, defaultVal) { try { const item = localStorage.getItem(key); return item ? JSON.parse(item) : defaultVal; } catch (e) { return defaultVal; } }
     function setStore(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { console.error(e); } }
 
-    let users = getStore('fx_users', []);
-    if (!Array.isArray(users)) users = [];
-    
-    let currentUser = getStore('fx_current_user', null);
-    
-    let deposits = getStore('fx_deposits', []);
-    if (!Array.isArray(deposits)) deposits = [];
-    
-    let withdrawals = getStore('fx_withdrawals', []);
-    if (!Array.isArray(withdrawals)) withdrawals = [];
-    
-    let trades = getStore('fx_trades', []);
-    if (!Array.isArray(trades)) trades = [];
-    
-    let chatMessages = getStore('fx_chats', []);
-    if (!Array.isArray(chatMessages)) chatMessages = [];
-    
-    let botEnabled = getStore('fx_bot_enabled', true);
+    let users = [];
+    let currentUser = null;
+    let deposits = [];
+    let withdrawals = [];
+    let trades = [];
+    let chatMessages = [];
+    let botEnabled = true;
+
+    function syncData() {
+      users = getStore('fx_users', []);
+      currentUser = getStore('fx_current_user', null);
+      deposits = getStore('fx_deposits', []);
+      withdrawals = getStore('fx_withdrawals', []);
+      trades = getStore('fx_trades', []);
+      chatMessages = getStore('fx_chats', []);
+      botEnabled = getStore('fx_bot_enabled', true);
+    }
 
     let activeTab = 'trade';
     let authMode = 'login';
     let selectedDuration = 30;
     let selectedDepositAmount = 500;
-    let adminRigMode = 'AUTO'; // Default to AUTO (Loss Bias)
+    let adminRigMode = 'AUTO'; 
     let editingUserPhone = null;
     let adminSelectedChatPhone = null;
 
@@ -618,6 +659,7 @@
     let priceHistory = [], candles = [], currentPrice = selectedAsset.price;
 
     window.addEventListener('DOMContentLoaded', () => {
+      syncData();
       lucide.createIcons();
       initChartData();
       renderAssetPills();
@@ -657,7 +699,6 @@
       const activeEl = document.getElementById(`tab-${tabId}`);
       if (activeEl) activeEl.classList.remove('hidden');
 
-      // Setup Headers and Navbars based on Auth State
       if (tabId === 'auth') {
         document.getElementById('mainHeader').classList.add('hidden');
         document.getElementById('mobileBottomNav').classList.add('hidden');
@@ -676,7 +717,6 @@
         botWidget.classList.add('bottom-20');
       }
 
-      // Desktop Nav Selection
       document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.remove('bg-slate-900', 'text-white', 'shadow-sm');
         btn.classList.add('text-slate-600', 'hover:bg-slate-100');
@@ -687,7 +727,6 @@
         currentNavBtn.classList.add('bg-slate-900', 'text-white', 'shadow-sm');
       }
 
-      // Mobile Nav Selection
       document.querySelectorAll('.mobile-nav-item').forEach(b => {
         b.classList.remove('text-emerald-600', 'text-indigo-600');
         b.classList.add('text-slate-500');
@@ -704,7 +743,7 @@
       renderUI();
     }
 
-    // --- CHART ENGINE WITH ADMIN MANIPULATION ---
+    // --- CHART ENGINE ---
     function initChartData() {
       let base = selectedAsset.price; priceHistory = []; candles = [];
       for (let i = 0; i < 40; i++) {
@@ -722,22 +761,22 @@
         
         let tickChange = (Math.random() - 0.49) * selectedAsset.volatility * 3.5;
         
-        // ADMIN GRAPH RIGGING
+        // ADMIN RIGGING LOGIC
         if (adminRigMode === 'UP') {
           tickChange = Math.abs((Math.random() * selectedAsset.volatility * 4));
         } else if (adminRigMode === 'DOWN') {
           tickChange = -Math.abs((Math.random() * selectedAsset.volatility * 4));
         } else if (adminRigMode === 'AUTO') {
-          // Find if user has active trades to bias against them
           if (currentUser) {
+            syncData(); // Ensure fresh trades
             const activeTrades = trades.filter(t => t.userPhone === currentUser.phone && t.status === 'ACTIVE');
             if (activeTrades.length > 0) {
               const hasCall = activeTrades.some(t => t.type === 'CALL');
               const hasPut = activeTrades.some(t => t.type === 'PUT');
               if (hasCall && !hasPut) {
-                tickChange = -Math.abs((Math.random() * selectedAsset.volatility * 5)); // Graph goes down
+                tickChange = -Math.abs((Math.random() * selectedAsset.volatility * 5)); 
               } else if (hasPut && !hasCall) {
-                tickChange = Math.abs((Math.random() * selectedAsset.volatility * 5)); // Graph goes up
+                tickChange = Math.abs((Math.random() * selectedAsset.volatility * 5)); 
               }
             }
           }
@@ -818,11 +857,11 @@
     function startTradeEngineLoop() {
       setInterval(() => {
         const now = Date.now(); let stateChanged = false;
+        syncData();
         trades.forEach(trade => {
           if (trade.status === 'ACTIVE' && now >= trade.expiryTime) {
             stateChanged = true; 
             
-            // Natural settlement based on rigged graph
             let isWin = false;
             if (trade.type === 'CALL') {
                isWin = currentPrice > trade.strikePrice;
@@ -850,6 +889,7 @@
 
     function placeTrade(type) {
       if (!currentUser) return switchTab('auth');
+      syncData();
       const stake = parseFloat(document.getElementById('tradeStakeInput').value) || 0;
       if (stake < 10) return showToast('Error', 'Min stake is ₹10.', 'error');
       if (currentUser.balance < stake) { showToast('Insufficient Balance', 'Please deposit funds to trade.', 'error'); return switchTab('deposit'); }
@@ -950,6 +990,7 @@
 
     function handleDepositSubmit(e) {
       e.preventDefault(); if (!currentUser) return switchTab('auth');
+      syncData();
       const customVal = parseFloat(document.getElementById('customDepositInput').value);
       const amt = customVal && customVal > 0 ? customVal : selectedDepositAmount;
       const utr = document.getElementById('utrInput').value.trim();
@@ -959,11 +1000,13 @@
       deposits.unshift({ id: 'DEP-' + Math.floor(100000 + Math.random() * 900000), userPhone: currentUser.phone, userName: currentUser.name, amount: amt, utr: utr, status: 'PENDING', timestamp: new Date().toLocaleString() });
       setStore('fx_deposits', deposits); document.getElementById('utrInput').value = ''; cancelDeposit();
       showToast('Deposit Placed', 'Request sent to Admin.', 'success'); 
+      renderUI();
       openHistoryModal('deposit');
     }
 
     function handleWithdrawSubmit(e) {
       e.preventDefault(); if (!currentUser) return;
+      syncData();
       const amt = parseFloat(document.getElementById('withdrawAmountInput').value); const upi = document.getElementById('withdrawUpiInput').value.trim();
       if (amt < 500) return showToast('Error', 'Minimum withdrawal is ₹500.', 'error');
       if (amt > currentUser.balance) return showToast('Error', 'Insufficient balance.', 'error');
@@ -979,6 +1022,7 @@
     
     // --- HISTORY MODALS ---
     function openHistoryModal(type) {
+       syncData();
        document.getElementById('historyModal').classList.remove('hidden');
        document.getElementById('historyModalTitle').innerHTML = `<i data-lucide="history" class="w-5 h-5 text-indigo-600"></i><span>${type === 'deposit' ? 'Deposit History' : 'Withdrawal History'}</span>`;
        
@@ -1016,21 +1060,33 @@
     }
 
     // --- ACCOUNT PAGE ---
-    function editUserName() {
-       const newName = prompt("Enter your new full name:", currentUser.name);
-       if (newName && newName.trim().length > 0) {
-          currentUser.name = newName.trim();
-          const u = users.find(x => x.phone === currentUser.phone);
-          if (u) u.name = currentUser.name;
-          setStore('fx_users', users);
-          setStore('fx_current_user', currentUser);
-          renderUI();
-          showToast('Updated', 'Profile name updated successfully.', 'success');
-       }
+    function openEditNameModal() {
+        document.getElementById('newNameInput').value = currentUser.name;
+        document.getElementById('editNameModal').classList.remove('hidden');
+    }
+    function closeEditNameModal() {
+        document.getElementById('editNameModal').classList.add('hidden');
+    }
+    function saveNewName() {
+        const newName = document.getElementById('newNameInput').value.trim();
+        if(newName) {
+            syncData();
+            currentUser.name = newName;
+            const u = users.find(x => x.phone === currentUser.phone);
+            if (u) u.name = newName;
+            setStore('fx_users', users);
+            setStore('fx_current_user', currentUser);
+            renderUI();
+            showToast('Success', 'Profile name updated.', 'success');
+            closeEditNameModal();
+        } else {
+            showToast('Error', 'Name cannot be empty.', 'error');
+        }
     }
     
     function saveBankDetails(e) {
       e.preventDefault();
+      syncData();
       currentUser.bankDetails = { holder: document.getElementById('bankHolderInput').value, acc: document.getElementById('bankAccInput').value, ifsc: document.getElementById('bankIfscInput').value, upi: document.getElementById('bankUpiInput').value };
       const u = users.find(x => x.phone === currentUser.phone); if(u) u.bankDetails = currentUser.bankDetails;
       setStore('fx_users', users); setStore('fx_current_user', currentUser); showToast('Success', 'Bank details securely saved.', 'success');
@@ -1038,13 +1094,26 @@
 
     function renderAccountTab() {
       if (!currentUser) return;
-      document.getElementById('accFullName').innerText = currentUser.name; document.getElementById('accPhone').innerText = currentUser.phone;
-      document.getElementById('accInitials').innerText = currentUser.name.charAt(0).toUpperCase(); document.getElementById('accUid').innerText = currentUser.uid || '000000';
+      document.getElementById('accFullName').innerText = currentUser.name; 
+      
+      let maskedPhone = currentUser.phone.length > 5 ? currentUser.phone.substring(0, 5) + 'xxxxx' : 'xxxxx';
+      document.getElementById('accPhone').innerText = '+91 ' + maskedPhone;
+      
+      document.getElementById('accInitials').innerText = currentUser.name.charAt(0).toUpperCase(); 
       document.getElementById('accBalance').innerText = `₹${currentUser.balance.toLocaleString('en-IN')}`;
+      
       if(currentUser.bankDetails) {
         document.getElementById('bankHolderInput').value = currentUser.bankDetails.holder || ''; document.getElementById('bankAccInput').value = currentUser.bankDetails.acc || '';
         document.getElementById('bankIfscInput').value = currentUser.bankDetails.ifsc || ''; document.getElementById('bankUpiInput').value = currentUser.bankDetails.upi || '';
       }
+      
+      const txns = [...deposits.filter(d => d.userPhone === currentUser.phone).map(d => ({ ...d, type: 'Deposit', sortTime: new Date(d.timestamp).getTime() })), ...withdrawals.filter(w => w.userPhone === currentUser.phone).map(w => ({ ...w, type: 'Withdraw', sortTime: new Date(w.timestamp).getTime() }))].sort((a,b) => b.sortTime - a.sortTime);
+      const tbody = document.getElementById('accTransactionsBody');
+      if (txns.length === 0) tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-400">No financial transactions found.</td></tr>`;
+      else tbody.innerHTML = txns.map(t => {
+        let stColor = t.status==='APPROVED'?'text-emerald-600':t.status==='REJECTED'?'text-rose-600':'text-amber-600';
+        return `<tr class="hover:bg-slate-50"><td class="py-2.5 px-2"><span class="bg-slate-100 font-bold px-2 py-0.5 rounded text-[10px] ${t.type==='Deposit'?'text-emerald-700':'text-blue-700'}">${t.type}</span></td><td class="py-2.5 px-2 font-mono font-bold text-slate-800">₹${t.amount}</td><td class="py-2.5 px-2 text-[10px] text-slate-500">${t.timestamp}</td><td class="py-2.5 px-2 font-mono text-[10px]">${t.utr || t.targetUpi}</td><td class="py-2.5 px-2 font-bold text-[10px] ${stColor}">${t.status}</td></tr>`;
+      }).join('');
     }
 
     // --- SUPPORT CHATBOT ---
@@ -1062,7 +1131,7 @@
 
     function handleUserChatSend(e) {
       e.preventDefault(); const input = document.getElementById('userChatInput'); const text = input.value.trim(); if (!text) return;
-      
+      syncData();
       const uPhone = currentUser ? currentUser.phone : 'Guest';
       const uName = currentUser ? currentUser.name : 'Guest User';
 
@@ -1109,6 +1178,7 @@
 
     function sendAdminChatReply() {
       const text = document.getElementById('adminReplyInput').value.trim(); if (!text || !adminSelectedChatPhone) return;
+      syncData();
       chatMessages.push({ id: 'MSG-'+Date.now(), userPhone: adminSelectedChatPhone, userName: 'Support', sender: 'ADMIN', text, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) });
       setStore('fx_chats', chatMessages); document.getElementById('adminReplyInput').value = ''; renderAdminChatConsole(); renderUserChatMessages();
     }
@@ -1124,6 +1194,7 @@
 
     function handleAuthSubmit(e) {
       e.preventDefault();
+      syncData();
       const phone = document.getElementById('authPhoneInput').value.trim();
       const pass = document.getElementById('authPasswordInput').value.trim();
       const name = document.getElementById('authNameInput').value.trim();
@@ -1131,7 +1202,7 @@
       document.getElementById('authErrorBox').classList.add('hidden');
 
       if (phone === '9529951116' && pass === 'Ritesh555') {
-        currentUser = { uid: '999999', name: 'Master Admin', phone, role: 'ADMIN', balance: 9999999 };
+        currentUser = { name: 'Master Admin', phone, role: 'ADMIN', balance: 9999999 };
         setStore('fx_current_user', currentUser); switchTab('admin'); showToast('Admin Verified', 'Welcome to Master Console', 'success'); return;
       }
 
@@ -1139,26 +1210,19 @@
         if (!name) return showToast('Error', 'Name required', 'error');
         if (users.find(u => u.phone === phone)) return showToast('Error', 'Phone already registered.', 'error');
         
-        // Auto Generate Sequential UID starting from 100001
-        let nextUid = 100001;
-        if (users.length > 0) {
-           const maxUid = Math.max(...users.map(u => parseInt(u.uid) || 100000));
-           nextUid = maxUid + 1;
-        }
-
-        currentUser = { uid: nextUid.toString(), name, phone, password: pass, role: 'USER', balance: 0 };
+        currentUser = { name, phone, password: pass, role: 'USER', balance: 0 };
         users.push(currentUser); setStore('fx_users', users); setStore('fx_current_user', currentUser);
         showToast('Registered', 'Account created successfully!', 'success'); switchTab('deposit');
       } else {
         const u = users.find(x => x.phone === phone && x.password === pass);
         if (u) {
-          if(!u.uid) u.uid = Math.floor(100000 + Math.random() * 900000).toString();
           currentUser = u; setStore('fx_users', users); setStore('fx_current_user', currentUser);
           showToast('Welcome Back', 'Logged in securely.', 'success'); switchTab('trade');
         } else {
           showToast('Login Failed', 'Invalid credentials.', 'error');
         }
       }
+      renderUI();
     }
 
     function handleLogout() { currentUser = null; localStorage.removeItem('fx_current_user'); showToast('Logged Out', 'Signed out safely.', 'success'); switchTab('auth'); }
@@ -1169,13 +1233,15 @@
       document.querySelectorAll('.rig-btn').forEach(b => b.className = 'rig-btn px-2.5 py-1 rounded text-xs font-bold text-slate-400 hover:bg-slate-700');
       document.getElementById(`rig-${mode}`).className = 'rig-btn px-2.5 py-1 rounded text-xs font-bold bg-emerald-600 text-white';
     }
-    function approveDeposit(id) { const d = deposits.find(x => x.id === id); if(d) { d.status = 'APPROVED'; const u = users.find(x => x.phone === d.userPhone); if(u) u.balance += d.amount; if(currentUser?.phone === d.userPhone) currentUser.balance = u.balance; setStore('fx_users', users); setStore('fx_current_user', currentUser); setStore('fx_deposits', deposits); renderUI(); } }
-    function rejectDeposit(id) { const d = deposits.find(x => x.id === id); if(d) { d.status = 'REJECTED'; setStore('fx_deposits', deposits); renderUI(); } }
-    function approveWithdrawal(id) { const w = withdrawals.find(x => x.id === id); if(w) { w.status = 'APPROVED'; setStore('fx_withdrawals', withdrawals); renderUI(); } }
-    function rejectWithdrawal(id) { const w = withdrawals.find(x => x.id === id); if(w && w.status === 'PENDING') { w.status = 'REJECTED'; const u = users.find(x => x.phone === w.userPhone); if(u) u.balance += w.amount; setStore('fx_users', users); setStore('fx_withdrawals', withdrawals); renderUI(); } }
-    function saveUserBalance(phone) { const amt = parseFloat(document.getElementById(`editBal_${phone}`).value); if(isNaN(amt)) return; const u = users.find(x => x.phone === phone); if(u) { u.balance = Math.max(0, u.balance + amt); if(currentUser?.phone === phone) currentUser.balance = u.balance; } editingUserPhone = null; setStore('fx_users', users); setStore('fx_current_user', currentUser); renderUI(); }
+    
+    function approveDeposit(id) { syncData(); const d = deposits.find(x => x.id === id); if(d) { d.status = 'APPROVED'; const u = users.find(x => x.phone === d.userPhone); if(u) u.balance += d.amount; if(currentUser?.phone === d.userPhone) currentUser.balance = u.balance; setStore('fx_users', users); setStore('fx_current_user', currentUser); setStore('fx_deposits', deposits); renderUI(); } }
+    function rejectDeposit(id) { syncData(); const d = deposits.find(x => x.id === id); if(d) { d.status = 'REJECTED'; setStore('fx_deposits', deposits); renderUI(); } }
+    function approveWithdrawal(id) { syncData(); const w = withdrawals.find(x => x.id === id); if(w) { w.status = 'APPROVED'; setStore('fx_withdrawals', withdrawals); renderUI(); } }
+    function rejectWithdrawal(id) { syncData(); const w = withdrawals.find(x => x.id === id); if(w && w.status === 'PENDING') { w.status = 'REJECTED'; const u = users.find(x => x.phone === w.userPhone); if(u) u.balance += w.amount; setStore('fx_users', users); setStore('fx_withdrawals', withdrawals); renderUI(); } }
+    function saveUserBalance(phone) { syncData(); const amt = parseFloat(document.getElementById(`editBal_${phone}`).value); if(isNaN(amt)) return; const u = users.find(x => x.phone === phone); if(u) { u.balance = Math.max(0, u.balance + amt); if(currentUser?.phone === phone) currentUser.balance = u.balance; } editingUserPhone = null; setStore('fx_users', users); setStore('fx_current_user', currentUser); renderUI(); }
 
     function renderUI() {
+      syncData();
       if (!currentUser) return;
       const hl = document.getElementById('headerLeftUserBadge'), hc = document.getElementById('headerAuthContainer');
       hl.innerHTML = `<div class="bg-slate-100 border border-slate-200/80 px-2.5 py-1 rounded-xl"><span class="text-[9px] text-slate-400 block font-bold leading-none">Wallet</span><span class="text-xs font-extrabold text-emerald-700 font-mono">₹${currentUser.balance.toLocaleString('en-IN')}</span></div>`;
@@ -1188,8 +1254,10 @@
         document.getElementById('adminTotalUsersCount').innerText = users.length;
         document.getElementById('adminPendingDepositsCount').innerText = deposits.filter(d => d.status === 'PENDING').length;
         document.getElementById('adminPendingWithdrawalsCount').innerText = withdrawals.filter(w => w.status === 'PENDING').length;
+        
         document.getElementById('adminPendingDepositsList').innerHTML = deposits.filter(d => d.status === 'PENDING').map(d => `<div class="bg-slate-50 border border-slate-200 p-3 rounded-xl flex justify-between items-center text-xs"><div><b>${d.userName}</b><br><span class="text-emerald-600 font-bold">₹${d.amount}</span><br>UTR: ${d.utr}</div><div><button onclick="approveDeposit('${d.id}')" class="px-2 py-1 bg-emerald-600 text-white rounded font-bold mr-1">OK</button><button onclick="rejectDeposit('${d.id}')" class="px-2 py-1 bg-rose-100 text-rose-600 rounded font-bold">X</button></div></div>`).join('') || '<p class="text-xs text-slate-400">None</p>';
         document.getElementById('adminPendingWithdrawalsList').innerHTML = withdrawals.filter(w => w.status === 'PENDING').map(w => `<div class="bg-slate-50 border border-slate-200 p-3 rounded-xl flex justify-between items-center text-xs"><div><b>${w.userName}</b><br><span class="text-blue-600 font-bold">₹${w.amount}</span><br>To: ${w.targetUpi}</div><div><button onclick="approveWithdrawal('${w.id}')" class="px-2 py-1 bg-blue-600 text-white rounded font-bold mr-1">OK</button><button onclick="rejectWithdrawal('${w.id}')" class="px-2 py-1 bg-rose-100 text-rose-600 rounded font-bold">X</button></div></div>`).join('') || '<p class="text-xs text-slate-400">None</p>';
+        
         renderAdminUsers(); renderAdminChatConsole();
       }
       calculateOrderReturns(); lucide.createIcons();
@@ -1197,7 +1265,7 @@
     
     function renderAdminUsers() {
       const search = document.getElementById('adminUserSearchInput')?.value.toLowerCase() || '';
-      document.getElementById('adminUserTableBody').innerHTML = users.filter(u => u.name?.toLowerCase().includes(search) || u.phone?.includes(search)).map(u => `<tr class="hover:bg-slate-50"><td class="py-3 text-slate-900 font-bold">${u.name}<br><span class="text-[9px] font-mono text-slate-500">${u.uid}</span></td><td class="py-3 font-mono">${u.phone}</td><td class="py-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${u.role === 'ADMIN' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100'}">${u.role}</span></td><td class="py-3 font-bold text-emerald-600">₹${u.balance?.toLocaleString('en-IN')}</td><td class="py-3">${editingUserPhone === u.phone ? `<input type="number" id="editBal_${u.phone}" class="w-16 border rounded text-xs px-1 py-0.5 mr-1"><button onclick="saveUserBalance('${u.phone}')" class="bg-emerald-600 text-white px-2 py-0.5 rounded text-[10px]">Save</button>` : `<button onclick="editingUserPhone='${u.phone}'; renderUI();" class="bg-slate-200 px-2 py-1 rounded text-[10px] font-bold">Edit</button>`}</td></tr>`).join('') || `<tr><td colspan="5" class="py-4 text-center text-slate-400">No users found.</td></tr>`;
+      document.getElementById('adminUserTableBody').innerHTML = users.filter(u => u.name?.toLowerCase().includes(search) || u.phone?.includes(search)).map(u => `<tr class="hover:bg-slate-50"><td class="py-3 text-slate-900 font-bold">${u.name}</td><td class="py-3 font-mono">${u.phone}</td><td class="py-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${u.role === 'ADMIN' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100'}">${u.role}</span></td><td class="py-3 font-bold text-emerald-600">₹${u.balance?.toLocaleString('en-IN')}</td><td class="py-3">${editingUserPhone === u.phone ? `<input type="number" id="editBal_${u.phone}" class="w-16 border rounded text-xs px-1 py-0.5 mr-1"><button onclick="saveUserBalance('${u.phone}')" class="bg-emerald-600 text-white px-2 py-0.5 rounded text-[10px]">Save</button>` : `<button onclick="editingUserPhone='${u.phone}'; renderUI();" class="bg-slate-200 px-2 py-1 rounded text-[10px] font-bold">Edit</button>`}</td></tr>`).join('') || `<tr><td colspan="5" class="py-4 text-center text-slate-400">No users found.</td></tr>`;
     }
   </script>
 </body>
