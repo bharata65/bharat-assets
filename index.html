@@ -1,60 +1,1736 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Forexaaa — Smart Currency Solutions</title>
-<style>
-:root{--b:#0757d9;--d:#061b42;--bg:#f5f8ff;--muted:#667085;--card:#fff;--line:#dfe7f5;--ok:#10a66a;--danger:#e5484d}
-*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,Arial;background:var(--bg);color:#14213d}button,input,select{font:inherit}button{cursor:pointer;border:0;border-radius:10px;padding:11px 16px;background:var(--b);color:white;font-weight:700}button.alt{background:white;color:var(--b);border:1px solid #cbd8ef}.wrap{max-width:1400px;margin:auto;padding:18px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px}.brand{font-size:25px;font-weight:900;color:var(--d)}.brand small{display:block;font-size:10px;color:#667085}.nav{display:flex;gap:8px;flex-wrap:wrap}.nav button{padding:9px 12px}.hero{margin-top:15px;border-radius:20px;overflow:hidden;background:#0b55c7;min-height:220px;display:flex;align-items:center;color:white}.hero img{width:100%;max-height:360px;object-fit:cover;display:block}.hero .copy{padding:35px;max-width:620px}.hero h1{font-size:40px;margin:0 0 10px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:16px}.card{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:17px;box-shadow:0 5px 20px #123a7a0b}.card h3{margin:0 0 10px}.metric{font-size:25px;font-weight:900;color:var(--d)}.muted{color:var(--muted);font-size:13px}.section{margin-top:25px}.section h2{font-size:21px}.list{display:grid;gap:9px}.row{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid var(--line);padding:11px 0}.pill{padding:5px 9px;border-radius:999px;background:#e9f1ff;color:var(--b);font-size:12px;font-weight:800}.ok{color:var(--ok)}.bad{color:var(--danger)}.modal{position:fixed;inset:0;background:#061b4288;display:none;align-items:center;justify-content:center;padding:15px;z-index:20}.modal.on{display:flex}.modalbox{background:white;border-radius:18px;max-width:620px;width:100%;padding:22px;max-height:90vh;overflow:auto}.field{margin:10px 0}.field label{display:block;font-size:13px;font-weight:800;margin-bottom:5px}.field input,.field select{width:100%;padding:12px;border:1px solid #cdd8eb;border-radius:9px;background:white}.qr{width:240px;height:240px;margin:10px auto;display:block;border:8px solid white;box-shadow:0 2px 10px #0002}.toast{position:fixed;right:15px;bottom:15px;background:#071d43;color:white;padding:12px 16px;border-radius:10px;display:none;z-index:40}.toast.on{display:block}.hide{display:none!important}.footer{margin-top:35px;background:#061b42;color:white;padding:30px;border-radius:18px}.tabs{display:flex;gap:8px;overflow:auto;margin:12px 0}.tabs button{white-space:nowrap}.danger{background:var(--danger)}@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}.hero h1{font-size:30px}}@media(max-width:560px){.grid{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}.hero .copy{padding:22px}.hero{min-height:180px}}
-</style>
-</head>
-<body>
-<div class="wrap">
-<header class="top"><div class="brand">F Forexaaa<small>Smart Currency Solutions</small></div><nav class="nav">
-<button onclick="show('home')">Home</button><button onclick="show('rates')">Live Rates</button><button onclick="show('converter')">Converter</button><button onclick="show('wallet')">Wallet</button><button onclick="show('deposit')">Deposit</button><button onclick="show('withdraw')">Withdraw</button><button onclick="show('history')">Transactions</button><button onclick="show('profile')">Profile</button><button id="authBtn" class="alt" onclick="openAuth()">Login / Register</button>
-</nav></header>
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  TrendingUp, 
+  TrendingDown, 
+  Wallet, 
+  QrCode, 
+  ShieldCheck, 
+  Clock, 
+  CheckCircle2, 
+  XCircle, 
+  History, 
+  LogOut, 
+  Menu, 
+  X, 
+  Copy, 
+  Check, 
+  ArrowUpRight, 
+  ArrowDownRight, 
+  User, 
+  CreditCard, 
+  AlertCircle,
+  BarChart2,
+  LineChart,
+  Download,
+  Upload,
+  Activity,
+  Eye,
+  EyeOff,
+  Search,
+  DollarSign,
+  Briefcase
+} from 'lucide-react';
 
-<main id="app"></main>
-<footer class="footer"><b>Forexaaa</b> — Smart Currency Solutions<br><span class="muted">Safe, Secure, Smart. Manual payment requests are reviewed by the admin.</span></footer>
-</div>
+export default function App() {
+  // Local storage management helpers
+  const getStorage = (key, defaultVal) => {
+    try {
+      const saved = localStorage.getItem(key);
+      return saved ? JSON.parse(saved) : defaultVal;
+    } catch (e) {
+      return defaultVal;
+    }
+  };
 
-<div id="modal" class="modal"><div class="modalbox" id="modalBody"></div></div><div id="toast" class="toast"></div>
+  const setStorage = (key, val) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(val));
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
-<script type="module">
-import {initializeApp} from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut} from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
-import {getFirestore,doc,getDoc,setDoc,addDoc,collection,query,where,orderBy,onSnapshot,serverTimestamp,limit,getDocs} from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+  // Persistent States
+  const [users, setUsers] = useState(() => getStorage('fx_users', []));
+  const [currentUser, setCurrentUser] = useState(() => getStorage('fx_current_user', null));
+  const [deposits, setDeposits] = useState(() => getStorage('fx_deposits', []));
+  const [withdrawals, setWithdrawals] = useState(() => getStorage('fx_withdrawals', []));
+  const [trades, setTrades] = useState(() => getStorage('fx_trades', []));
 
-const firebaseConfig={apiKey:"AIzaSyCKa0HNQd0kDA8uLP6hNWgkjF70d3wKXbU",authDomain:"bharat-digital-assets.firebaseapp.com",projectId:"bharat-digital-assets",storageBucket:"bharat-digital-assets.firebasestorage.app",messagingSenderId:"451769882363",appId:"1:451769882363:web:f80db52e495d8456d5425e"};
-const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
-let user=null,settings={upiId:"forexaaa@upi",upiName:"Forexaaa",minDeposit:100,maxDeposit:100000},wallet=0;
-const $=id=>document.getElementById(id), money=n=>"₹ "+Number(n||0).toLocaleString("en-IN",{maximumFractionDigits:2});
-function toast(x){$("toast").textContent=x;$("toast").classList.add("on");setTimeout(()=>$("toast").classList.remove("on"),2600)}
-function modal(html){$("modalBody").innerHTML=html;$("modal").classList.add("on")}function closeModal(){$("modal").classList.remove("on")}
-window.closeModal=closeModal;
-async function loadSettings(){let s=await getDoc(doc(db,"config","public"));if(s.exists())settings={...settings,...s.data()}}
-async function ensureProfile(u){let r=doc(db,"users",u.uid),s=await getDoc(r);if(!s.exists())await setDoc(r,{uid:u.uid,email:u.email,name:u.email.split("@")[0],wallet:0,createdAt:serverTimestamp(),status:"Active",kycStatus:"Pending"});else wallet=s.data().wallet||0}
-onAuthStateChanged(auth,async u=>{user=u;if(u){await ensureProfile(u);let s=await getDoc(doc(db,"users",u.uid));wallet=s.data()?.wallet||0;$("authBtn").textContent="Logout";$("authBtn").onclick=()=>signOut(auth)}else{$("authBtn").textContent="Login / Register";$("authBtn").onclick=openAuth}show(location.hash.slice(1)||"home")});
-window.openAuth=()=>modal(`<h2>Welcome Back</h2><div class="field"><label>Email</label><input id="em" type="email"></div><div class="field"><label>Password</label><input id="pw" type="password"></div><button onclick="login()">Login</button> <button class="alt" onclick="register()">Create Account</button><button class="alt" onclick="closeModal()">Close</button>`);
-window.login=async()=>{try{await signInWithEmailAndPassword(auth,$("em").value,$("pw").value);closeModal();toast("Logged in")}catch(e){toast(e.message)}};
-window.register=async()=>{try{let c=await createUserWithEmailAndPassword(auth,$("em").value,$("pw").value);await ensureProfile(c.user);closeModal();toast("Account created")}catch(e){toast(e.message)}};
-window.show=async p=>{location.hash=p;await loadSettings();let h;
-if(p==="home")h=`<section class="hero">${settings.bannerUrl?`<img src="${settings.bannerUrl}" alt="Banner">`:`<div class="copy"><h1>Smart, Secure & Best Forex Rates</h1><p>Currency conversion, wallet and international payment tools in one place.</p><button onclick="show('converter')">Get Started</button></div>`}</section><section class="grid"><div class="card"><div class="muted">Wallet Balance</div><div class="metric">${money(wallet)}</div></div><div class="card"><div class="muted">UPI Deposit</div><div class="metric">${money(settings.minDeposit)}+</div></div><div class="card"><div class="muted">Payment</div><div class="metric">Manual UPI</div></div><div class="card"><div class="muted">Support</div><div class="metric">24/7</div></div></section><section class="section"><h2>Quick Actions</h2><div class="grid"><div class="card"><h3>Deposit Money</h3><p class="muted">Pay using admin-configured UPI QR.</p><button onclick="show('deposit')">Deposit</button></div><div class="card"><h3>Send Money</h3><p class="muted">Create a payout request.</p><button onclick="show('withdraw')">Send</button></div><div class="card"><h3>Live Rates</h3><p class="muted">View configured currency rates.</p><button onclick="show('rates')">View</button></div><div class="card"><h3>Profile</h3><p class="muted">Account and KYC status.</p><button onclick="show('profile')">Open</button></div></div></section>`;
-else if(p==="rates")h=`<section class="section"><h2>Live Rates</h2><div id="ratesBox" class="grid"><div class="card">Loading...</div></div></section>`;
-else if(p==="converter")h=`<section class="section"><h2>Currency Converter</h2><div class="card"><div class="field"><label>Amount (INR)</label><input id="conv" type="number" value="1000"></div><div class="field"><label>Currency</label><select id="cc"><option>USD</option><option>EUR</option><option>GBP</option><option>AED</option></select></div><button onclick="convert()">Convert</button><div id="convout" class="metric" style="margin-top:15px"></div></div></section>`;
-else if(p==="wallet")h=`<section class="section"><h2>Wallet</h2><div class="grid"><div class="card"><div class="muted">Main Wallet</div><div class="metric">${money(wallet)}</div><button onclick="show('deposit')">Deposit</button> <button class="alt" onclick="show('withdraw')">Withdraw</button></div></div></section>`;
-else if(p==="deposit")h=`<section class="section"><h2>Manual Payment Gateway (UPI QR)</h2><div class="card"><p class="muted">UPI ID: <b>${settings.upiId}</b> · ${settings.upiName||""}</p><div class="field"><label>Deposit Amount (INR)</label><input id="depAmt" type="number" min="${settings.minDeposit}" max="${settings.maxDeposit}" placeholder="Enter amount"></div><button onclick="makeQR()">Generate QR</button><div id="qrArea"></div></div></section>`;
-else if(p==="withdraw")h=`<section class="section"><h2>Withdraw</h2><div class="card"><div class="muted">Available balance</div><div class="metric">${money(wallet)}</div><div class="field"><label>Amount</label><input id="wdAmt" type="number"></div><div class="field"><label>UPI ID / Bank details</label><input id="wdTo" placeholder="Enter UPI ID or account details"></div><button onclick="withdraw()">Submit Withdrawal</button></div></section>`;
-else if(p==="history")h=`<section class="section"><h2>Transaction History</h2><div id="hist" class="card">Loading...</div></section>`;
-else if(p==="profile")h=`<section class="section"><h2>Profile</h2><div class="card"><div id="prof">Loading...</div></div></section>`;
-else h=`<section class="section"><h2>Forexaaa</h2><div class="card">Page not found.</div></section>`;
-$("app").innerHTML=h;if(p==="rates")loadRates();if(p==="history")loadHistory();if(p==="profile")loadProfile();};
-async function loadRates(){let q=await getDocs(collection(db,"rates")),x="";q.forEach(d=>{let r=d.data();x+=`<div class="card"><b>${r.currency||d.id}</b><div>Buy: ${r.buy||"-"}</div><div>Sell: ${r.sell||"-"}</div><span class="pill">${r.status||"Active"}</span></div>`});$("ratesBox").innerHTML=x||`<div class="card">No rates configured yet.</div>`}
-window.convert=async()=>{let c=$("cc").value,a=+$("conv").value,q=query(collection(db,"rates"),where("currency","==",c),limit(1)),s=await getDocs(q);let r=s.docs[0]?.data();$("convout").textContent=r?`${c} ${ (a/Number(r.sell||1)).toFixed(2)}`:"Rate unavailable"};
-window.makeQR=()=>{if(!user)return openAuth();let a=+$("depAmt").value;if(!a||a<settings.minDeposit||a>settings.maxDeposit)return toast(`Amount must be between ${money(settings.minDeposit)} and ${money(settings.maxDeposit)}`);let upi=`upi://pay?pa=${encodeURIComponent(settings.upiId)}&pn=${encodeURIComponent(settings.upiName||"Forexaaa")}&am=${a.toFixed(2)}&cu=INR`;modal(`<h2>Pay ${money(a)}</h2><p>Scan this UPI QR and complete payment.</p><img class="qr" src="https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(upi)}"><p><b>UPI ID:</b> ${settings.upiId}</p><button onclick="submitDeposit(${a})">I Have Paid</button><button class="alt" onclick="closeModal()">Cancel</button>`)}
-window.submitDeposit=async a=>{try{let ref=await addDoc(collection(db,"deposits"),{uid:user.uid,email:user.email,amount:a,method:"UPI QR",upiId:settings.upiId,status:"Pending",createdAt:serverTimestamp()});await addDoc(collection(db,"notifications"),{uid:user.uid,title:"Deposit submitted",message:`Deposit ${money(a)} is pending admin verification.`,read:false,createdAt:serverTimestamp()});closeModal();toast("Deposit submitted for verification");show("history")}catch(e){toast(e.message)}};
-window.withdraw=async()=>{if(!user)return openAuth();let a=+$("wdAmt").value,to=$("wdTo").value.trim();if(!a||a<=0||a>wallet||!to)return toast("Enter valid amount and payout details");await addDoc(collection(db,"withdrawals"),{uid:user.uid,email:user.email,amount:a,to,status:"Pending",createdAt:serverTimestamp()});toast("Withdrawal request submitted");show("history")};
-async function loadHistory(){if(!user){$("hist").innerHTML="Please login to view transactions.";return}let out="",dq=query(collection(db,"deposits"),where("uid","==",user.uid),orderBy("createdAt","desc"),limit(30));let d=await getDocs(dq);d.forEach(x=>{let r=x.data();out+=`<div class="row"><span>Deposit · ${money(r.amount)}<small class="muted"> ${r.method||""}</small></span><b>${r.status}</b></div>`});let wq=query(collection(db,"withdrawals"),where("uid","==",user.uid),orderBy("createdAt","desc"),limit(30));let w=await getDocs(wq);w.forEach(x=>{let r=x.data();out+=`<div class="row"><span>Withdrawal · ${money(r.amount)}</span><b>${r.status}</b></div>`});$("hist").innerHTML=out||"No transactions yet."}
-async function loadProfile(){if(!user){$("prof").innerHTML="Please login.";return}let s=(await getDoc(doc(db,"users",user.uid))).data();$("prof").innerHTML=`<p><b>Name:</b> ${s.name||"-"}</p><p><b>Email:</b> ${s.email}</p><p><b>Wallet:</b> ${money(s.wallet)}</p><p><b>KYC:</b> <span class="pill">${s.kycStatus||"Pending"}</span></p><p><b>Account:</b> ${s.status||"Active"}</p>`}
-</script>
-</body></html>
+  // Navigation State
+  const [activeTab, setActiveTab] = useState('trade'); // 'trade', 'deposit', 'withdraw', 'history', 'admin', 'auth'
+  const [authMode, setAuthMode] = useState('login'); // 'login', 'register'
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Auth Inputs
+  const [phoneInput, setPhoneInput] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
+  const [nameInput, setNameInput] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [authError, setAuthError] = useState('');
+
+  // Deposit Form
+  const [depositAmount, setDepositAmount] = useState(500);
+  const [customDepositAmt, setCustomDepositAmt] = useState('');
+  const [utrNumber, setUtrNumber] = useState('');
+  const [copiedUpi, setCopiedUpi] = useState(false);
+  const [depositNotice, setDepositNotice] = useState(null);
+
+  // Withdrawal Form
+  const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [withdrawUpi, setWithdrawUpi] = useState('');
+  const [withdrawNotice, setWithdrawNotice] = useState(null);
+
+  // Trading Console States
+  const [selectedAsset, setSelectedAsset] = useState({ 
+    id: 'eurusd', name: 'EUR/USD', price: 1.0850, payout: 88, volatility: 0.0006, type: 'Forex' 
+  });
+  const [chartType, setChartType] = useState('candlestick'); // 'candlestick' or 'line'
+  const [showIndicators, setShowIndicators] = useState({ ma: true });
+  const [tradeAmount, setTradeAmount] = useState(200);
+  const [tradeDuration, setTradeDuration] = useState(30); // seconds
+  
+  // Market Engine Rigging (Admin Controlled)
+  const [adminRigMode, setAdminRigMode] = useState('FAIR'); // 'FAIR', 'FORCE_WIN', 'FORCE_LOSS'
+
+  // Real-Time Chart Data
+  const [priceHistory, setPriceHistory] = useState([]);
+  const [candles, setCandles] = useState([]);
+  const [currentPrice, setCurrentPrice] = useState(1.0850);
+
+  // Admin Controls
+  const [selectedUserPhone, setSelectedUserPhone] = useState(null);
+  const [balanceAdjustAmt, setBalanceAdjustAmt] = useState('');
+  const [adminSearch, setAdminSearch] = useState('');
+
+  const canvasRef = useRef(null);
+
+  // Auto Sync State to Storage
+  useEffect(() => setStorage('fx_users', users), [users]);
+  useEffect(() => setStorage('fx_deposits', deposits), [deposits]);
+  useEffect(() => setStorage('fx_withdrawals', withdrawals), [withdrawals]);
+  useEffect(() => setStorage('fx_trades', trades), [trades]);
+
+  useEffect(() => {
+    if (currentUser) {
+      setStorage('fx_current_user', currentUser);
+      // Synchronize latest user balance from master array
+      const latest = users.find(u => u.phone === currentUser.phone);
+      if (latest && latest.balance !== currentUser.balance) {
+        setCurrentUser(latest);
+      }
+    } else {
+      localStorage.removeItem('fx_current_user');
+    }
+  }, [currentUser, users]);
+
+  // Asset Pair List
+  const assetsCatalog = [
+    { id: 'eurusd', name: 'EUR/USD', price: 1.0850, payout: 88, volatility: 0.0005, type: 'Forex' },
+    { id: 'gbpusd', name: 'GBP/USD', price: 1.2720, payout: 85, volatility: 0.0007, type: 'Forex' },
+    { id: 'btcinr', name: 'BTC/INR', price: 5980000, payout: 92, volatility: 380.0, type: 'Crypto' },
+    { id: 'ethusd', name: 'ETH/USD', price: 3450.00, payout: 89, volatility: 2.50, type: 'Crypto' },
+    { id: 'xauusd', name: 'XAU/USD (Gold)', price: 2410.50, payout: 86, volatility: 1.20, type: 'Commodity' },
+    { id: 'usdinr', name: 'USD/INR', price: 83.72, payout: 82, volatility: 0.04, type: 'Forex' }
+  ];
+
+  // High-Precision Candlestick & Price Engine
+  useEffect(() => {
+    let base = selectedAsset.price;
+    const history = [];
+    const candleList = [];
+    
+    // Generate initial historical candles
+    for (let i = 0; i < 45; i++) {
+      const open = base;
+      const delta = (Math.random() - 0.495) * selectedAsset.volatility * 8;
+      const close = parseFloat((open + delta).toFixed(2));
+      const high = Math.max(open, close) + Math.abs((Math.random() * selectedAsset.volatility * 2.5));
+      const low = Math.min(open, close) - Math.abs((Math.random() * selectedAsset.volatility * 2.5));
+      
+      candleList.push({ open, high, low, close });
+      history.push(close);
+      base = close;
+    }
+
+    setCandles(candleList);
+    setPriceHistory(history);
+    setCurrentPrice(base);
+
+    // Live price tick simulator
+    const interval = setInterval(() => {
+      setCandles(prevCandles => {
+        if (prevCandles.length === 0) return prevCandles;
+        const lastCandle = { ...prevCandles[prevCandles.length - 1] };
+        const tickChange = (Math.random() - 0.49) * selectedAsset.volatility * 3.5;
+        const nextPrice = parseFloat((lastCandle.close + tickChange).toFixed(2));
+
+        setCurrentPrice(nextPrice);
+
+        // Update active bar high/low/close
+        lastCandle.close = nextPrice;
+        lastCandle.high = Math.max(lastCandle.high, nextPrice);
+        lastCandle.low = Math.min(lastCandle.low, nextPrice);
+
+        const updatedCandles = [...prevCandles.slice(0, prevCandles.length - 1), lastCandle];
+
+        // Append new candle periodically
+        if (Math.random() > 0.65 && updatedCandles.length < 55) {
+          updatedCandles.push({
+            open: nextPrice,
+            high: nextPrice,
+            low: nextPrice,
+            close: nextPrice
+          });
+        }
+
+        setPriceHistory(updatedCandles.map(c => c.close));
+        return updatedCandles.slice(-45);
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [selectedAsset]);
+
+  // Clean Professional White Chart Renderer (HTML5 Canvas)
+  useEffect(() => {
+    if (!canvasRef.current || priceHistory.length === 0) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+
+    // Fill Crisp White Background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+
+    // Dynamic Price Range
+    const prices = priceHistory;
+    const minPrice = Math.min(...prices) * 0.9992;
+    const maxPrice = Math.max(...prices) * 1.0008;
+    const priceRange = maxPrice - minPrice || 1;
+
+    // Technical Chart Grid lines (Subtle Gray)
+    ctx.strokeStyle = '#f1f5f9';
+    ctx.lineWidth = 1;
+    for (let y = 0; y < height; y += 35) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+    }
+    for (let x = 0; x < width; x += 55) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+      ctx.stroke();
+    }
+
+    if (chartType === 'candlestick' && candles.length > 0) {
+      const candleWidth = Math.max(4, (width / candles.length) - 3.5);
+
+      candles.forEach((candle, i) => {
+        const x = i * (width / candles.length) + candleWidth / 2;
+        const openY = height - ((candle.open - minPrice) / priceRange) * height;
+        const closeY = height - ((candle.close - minPrice) / priceRange) * height;
+        const highY = height - ((candle.high - minPrice) / priceRange) * height;
+        const lowY = height - ((candle.low - minPrice) / priceRange) * height;
+
+        const isGreen = candle.close >= candle.open;
+        const color = isGreen ? '#10b981' : '#ef4444';
+
+        // Draw Candle Wick
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(x + candleWidth / 2, highY);
+        ctx.lineTo(x + candleWidth / 2, lowY);
+        ctx.stroke();
+
+        // Draw Candle Body
+        ctx.fillStyle = color;
+        const bodyY = Math.min(openY, closeY);
+        const bodyHeight = Math.max(Math.abs(closeY - openY), 2);
+        ctx.fillRect(x, bodyY, candleWidth, bodyHeight);
+      });
+
+    } else {
+      // Line Chart Rendering
+      ctx.beginPath();
+      priceHistory.forEach((price, i) => {
+        const x = (i / (priceHistory.length - 1)) * width;
+        const y = height - ((price - minPrice) / priceRange) * height;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+
+      const isUp = priceHistory[priceHistory.length - 1] >= priceHistory[0];
+      const themeColor = isUp ? '#10b981' : '#ef4444';
+
+      ctx.strokeStyle = themeColor;
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      // Soft Subtle Chart Gradient Fill
+      const gradient = ctx.createLinearGradient(0, 0, 0, height);
+      gradient.addColorStop(0, isUp ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)');
+      gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      
+      ctx.lineTo(width, height);
+      ctx.lineTo(0, height);
+      ctx.closePath();
+      ctx.fillStyle = gradient;
+      ctx.fill();
+    }
+
+    // Moving Average Overlay Indicator (MA-7)
+    if (showIndicators.ma && priceHistory.length > 7) {
+      ctx.beginPath();
+      ctx.strokeStyle = '#d97706'; // Amber line
+      ctx.lineWidth = 1.5;
+      
+      const period = 7;
+      for (let i = period; i < priceHistory.length; i++) {
+        const slice = priceHistory.slice(i - period, i);
+        const avg = slice.reduce((a, b) => a + b, 0) / period;
+        const x = (i / (priceHistory.length - 1)) * width;
+        const y = height - ((avg - minPrice) / priceRange) * height;
+
+        if (i === period) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    // Render Active Trades Strike Lines on Canvas
+    const activeUserTrades = trades.filter(t => t.userPhone === currentUser?.phone && t.status === 'ACTIVE');
+    activeUserTrades.forEach(trade => {
+      const strikeY = height - ((trade.strikePrice - minPrice) / priceRange) * height;
+      ctx.strokeStyle = trade.type === 'CALL' ? '#10b981' : '#ef4444';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([5, 3]);
+      ctx.beginPath();
+      ctx.moveTo(0, strikeY);
+      ctx.lineTo(width, strikeY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Strike Badge
+      ctx.fillStyle = trade.type === 'CALL' ? '#10b981' : '#ef4444';
+      ctx.fillRect(5, strikeY - 10, 65, 18);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 9px sans-serif';
+      ctx.fillText(`${trade.type} @ ${trade.strikePrice}`, 8, strikeY + 2);
+    });
+
+    // Current Market Price Ticker Line
+    const lastY = height - ((currentPrice - minPrice) / priceRange) * height;
+    ctx.strokeStyle = '#2563eb';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(0, lastY);
+    ctx.lineTo(width, lastY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Live Price Dot
+    ctx.beginPath();
+    ctx.arc(width - 3, lastY, 4.5, 0, Math.PI * 2);
+    ctx.fillStyle = '#2563eb';
+    ctx.fill();
+
+  }, [priceHistory, candles, chartType, showIndicators, currentPrice, trades, currentUser]);
+
+  // Robust Settlement Loop for Active Positions & Immediate Wallet Credit
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = Date.now();
+
+      setTrades(prevTrades => {
+        let updated = false;
+
+        const processed = prevTrades.map(trade => {
+          if (trade.status === 'ACTIVE' && now >= trade.expiryTime) {
+            updated = true;
+            let win = false;
+
+            // Apply Rigging or Natural Market Rules
+            if (adminRigMode === 'FORCE_WIN') {
+              win = true;
+            } else if (adminRigMode === 'FORCE_LOSS') {
+              win = false;
+            } else {
+              if (trade.type === 'CALL') {
+                win = currentPrice > trade.strikePrice;
+              } else {
+                win = currentPrice < trade.strikePrice;
+              }
+            }
+
+            const payoutAmount = win ? Math.round(trade.amount * (1 + trade.payout / 100)) : 0;
+
+            // Immediate Wallet Update when Trade is Won
+            if (win && payoutAmount > 0) {
+              setUsers(allUsers => {
+                const updatedUsers = allUsers.map(u => {
+                  if (u.phone === trade.userPhone) {
+                    const newBal = u.balance + payoutAmount;
+                    // If current logged in user, update state directly
+                    if (currentUser && currentUser.phone === u.phone) {
+                      setCurrentUser(curr => ({ ...curr, balance: newBal }));
+                    }
+                    return { ...u, balance: newBal };
+                  }
+                  return u;
+                });
+                return updatedUsers;
+              });
+            }
+
+            return {
+              ...trade,
+              status: win ? 'WON' : 'LOST',
+              closePrice: currentPrice,
+              payoutAmount
+            };
+          }
+          return trade;
+        });
+
+        return updated ? processed : prevTrades;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [currentPrice, adminRigMode, currentUser]);
+
+  // Authentication Execution
+  const handleAuth = (e) => {
+    e.preventDefault();
+    setAuthError('');
+
+    if (!phoneInput || !passwordInput) {
+      setAuthError('Please fill in all required fields.');
+      return;
+    }
+
+    // Discreet Admin Validation Check (Completely Private Credentials)
+    if (phoneInput === '9529951116' && passwordInput === 'Ritesh555') {
+      const adminAcc = {
+        name: 'Master Admin',
+        phone: '9529951116',
+        role: 'ADMIN',
+        balance: 999999,
+        joinedAt: new Date().toLocaleDateString()
+      };
+      setCurrentUser(adminAcc);
+      setActiveTab('admin');
+      setPhoneInput('');
+      setPasswordInput('');
+      return;
+    }
+
+    if (authMode === 'register') {
+      if (!nameInput) {
+        setAuthError('Please enter your full name.');
+        return;
+      }
+
+      const existing = users.find(u => u.phone === phoneInput);
+      if (existing) {
+        setAuthError('An account with this phone number already exists.');
+        return;
+      }
+
+      // REGISTER WITH EXACTLY ₹0 BALANCE (NO BONUS)
+      const newUser = {
+        name: nameInput,
+        phone: phoneInput,
+        password: passwordInput,
+        role: 'USER',
+        balance: 0,
+        joinedAt: new Date().toLocaleDateString()
+      };
+
+      setUsers([...users, newUser]);
+      setCurrentUser(newUser);
+      setActiveTab('deposit');
+      setPhoneInput('');
+      setPasswordInput('');
+      setNameInput('');
+    } else {
+      // Standard User Login
+      const user = users.find(u => u.phone === phoneInput && u.password === passwordInput);
+      if (user) {
+        setCurrentUser(user);
+        setActiveTab('trade');
+        setPhoneInput('');
+        setPasswordInput('');
+      } else {
+        setAuthError('Invalid phone number or password.');
+      }
+    }
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setActiveTab('trade');
+    setMobileMenuOpen(false);
+  };
+
+  // Deposit Handler
+  const handleDepositSubmit = (e) => {
+    e.preventDefault();
+    const finalAmt = customDepositAmt ? parseFloat(customDepositAmt) : depositAmount;
+
+    if (!finalAmt || finalAmt < 100) {
+      setDepositNotice({ type: 'error', text: 'Minimum deposit amount is ₹100.' });
+      return;
+    }
+
+    if (!utrNumber || utrNumber.trim().length < 8) {
+      setDepositNotice({ type: 'error', text: 'Please enter a valid 12-digit UTR/Ref Number.' });
+      return;
+    }
+
+    const newDep = {
+      id: 'DEP-' + Math.floor(100000 + Math.random() * 900000),
+      userPhone: currentUser.phone,
+      userName: currentUser.name,
+      amount: finalAmt,
+      utr: utrNumber.trim(),
+      gateway: 'UPI (paytmqr6n4gde@ptys)',
+      status: 'PENDING',
+      timestamp: new Date().toLocaleString()
+    };
+
+    setDeposits([newDep, ...deposits]);
+    setUtrNumber('');
+    setCustomDepositAmt('');
+    setDepositNotice({ type: 'success', text: 'Deposit request submitted! Wallet will update upon Admin confirmation.' });
+  };
+
+  // Withdrawal Request Handler
+  const handleWithdrawSubmit = (e) => {
+    e.preventDefault();
+    const amt = parseFloat(withdrawAmount);
+
+    if (!amt || amt < 300) {
+      setWithdrawNotice({ type: 'error', text: 'Minimum withdrawal amount is ₹300.' });
+      return;
+    }
+
+    if (amt > currentUser.balance) {
+      setWithdrawNotice({ type: 'error', text: 'Insufficient account balance.' });
+      return;
+    }
+
+    if (!withdrawUpi) {
+      setWithdrawNotice({ type: 'error', text: 'Please enter valid UPI ID or Bank details.' });
+      return;
+    }
+
+    // Deduct user balance immediately
+    const updatedUser = { ...currentUser, balance: currentUser.balance - amt };
+    setCurrentUser(updatedUser);
+    setUsers(users.map(u => u.phone === currentUser.phone ? updatedUser : u));
+
+    const newWd = {
+      id: 'WD-' + Math.floor(100000 + Math.random() * 900000),
+      userPhone: currentUser.phone,
+      userName: currentUser.name,
+      amount: amt,
+      targetUpi: withdrawUpi,
+      status: 'PENDING',
+      timestamp: new Date().toLocaleString()
+    };
+
+    setWithdrawals([newWd, ...withdrawals]);
+    setWithdrawAmount('');
+    setWithdrawUpi('');
+    setWithdrawNotice({ type: 'success', text: 'Payout request submitted! Processing within 2 hours.' });
+  };
+
+  // Order Placement
+  const handlePlaceTrade = (type) => {
+    if (!currentUser) {
+      setActiveTab('auth');
+      return;
+    }
+
+    if (currentUser.balance < tradeAmount) {
+      alert('Insufficient wallet balance! Please deposit funds first.');
+      setActiveTab('deposit');
+      return;
+    }
+
+    // Deduct trade stake from user wallet
+    const updatedUser = { ...currentUser, balance: currentUser.balance - tradeAmount };
+    setCurrentUser(updatedUser);
+    setUsers(users.map(u => u.phone === currentUser.phone ? updatedUser : u));
+
+    const newTrade = {
+      id: 'TRD-' + Math.floor(100000 + Math.random() * 900000),
+      userPhone: currentUser.phone,
+      assetName: selectedAsset.name,
+      amount: tradeAmount,
+      type: type, // 'CALL' or 'PUT'
+      strikePrice: currentPrice,
+      closePrice: null,
+      duration: tradeDuration,
+      payout: selectedAsset.payout,
+      status: 'ACTIVE',
+      startTime: Date.now(),
+      expiryTime: Date.now() + (tradeDuration * 1000)
+    };
+
+    setTrades([newTrade, ...trades]);
+  };
+
+  // Admin Actions
+  const handleApproveDeposit = (id) => {
+    const dep = deposits.find(d => d.id === id);
+    if (!dep || dep.status !== 'PENDING') return;
+
+    setUsers(users.map(u => {
+      if (u.phone === dep.userPhone) {
+        const newBal = u.balance + dep.amount;
+        if (currentUser && currentUser.phone === u.phone) {
+          setCurrentUser(curr => ({ ...curr, balance: newBal }));
+        }
+        return { ...u, balance: newBal };
+      }
+      return u;
+    }));
+
+    setDeposits(deposits.map(d => d.id === id ? { ...d, status: 'APPROVED' } : d));
+  };
+
+  const handleRejectDeposit = (id) => {
+    setDeposits(deposits.map(d => d.id === id ? { ...d, status: 'REJECTED' } : d));
+  };
+
+  const handleApproveWithdrawal = (id) => {
+    setWithdrawals(withdrawals.map(w => w.id === id ? { ...w, status: 'APPROVED' } : w));
+  };
+
+  const handleRejectWithdrawal = (id) => {
+    const wd = withdrawals.find(w => w.id === id);
+    if (!wd || wd.status !== 'PENDING') return;
+
+    // Refund Balance to user
+    setUsers(users.map(u => {
+      if (u.phone === wd.userPhone) {
+        const newBal = u.balance + wd.amount;
+        if (currentUser && currentUser.phone === u.phone) {
+          setCurrentUser(curr => ({ ...curr, balance: newBal }));
+        }
+        return { ...u, balance: newBal };
+      }
+      return u;
+    }));
+
+    setWithdrawals(withdrawals.map(w => w.id === id ? { ...w, status: 'REJECTED' } : w));
+  };
+
+  const handleUpdateUserBalance = (phone) => {
+    const amt = parseFloat(balanceAdjustAmt);
+    if (isNaN(amt)) return;
+
+    setUsers(users.map(u => {
+      if (u.phone === phone) {
+        const newBal = Math.max(0, u.balance + amt);
+        if (currentUser && currentUser.phone === u.phone) {
+          setCurrentUser(curr => ({ ...curr, balance: newBal }));
+        }
+        return { ...u, balance: newBal };
+      }
+      return u;
+    }));
+
+    setBalanceAdjustAmt('');
+    setSelectedUserPhone(null);
+  };
+
+  // Exact Paytm QR / Gurudatt Kirana Store UPI Handle Details
+  const activeDepositAmount = customDepositAmt ? parseFloat(customDepositAmt) || 0 : depositAmount;
+  const upiURI = `upi://pay?pa=paytmqr6n4gde@ptys&pn=Gurudatt%20Kirana%20Store&am=${activeDepositAmount}&cu=INR`;
+  const qrCodeImage = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiURI)}`;
+
+  const copyUpiToClipboard = () => {
+    navigator.clipboard.writeText('paytmqr6n4gde@ptys');
+    setCopiedUpi(true);
+    setTimeout(() => setCopiedUpi(false), 2000);
+  };
+
+  // Filtered Users for Admin
+  const filteredUsers = users.filter(u => 
+    u.name?.toLowerCase().includes(adminSearch.toLowerCase()) || 
+    u.phone?.includes(adminSearch)
+  );
+
+  return (
+    <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans flex flex-col selection:bg-emerald-500 selection:text-white">
+      
+      {/* PROFESSIONAL WHITE HEADER BAR */}
+      <header className="border-b border-slate-200 bg-white sticky top-0 z-50 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+          
+          {/* Logo & Brand */}
+          <div 
+            onClick={() => setActiveTab('trade')} 
+            className="flex items-center space-x-3 cursor-pointer group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-emerald-400 shadow-md group-hover:bg-emerald-600 group-hover:text-white transition">
+              <TrendingUp className="w-6 h-6 font-black" />
+            </div>
+            <div>
+              <span className="text-xl sm:text-2xl font-black tracking-tight text-slate-900">
+                FOREX<span className="text-emerald-600">AAA</span>
+              </span>
+              <span className="hidden sm:inline-block ml-2 text-[10px] bg-slate-100 text-slate-600 border border-slate-200 px-2 py-0.5 rounded font-mono font-semibold uppercase">
+                Institutional Terminal
+              </span>
+            </div>
+          </div>
+
+          {/* Navigation Links */}
+          <nav className="hidden md:flex items-center space-x-1">
+            <button 
+              onClick={() => setActiveTab('trade')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-2 ${
+                activeTab === 'trade' 
+                  ? 'bg-slate-900 text-white shadow-sm' 
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <Activity className="w-4 h-4" />
+              <span>Trading Terminal</span>
+            </button>
+
+            <button 
+              onClick={() => setActiveTab('deposit')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-2 ${
+                activeTab === 'deposit' 
+                  ? 'bg-slate-900 text-white shadow-sm' 
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <Upload className="w-4 h-4" />
+              <span>Deposit</span>
+            </button>
+
+            <button 
+              onClick={() => setActiveTab('withdraw')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-2 ${
+                activeTab === 'withdraw' 
+                  ? 'bg-slate-900 text-white shadow-sm' 
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <Download className="w-4 h-4" />
+              <span>Withdraw</span>
+            </button>
+
+            <button 
+              onClick={() => setActiveTab('history')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-2 ${
+                activeTab === 'history' 
+                  ? 'bg-slate-900 text-white shadow-sm' 
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <History className="w-4 h-4" />
+              <span>Trade Logs</span>
+            </button>
+
+            {currentUser?.role === 'ADMIN' && (
+              <button 
+                onClick={() => setActiveTab('admin')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-2 ${
+                  activeTab === 'admin' 
+                    ? 'bg-amber-500 text-white shadow-sm' 
+                    : 'text-amber-700 bg-amber-50 hover:bg-amber-100'
+                }`}
+              >
+                <ShieldCheck className="w-4 h-4" />
+                <span>Admin Console</span>
+              </button>
+            )}
+          </nav>
+
+          {/* User Account Bar */}
+          <div className="hidden md:flex items-center space-x-3">
+            {currentUser ? (
+              <div className="flex items-center space-x-3 bg-slate-100 border border-slate-200 px-3.5 py-1.5 rounded-xl">
+                <div className="text-right">
+                  <div className="text-[11px] font-semibold text-slate-500">{currentUser.name}</div>
+                  <div className="text-xs font-extrabold text-emerald-700 font-mono">
+                    ₹{currentUser.balance?.toLocaleString('en-IN')}
+                  </div>
+                </div>
+                <button 
+                  onClick={handleLogout}
+                  className="p-1.5 hover:bg-slate-200 text-slate-500 hover:text-rose-600 rounded-lg transition"
+                  title="Logout"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <button 
+                  onClick={() => { setActiveTab('auth'); setAuthMode('login'); }}
+                  className="px-4 py-2 text-xs font-bold text-slate-700 hover:text-slate-900 transition"
+                >
+                  Sign In
+                </button>
+                <button 
+                  onClick={() => { setActiveTab('auth'); setAuthMode('register'); }}
+                  className="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition shadow-md"
+                >
+                  Create Account
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Navigation Toggle */}
+          <div className="md:hidden flex items-center space-x-2">
+            {currentUser && (
+              <div className="bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200 text-right">
+                <span className="text-[10px] text-slate-500 block">Balance</span>
+                <span className="text-xs font-bold text-emerald-700 font-mono">₹{currentUser.balance?.toLocaleString('en-IN')}</span>
+              </div>
+            )}
+            <button 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 text-slate-700 bg-slate-100 rounded-lg border border-slate-200"
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
+
+        </div>
+
+        {/* Mobile Dropdown Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden bg-white border-b border-slate-200 px-4 py-3 space-y-2 shadow-lg">
+            <button 
+              onClick={() => { setActiveTab('trade'); setMobileMenuOpen(false); }}
+              className="w-full text-left py-2.5 px-3 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center space-x-2"
+            >
+              <Activity className="w-4 h-4 text-emerald-600" />
+              <span>Trading Terminal</span>
+            </button>
+
+            <button 
+              onClick={() => { setActiveTab('deposit'); setMobileMenuOpen(false); }}
+              className="w-full text-left py-2.5 px-3 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center space-x-2"
+            >
+              <Upload className="w-4 h-4 text-emerald-600" />
+              <span>Deposit Funds</span>
+            </button>
+
+            <button 
+              onClick={() => { setActiveTab('withdraw'); setMobileMenuOpen(false); }}
+              className="w-full text-left py-2.5 px-3 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center space-x-2"
+            >
+              <Download className="w-4 h-4 text-emerald-600" />
+              <span>Withdraw Funds</span>
+            </button>
+
+            <button 
+              onClick={() => { setActiveTab('history'); setMobileMenuOpen(false); }}
+              className="w-full text-left py-2.5 px-3 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center space-x-2"
+            >
+              <History className="w-4 h-4 text-emerald-600" />
+              <span>Trade Logs</span>
+            </button>
+
+            {currentUser?.role === 'ADMIN' && (
+              <button 
+                onClick={() => { setActiveTab('admin'); setMobileMenuOpen(false); }}
+                className="w-full text-left py-2.5 px-3 rounded-xl text-xs font-bold text-amber-800 bg-amber-50 flex items-center space-x-2"
+              >
+                <ShieldCheck className="w-4 h-4 text-amber-600" />
+                <span>Admin Console</span>
+              </button>
+            )}
+
+            <div className="pt-2 border-t border-slate-200">
+              {currentUser ? (
+                <button 
+                  onClick={handleLogout}
+                  className="w-full text-left py-2.5 px-3 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-bold flex items-center space-x-2"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Logout ({currentUser.name})</span>
+                </button>
+              ) : (
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <button 
+                    onClick={() => { setActiveTab('auth'); setAuthMode('login'); setMobileMenuOpen(false); }}
+                    className="py-2 text-center text-xs font-bold bg-slate-100 text-slate-800 rounded-xl"
+                  >
+                    Sign In
+                  </button>
+                  <button 
+                    onClick={() => { setActiveTab('auth'); setAuthMode('register'); setMobileMenuOpen(false); }}
+                    className="py-2 text-center text-xs font-bold bg-emerald-600 text-white rounded-xl"
+                  >
+                    Register
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </header>
+
+      {/* MAIN CONTAINER */}
+      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6">
+
+        {/* 1. TRADING TERMINAL VIEW */}
+        {activeTab === 'trade' && (
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
+            
+            {/* Chart Column */}
+            <div className="lg:col-span-3 space-y-4">
+              
+              {/* Asset Bar */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 flex flex-wrap items-center justify-between gap-3 shadow-sm">
+                
+                {/* Asset Pills */}
+                <div className="flex items-center space-x-2 overflow-x-auto py-1 scrollbar-none max-w-full">
+                  {assetsCatalog.map(asset => (
+                    <button
+                      key={asset.id}
+                      onClick={() => setSelectedAsset(asset)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 whitespace-nowrap ${
+                        selectedAsset.id === asset.id 
+                          ? 'bg-slate-900 text-white shadow' 
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
+                      }`}
+                    >
+                      <span>{asset.name}</span>
+                      <span className="text-[10px] opacity-80 font-mono">+{asset.payout}%</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Chart Controls & Live Price Ticker */}
+                <div className="flex items-center space-x-3 ml-auto">
+                  
+                  {/* Candlestick / Line Chart Toggle */}
+                  <div className="flex bg-slate-100 border border-slate-200 rounded-xl p-1">
+                    <button 
+                      onClick={() => setChartType('candlestick')}
+                      className={`p-1.5 rounded-lg transition ${chartType === 'candlestick' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                      title="Candlestick Chart"
+                    >
+                      <BarChart2 className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => setChartType('line')}
+                      className={`p-1.5 rounded-lg transition ${chartType === 'line' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                      title="Line Chart"
+                    >
+                      <LineChart className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* MA Indicator Toggle */}
+                  <button 
+                    onClick={() => setShowIndicators(prev => ({ ...prev, ma: !prev.ma }))}
+                    className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-bold transition ${
+                      showIndicators.ma ? 'bg-amber-50 border-amber-300 text-amber-800' : 'bg-slate-100 border-slate-200 text-slate-500'
+                    }`}
+                  >
+                    MA (7)
+                  </button>
+
+                  <div className="pl-2 text-right border-l border-slate-200">
+                    <span className="text-[10px] text-slate-400 block uppercase tracking-wider font-semibold">Rate</span>
+                    <span className="text-base font-extrabold font-mono text-emerald-700">
+                      ₹{currentPrice.toFixed(2)}
+                    </span>
+                  </div>
+
+                </div>
+
+              </div>
+
+              {/* White Canvas Screen */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-4 relative overflow-hidden shadow-sm min-h-[390px] sm:min-h-[450px] flex flex-col justify-between">
+                
+                {/* Live Feed Status Pill */}
+                <div className="absolute top-6 left-6 flex items-center space-x-2 bg-slate-900 text-white px-3 py-1 rounded-full shadow z-10">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span className="text-[11px] font-bold font-mono tracking-wide">
+                    {selectedAsset.name} REALTIME FEED
+                  </span>
+                </div>
+
+                <div className="w-full flex-1 pt-8 pb-2">
+                  <canvas 
+                    ref={canvasRef} 
+                    width={750} 
+                    height={350} 
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between text-[11px] text-slate-500 border-t border-slate-100 pt-2 font-mono">
+                  <span>Execution Speed: <span className="text-emerald-700 font-bold">&lt; 10ms</span></span>
+                  <span>Payout Rate: <span className="text-emerald-700 font-bold">+{selectedAsset.payout}% Profit</span></span>
+                </div>
+              </div>
+
+              {/* Running Positions Box */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+                <h3 className="text-xs font-extrabold text-slate-700 mb-3 uppercase tracking-wider flex items-center space-x-2">
+                  <Clock className="w-4 h-4 text-emerald-600" />
+                  <span>Open Market Positions</span>
+                </h3>
+
+                {trades.filter(t => t.userPhone === currentUser?.phone && t.status === 'ACTIVE').length === 0 ? (
+                  <p className="text-xs text-slate-400 italic py-2">No active market positions currently running.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {trades.filter(t => t.userPhone === currentUser?.phone && t.status === 'ACTIVE').map(t => {
+                      const remainingSecs = Math.max(0, Math.ceil((t.expiryTime - Date.now()) / 1000));
+                      return (
+                        <div key={t.id} className="bg-slate-50 border border-slate-200 p-3 rounded-xl flex items-center justify-between text-xs">
+                          <div className="flex items-center space-x-2">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold ${t.type === 'CALL' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
+                              {t.type}
+                            </span>
+                            <span className="font-bold text-slate-900">{t.assetName}</span>
+                            <span className="text-slate-500 font-mono">@ ₹{t.strikePrice}</span>
+                          </div>
+                          <div className="flex items-center space-x-4">
+                            <span className="font-mono text-emerald-700 font-bold">₹{t.amount}</span>
+                            <span className="bg-amber-100 border border-amber-300 px-2.5 py-1 rounded-lg text-amber-800 font-mono font-extrabold animate-pulse">
+                              {remainingSecs}s
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+            </div>
+
+            {/* Right Side: Order Desk */}
+            <div className="lg:col-span-1 space-y-4">
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-5">
+                
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <span className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">Trading Desk</span>
+                  <span className="text-[10px] text-emerald-800 font-bold bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    High/Low Option
+                  </span>
+                </div>
+
+                {/* Investment Stake */}
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 block mb-1.5">Trade Stake (₹)</label>
+                  <input 
+                    type="number" 
+                    value={tradeAmount}
+                    onChange={(e) => setTradeAmount(Math.max(10, parseInt(e.target.value) || 0))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 font-mono font-bold focus:outline-none focus:border-emerald-600 text-sm"
+                  />
+                  {/* Preset Buttons */}
+                  <div className="grid grid-cols-4 gap-1.5 mt-2">
+                    {[100, 200, 500, 1000].map(val => (
+                      <button
+                        key={val}
+                        onClick={() => setTradeAmount(val)}
+                        className={`py-1 text-[11px] font-bold rounded-lg border transition ${
+                          tradeAmount === val 
+                            ? 'bg-slate-900 border-slate-900 text-white' 
+                            : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        ₹{val}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Duration Picker */}
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 block mb-1.5">Expiry Duration</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[15, 30, 60].map(s => (
+                      <button
+                        key={s}
+                        onClick={() => setTradeDuration(s)}
+                        className={`py-2 text-xs font-bold rounded-xl border transition ${
+                          tradeDuration === s 
+                            ? 'bg-emerald-50 border-emerald-500 text-emerald-800' 
+                            : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        {s} Sec
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Return Calculation */}
+                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-1.5">
+                  <div className="flex justify-between text-xs text-slate-500">
+                    <span>Yield Rate</span>
+                    <span className="text-emerald-700 font-bold font-mono">+{selectedAsset.payout}%</span>
+                  </div>
+                  <div className="flex justify-between text-xs font-semibold text-slate-700">
+                    <span>Net Profit</span>
+                    <span className="text-emerald-700 font-bold font-mono">
+                      +₹{Math.round(tradeAmount * (selectedAsset.payout / 100))}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm font-extrabold text-slate-900 pt-2 border-t border-slate-200">
+                    <span>Total Return</span>
+                    <span className="text-emerald-700 font-mono">
+                      ₹{Math.round(tradeAmount * (1 + selectedAsset.payout / 100))}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Order Execution Buttons */}
+                <div className="space-y-3 pt-1">
+                  <button 
+                    onClick={() => handlePlaceTrade('CALL')}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3.5 rounded-xl transition flex items-center justify-center space-x-2 shadow-md active:scale-[0.98]"
+                  >
+                    <ArrowUpRight className="w-5 h-5 stroke-[3]" />
+                    <span className="text-sm tracking-wider uppercase">Call (Higher)</span>
+                  </button>
+
+                  <button 
+                    onClick={() => handlePlaceTrade('PUT')}
+                    className="w-full bg-rose-600 hover:bg-rose-700 text-white font-black py-3.5 rounded-xl transition flex items-center justify-center space-x-2 shadow-md active:scale-[0.98]"
+                  >
+                    <ArrowDownRight className="w-5 h-5 stroke-[3]" />
+                    <span className="text-sm tracking-wider uppercase">Put (Lower)</span>
+                  </button>
+                </div>
+
+                {!currentUser && (
+                  <p className="text-[11px] text-center text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200">
+                    Please Sign In or Register to execute real trades.
+                  </p>
+                )}
+
+              </div>
+            </div>
+
+          </div>
+        )}
+
+        {/* 2. MANUAL UPI DEPOSIT VIEW */}
+        {activeTab === 'deposit' && (
+          <div className="max-w-2xl mx-auto space-y-6">
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
+              
+              <div className="text-center space-y-1">
+                <div className="w-12 h-12 bg-emerald-50 text-emerald-700 rounded-2xl flex items-center justify-center mx-auto mb-2 border border-emerald-200">
+                  <QrCode className="w-6 h-6" />
+                </div>
+                <h2 className="text-2xl font-black text-slate-900">Instant Deposit via UPI</h2>
+                <p className="text-xs text-slate-500">Scan QR Code or pay directly to the Paytm UPI handle below</p>
+              </div>
+
+              {/* Amount Selection Presets */}
+              <div>
+                <label className="text-xs font-semibold text-slate-700 block mb-2">Select Deposit Amount:</label>
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                  {[200, 500, 1000, 2000, 5000].map(val => (
+                    <button
+                      key={val}
+                      onClick={() => { setDepositAmount(val); setCustomDepositAmt(''); }}
+                      className={`py-2 text-xs font-bold rounded-xl border transition ${
+                        depositAmount === val && !customDepositAmt
+                          ? 'bg-slate-900 border-slate-900 text-white shadow-sm' 
+                          : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      ₹{val}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="mt-3">
+                  <input 
+                    type="number"
+                    placeholder="Or enter custom amount (Min ₹100)"
+                    value={customDepositAmt}
+                    onChange={(e) => setCustomDepositAmt(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600"
+                  />
+                </div>
+              </div>
+
+              {/* Paytm QR Display */}
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 text-center space-y-4">
+                <div className="inline-block bg-white p-3 rounded-2xl shadow border-2 border-emerald-500">
+                  <img 
+                    src={qrCodeImage} 
+                    alt="Gurudatt Kirana Store UPI QR" 
+                    className="w-48 h-48 mx-auto rounded-lg object-contain"
+                  />
+                </div>
+
+                <div>
+                  <span className="text-xs text-slate-500 block mb-1">Payee Name: <strong className="text-slate-800">Gurudatt Kirana Store</strong></span>
+                  <div className="inline-flex items-center space-x-2 bg-white border border-slate-300 px-4 py-2 rounded-xl shadow-sm">
+                    <span className="text-sm font-bold font-mono text-emerald-700">paytmqr6n4gde@ptys</span>
+                    <button 
+                      onClick={copyUpiToClipboard}
+                      className="text-slate-400 hover:text-slate-800 transition"
+                      title="Copy UPI ID"
+                    >
+                      {copiedUpi ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="text-xs bg-emerald-50 text-emerald-800 py-2 px-3 rounded-xl border border-emerald-200 font-semibold">
+                  Selected Amount for QR Code: <span className="font-bold text-slate-900 font-mono">₹{activeDepositAmount}</span>
+                </div>
+              </div>
+
+              {/* Payment UTR Form */}
+              <form onSubmit={handleDepositSubmit} className="space-y-4">
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                    Enter 12-Digit Payment UTR / Ref Number *
+                  </label>
+                  <input 
+                    type="text" 
+                    required
+                    placeholder="e.g. 423985710293"
+                    value={utrNumber}
+                    onChange={(e) => setUtrNumber(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 font-mono"
+                  />
+                </div>
+
+                {depositNotice && (
+                  <div className={`p-3 rounded-xl text-xs flex items-center space-x-2 ${
+                    depositNotice.type === 'error' 
+                      ? 'bg-rose-50 border border-rose-200 text-rose-700' 
+                      : 'bg-emerald-50 border border-emerald-200 text-emerald-700'
+                  }`}>
+                    {depositNotice.type === 'error' ? <AlertCircle className="w-4 h-4 flex-shrink-0" /> : <CheckCircle2 className="w-4 h-4 flex-shrink-0" />}
+                    <span>{depositNotice.text}</span>
+                  </div>
+                )}
+
+                <button 
+                  type="submit"
+                  disabled={!currentUser}
+                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3.5 rounded-xl transition shadow disabled:opacity-50"
+                >
+                  {currentUser ? 'Submit Deposit Request' : 'Sign In to Deposit'}
+                </button>
+              </form>
+
+            </div>
+          </div>
+        )}
+
+        {/* 3. WITHDRAWAL VIEW */}
+        {activeTab === 'withdraw' && (
+          <div className="max-w-2xl mx-auto space-y-6">
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
+              
+              <div className="text-center space-y-1">
+                <div className="w-12 h-12 bg-emerald-50 text-emerald-700 rounded-2xl flex items-center justify-center mx-auto mb-2 border border-emerald-200">
+                  <Download className="w-6 h-6" />
+                </div>
+                <h2 className="text-2xl font-black text-slate-900">Withdraw Funds</h2>
+                <p className="text-xs text-slate-500">Payout directly to your UPI ID or Bank Account</p>
+              </div>
+
+              {!currentUser ? (
+                <p className="text-center text-xs text-slate-500 py-4">Please sign in to request withdrawals.</p>
+              ) : (
+                <form onSubmit={handleWithdrawSubmit} className="space-y-4">
+                  
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex justify-between items-center">
+                    <span className="text-xs font-semibold text-slate-600">Available Balance:</span>
+                    <span className="text-base font-extrabold font-mono text-emerald-700">
+                      ₹{currentUser.balance?.toLocaleString('en-IN')}
+                    </span>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 block mb-1">Withdrawal Amount (₹) *</label>
+                    <input 
+                      type="number" 
+                      required
+                      placeholder="Min ₹300"
+                      value={withdrawAmount}
+                      onChange={(e) => setWithdrawAmount(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 block mb-1">UPI ID or Bank Details *</label>
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="e.g. mobile@upi or Account + IFSC"
+                      value={withdrawUpi}
+                      onChange={(e) => setWithdrawUpi(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600"
+                    />
+                  </div>
+
+                  {withdrawNotice && (
+                    <div className={`p-3 rounded-xl text-xs flex items-center space-x-2 ${
+                      withdrawNotice.type === 'error' 
+                        ? 'bg-rose-50 border border-rose-200 text-rose-700' 
+                        : 'bg-emerald-50 border border-emerald-200 text-emerald-700'
+                    }`}>
+                      {withdrawNotice.type === 'error' ? <AlertCircle className="w-4 h-4 flex-shrink-0" /> : <CheckCircle2 className="w-4 h-4 flex-shrink-0" />}
+                      <span>{withdrawNotice.text}</span>
+                    </div>
+                  )}
+
+                  <button 
+                    type="submit"
+                    className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3.5 rounded-xl transition shadow"
+                  >
+                    Request Payout
+                  </button>
+                </form>
+              )}
+
+            </div>
+          </div>
+        )}
+
+        {/* 4. TRADE LOGS VIEW */}
+        {activeTab === 'history' && (
+          <div className="max-w-4xl mx-auto space-y-4">
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+              <h2 className="text-lg font-black text-slate-900 flex items-center space-x-2">
+                <History className="w-5 h-5 text-emerald-600" />
+                <span>Trade Execution Logs</span>
+              </h2>
+
+              {!currentUser ? (
+                <p className="text-slate-500 text-xs">Please sign in to view your execution logs.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider">
+                        <th className="py-3 px-2">Asset</th>
+                        <th className="py-3 px-2">Type</th>
+                        <th className="py-3 px-2">Stake</th>
+                        <th className="py-3 px-2">Strike</th>
+                        <th className="py-3 px-2">Close</th>
+                        <th className="py-3 px-2">Result</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-xs">
+                      {trades.filter(t => t.userPhone === currentUser.phone).length === 0 ? (
+                        <tr>
+                          <td colSpan="6" className="py-6 text-center text-slate-400 italic">
+                            No executed trades on record.
+                          </td>
+                        </tr>
+                      ) : (
+                        trades.filter(t => t.userPhone === currentUser.phone).map(t => (
+                          <tr key={t.id} className="hover:bg-slate-50">
+                            <td className="py-3 px-2 font-bold text-slate-900">{t.assetName}</td>
+                            <td className="py-3 px-2">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold ${t.type === 'CALL' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
+                                {t.type}
+                              </span>
+                            </td>
+                            <td className="py-3 px-2 font-mono font-semibold">₹{t.amount}</td>
+                            <td className="py-3 px-2 font-mono text-slate-500">₹{t.strikePrice}</td>
+                            <td className="py-3 px-2 font-mono text-slate-500">{t.closePrice ? `₹${t.closePrice}` : 'In Progress'}</td>
+                            <td className="py-3 px-2">
+                              {t.status === 'ACTIVE' && (
+                                <span className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-[10px] font-extrabold">
+                                  Running
+                                </span>
+                              )}
+                              {t.status === 'WON' && (
+                                <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-[10px] font-extrabold font-mono">
+                                  +₹{t.payoutAmount} WIN
+                                </span>
+                              )}
+                              {t.status === 'LOST' && (
+                                <span className="bg-rose-100 text-rose-800 px-2 py-0.5 rounded text-[10px] font-extrabold font-mono">
+                                  -₹{t.amount} LOSS
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 5. PROTECTED MASTER ADMIN CONSOLE */}
+        {activeTab === 'admin' && currentUser?.role === 'ADMIN' && (
+          <div className="space-y-6">
+            
+            {/* Header Banner */}
+            <div className="bg-gradient-to-r from-amber-50 to-white border border-amber-200 rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+              <div>
+                <span className="text-xs font-bold text-amber-800 uppercase tracking-widest block">Master Control</span>
+                <h2 className="text-2xl font-black text-slate-900">Administrator Terminal</h2>
+                <p className="text-xs text-slate-500">Manage manual deposits, withdrawal payouts, user accounts & trade outcome overrides.</p>
+              </div>
+
+              {/* Trade Outcome Rigging Controls */}
+              <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm space-y-1">
+                <span className="text-[11px] font-semibold text-slate-600 block">Market Settlement Rigging:</span>
+                <div className="flex space-x-1">
+                  <button
+                    onClick={() => setAdminRigMode('FAIR')}
+                    className={`px-3 py-1 rounded text-xs font-bold transition ${adminRigMode === 'FAIR' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
+                  >
+                    Fair Market
+                  </button>
+                  <button
+                    onClick={() => setAdminRigMode('FORCE_WIN')}
+                    className={`px-3 py-1 rounded text-xs font-bold transition ${adminRigMode === 'FORCE_WIN' ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
+                  >
+                    Force Win
+                  </button>
+                  <button
+                    onClick={() => setAdminRigMode('FORCE_LOSS')}
+                    className={`px-3 py-1 rounded text-xs font-bold transition ${adminRigMode === 'FORCE_LOSS' ? 'bg-rose-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
+                  >
+                    Force Loss
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Platform Metrics */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm">
+                <span className="text-xs text-slate-500 block">Total Registered Users</span>
+                <span className="text-2xl font-bold font-mono text-slate-900">{users.length}</span>
+              </div>
+              <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm">
+                <span className="text-xs text-slate-500 block">Pending Deposit Approvals</span>
+                <span className="text-2xl font-bold font-mono text-amber-600">
+                  {deposits.filter(d => d.status === 'PENDING').length}
+                </span>
+              </div>
+              <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm">
+                <span className="text-xs text-slate-500 block">Pending Withdrawals</span>
+                <span className="text-2xl font-bold font-mono text-emerald-600">
+                  {withdrawals.filter(w => w.status === 'PENDING').length}
+                </span>
+              </div>
+            </div>
+
+            {/* Pending Deposits Queue */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+              <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+                <CreditCard className="w-4 h-4 text-amber-600" />
+                <span>Pending Deposits Queue (Manual UPI)</span>
+              </h3>
+
+              {deposits.filter(d => d.status === 'PENDING').length === 0 ? (
+                <p className="text-xs text-slate-400 italic py-2">No pending deposit requests.</p>
+              ) : (
+                <div className="space-y-3">
+                  {deposits.filter(d => d.status === 'PENDING').map(dep => (
+                    <div key={dep.id} className="bg-slate-50 border border-slate-200 p-4 rounded-xl flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-bold text-slate-900">{dep.userName} ({dep.userPhone})</div>
+                        <div className="text-sm font-mono font-extrabold text-emerald-700 mt-0.5">Amount: ₹{dep.amount}</div>
+                        <div className="text-xs text-slate-500 font-mono">UTR / Ref: <span className="text-slate-900 font-bold">{dep.utr}</span></div>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleApproveDeposit(dep.id)}
+                          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition"
+                        >
+                          Approve & Credit Balance
+                        </button>
+                        <button
+                          onClick={() => handleRejectDeposit(dep.id)}
+                          className="px-4 py-2 bg-rose-100 hover:bg-rose-200 text-rose-800 text-xs font-bold rounded-lg transition"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Pending Withdrawals Queue */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+              <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+                <Download className="w-4 h-4 text-emerald-600" />
+                <span>Pending Payout Requests</span>
+              </h3>
+
+              {withdrawals.filter(w => w.status === 'PENDING').length === 0 ? (
+                <p className="text-xs text-slate-400 italic py-2">No pending withdrawal requests.</p>
+              ) : (
+                <div className="space-y-3">
+                  {withdrawals.filter(w => w.status === 'PENDING').map(wd => (
+                    <div key={wd.id} className="bg-slate-50 border border-slate-200 p-4 rounded-xl flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-bold text-slate-900">{wd.userName} ({wd.userPhone})</div>
+                        <div className="text-sm font-mono font-extrabold text-rose-700 mt-0.5">Payout: ₹{wd.amount}</div>
+                        <div className="text-xs text-slate-500 font-mono">Target UPI/Bank: <span className="text-slate-900 font-bold">{wd.targetUpi}</span></div>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleApproveWithdrawal(wd.id)}
+                          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition"
+                        >
+                          Mark Paid
+                        </button>
+                        <button
+                          onClick={() => handleRejectWithdrawal(wd.id)}
+                          className="px-4 py-2 bg-rose-100 hover:bg-rose-200 text-rose-800 text-xs font-bold rounded-lg transition"
+                        >
+                          Reject & Refund
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* User Account Table */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+                  <User className="w-4 h-4 text-emerald-600" />
+                  <span>User Accounts & Manual Balance Control</span>
+                </h3>
+
+                <div className="relative w-full sm:w-64">
+                  <input 
+                    type="text" 
+                    placeholder="Search by name or phone..."
+                    value={adminSearch}
+                    onChange={(e) => setAdminSearch(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 pl-8 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600"
+                  />
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider">
+                      <th className="py-2">Name</th>
+                      <th className="py-2">Phone</th>
+                      <th className="py-2">Role</th>
+                      <th className="py-2">Wallet Balance</th>
+                      <th className="py-2">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredUsers.length === 0 ? (
+                      <tr>
+                        <td colSpan="5" className="py-4 text-center text-slate-400">No registered users found.</td>
+                      </tr>
+                    ) : (
+                      filteredUsers.map(u => (
+                        <tr key={u.phone} className="hover:bg-slate-50">
+                          <td className="py-3 font-semibold text-slate-900">{u.name}</td>
+                          <td className="py-3 text-slate-600 font-mono">{u.phone}</td>
+                          <td className="py-3">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${u.role === 'ADMIN' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'}`}>
+                              {u.role}
+                            </span>
+                          </td>
+                          <td className="py-3 font-mono font-bold text-emerald-700">₹{u.balance?.toLocaleString('en-IN')}</td>
+                          <td className="py-3">
+                            {selectedUserPhone === u.phone ? (
+                              <div className="flex items-center space-x-2">
+                                <input 
+                                  type="number" 
+                                  placeholder="+/- Amount"
+                                  value={balanceAdjustAmt}
+                                  onChange={(e) => setBalanceAdjustAmt(e.target.value)}
+                                  className="w-24 bg-slate-50 border border-slate-300 px-2 py-1 rounded text-slate-900 font-mono text-xs"
+                                />
+                                <button 
+                                  onClick={() => handleUpdateUserBalance(u.phone)}
+                                  className="px-2 py-1 bg-emerald-600 text-white text-[10px] font-bold rounded"
+                                >
+                                  Save
+                                </button>
+                                <button 
+                                  onClick={() => setSelectedUserPhone(null)}
+                                  className="px-2 py-1 bg-slate-200 text-slate-600 text-[10px] font-bold rounded"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            ) : (
+                              <button 
+                                onClick={() => setSelectedUserPhone(u.phone)}
+                                className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded font-semibold text-[11px]"
+                              >
+                                Edit Balance
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        )}
+
+        {/* 6. AUTHENTICATION VIEW */}
+        {activeTab === 'auth' && (
+          <div className="max-w-md mx-auto my-8">
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
+              
+              <div className="text-center space-y-1">
+                <h2 className="text-2xl font-black text-slate-900">
+                  {authMode === 'login' ? 'Sign In to Forexaaa' : 'Create Account'}
+                </h2>
+                <p className="text-xs text-slate-500">
+                  {authMode === 'login' ? 'Enter your credentials to access your trading desk' : 'Register your account to begin trading'}
+                </p>
+              </div>
+
+              {authError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-center space-x-2">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <span>{authError}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleAuth} className="space-y-4">
+                {authMode === 'register' && (
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 block mb-1">Full Name</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Rahul Sharma"
+                      value={nameInput}
+                      onChange={(e) => setNameInput(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">Mobile Number</label>
+                  <input 
+                    type="text" 
+                    placeholder="Enter phone number"
+                    value={phoneInput}
+                    onChange={(e) => setPhoneInput(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">Password</label>
+                  <div className="relative">
+                    <input 
+                      type={showPassword ? 'text' : 'password'} 
+                      placeholder="••••••••"
+                      value={passwordInput}
+                      onChange={(e) => setPasswordInput(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-800"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <button 
+                  type="submit"
+                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3.5 rounded-xl transition shadow"
+                >
+                  {authMode === 'login' ? 'Sign In' : 'Create Account'}
+                </button>
+              </form>
+
+              <div className="pt-4 border-t border-slate-100 text-center">
+                {authMode === 'login' ? (
+                  <p className="text-xs text-slate-500">
+                    Don't have an account?{' '}
+                    <button 
+                      onClick={() => setAuthMode('register')} 
+                      className="text-emerald-700 font-bold hover:underline"
+                    >
+                      Register Now
+                    </button>
+                  </p>
+                ) : (
+                  <p className="text-xs text-slate-500">
+                    Already registered?{' '}
+                    <button 
+                      onClick={() => setAuthMode('login')} 
+                      className="text-emerald-700 font-bold hover:underline"
+                    >
+                      Sign In
+                    </button>
+                  </p>
+                )}
+              </div>
+
+            </div>
+          </div>
+        )}
+
+      </main>
+
+      {/* FOOTER */}
+      <footer className="border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-500">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+          <span>© 2026 FOREXAAA Terminal. All rights reserved.</span>
+          <div className="flex space-x-4 text-slate-600 font-medium">
+            <span>Verified UPI Gateway (`paytmqr6n4gde@ptys`)</span>
+            <span>Fast Execution Engine</span>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
