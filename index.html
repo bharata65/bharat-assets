@@ -47,7 +47,7 @@
       <i data-lucide="trending-up" class="w-8 h-8 stroke-[2.5]"></i>
     </div>
     <div class="text-xl font-black tracking-widest uppercase">FOREX<span class="text-emerald-500">AAA</span></div>
-    <div class="text-xs text-slate-400 mt-2 font-mono" id="loadingText">Securing Live Environment...</div>
+    <div class="text-xs text-slate-400 mt-2 font-mono text-center px-4" id="loadingText">Connecting to Live Server...</div>
   </div>
 
   <!-- TOAST NOTIFICATIONS -->
@@ -139,6 +139,7 @@
 
       <!-- Desktop Nav -->
       <div class="flex items-center space-x-3">
+        <div id="connectionStatus" class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" title="Connected to Cloud"></div>
         <nav class="hidden lg:flex items-center space-x-1" id="desktopNav">
           <button onclick="switchTab('trade')" id="nav-trade" class="nav-btn px-3 py-2 rounded-xl text-xs font-bold bg-slate-900 text-white shadow-sm flex items-center space-x-1"><i data-lucide="activity" class="w-4 h-4"></i><span>Desk</span></button>
           <button onclick="switchTab('deposit')" id="nav-deposit" class="nav-btn px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 flex items-center space-x-1"><i data-lucide="arrow-down-left" class="w-4 h-4 text-emerald-600"></i><span>Deposit</span></button>
@@ -409,7 +410,7 @@
                <button type="button" onclick="cancelDeposit()" class="w-full bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold py-3.5 rounded-xl transition shadow-sm text-sm">
                  Go Back
                </button>
-               <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3.5 rounded-xl transition shadow-md text-sm">
+               <button type="submit" id="depositSubmitBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3.5 rounded-xl transition shadow-md text-sm">
                  Confirm Payment
                </button>
             </div>
@@ -454,7 +455,7 @@
              </div>
           </div>
 
-          <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl transition shadow-xl text-sm uppercase tracking-widest active:scale-95">
+          <button type="submit" id="withdrawSubmitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl transition shadow-xl text-sm uppercase tracking-widest active:scale-95">
             Submit Request
           </button>
         </form>
@@ -544,7 +545,7 @@
         <div class="relative z-10">
           <span class="text-[10px] font-black text-amber-400 uppercase tracking-widest block mb-1 bg-amber-400/10 inline-block px-2 py-1 rounded">Level 99 Authorization</span>
           <h2 class="text-2xl sm:text-3xl font-black">Admin Console</h2>
-          <p class="text-slate-400 text-xs mt-1 font-mono">Firebase Connected: Live Sync Active</p>
+          <p class="text-slate-400 text-xs mt-1 font-mono">Firebase Connected: Live Global Sync Active</p>
         </div>
       </div>
       
@@ -645,27 +646,26 @@
     <button type="button" onclick="switchTab('account')" id="m-nav-account" class="mobile-nav-item flex flex-col items-center justify-center w-full py-1.5 text-slate-400 transition hover:text-slate-700"><i data-lucide="user" class="w-5 h-5 mb-1"></i><span class="text-[10px] font-black uppercase">Profile</span></button>
   </nav>
 
-  <!-- Using the robust Modular Firebase SDK to ensure perfect saving/loading across devices -->
+  <!-- Strict Cloud DB Logic -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    const firebaseConfigStr = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+    // HARDCODED APP ID guarantees all your devices link to the EXACT same database
+    const APP_ID = 'forex-master-pro-live-v1'; 
+
     let db, auth;
-    
-    // Core Application State Arrays (mirrors DB)
+    let currentUser = null; 
+    let firebaseUid = null;
+    let sessionSavedPhone = null; // Used to restore session after page reload
+
     let fb_users = [];
     let fb_trades = [];
     let fb_deposits = [];
     let fb_withdrawals = [];
     let fb_chats = [];
     let fb_settings = { upiId: 'admin@okaxis', globalRig: 'AUTO' };
-    
-    let currentUser = null; 
-    let fb_unsubscribe_funcs = [];
-
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'forexaaa-pro';
     
     let activeTab = 'auth';
     let authMode = 'login';
@@ -702,127 +702,102 @@
       renderAssetPills();
       window.addEventListener('resize', resizeCanvas);
       
-      // Strict Firebase Implementation - with Fail-Safe fallback
-      if (firebaseConfigStr) {
-        try {
-          const config = JSON.parse(firebaseConfigStr);
-          const app = initializeApp(config);
-          db = getFirestore(app);
-          auth = getAuth(app);
-          await initFirebaseAuth();
-        } catch(e) {
-          console.error("Firebase Init Error", e);
-          fallbackDevMode(); 
+      try {
+        let configToUse = null;
+        if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+            configToUse = JSON.parse(__firebase_config);
+        } else {
+            // Force crash to avoid local memory illusion if deployed outside
+            throw new Error("No Cloud Config Provided");
         }
-      } else { 
-        fallbackDevMode(); 
+
+        const app = initializeApp(configToUse);
+        db = getFirestore(app);
+        auth = getAuth(app);
+        
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+            await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+            await signInAnonymously(auth);
+        }
+
+        onAuthStateChanged(auth, async (user) => { 
+           if (user) {
+               firebaseUid = user.uid;
+               // Check if session exists on cloud to prevent logout on reload
+               try {
+                  const sessionDoc = await getDoc(doc(db, 'artifacts', APP_ID, 'users', user.uid, 'session', 'current'));
+                  if (sessionDoc.exists()) {
+                      sessionSavedPhone = sessionDoc.data().phone;
+                  }
+               } catch(e) {}
+               setupFirestoreListeners(); 
+           }
+        });
+      } catch(e) {
+         document.getElementById('loadingText').innerText = "Cloud Connection Error. Needs real Firebase Config.";
+         document.getElementById('loadingText').classList.add('text-rose-500');
+         document.getElementById('globalLoader').querySelector('i').classList.replace('text-emerald-500', 'text-rose-500');
       }
     });
 
-    function fallbackDevMode() {
-      db = null; // Mark DB as null to use local memory (fail-safe logic)
-      hideGlobalLoader();
-      showToast('Dev Mode Enabled', 'Running locally without Cloud.', 'success');
-      // Set a generic admin user for testing if no DB exists
-      fb_users.push({ phone: '9529951116', name: 'Master Admin', password: 'Ritesh555', role: 'ADMIN', balance: 0 });
-    }
+    // --- DB WRAPPERS ---
+    function getPubCol(name) { return collection(db, 'artifacts', APP_ID, 'public', 'data', name); }
+    function getPubDoc(colName, docId) { return doc(db, 'artifacts', APP_ID, 'public', 'data', colName, docId); }
 
-    async function initFirebaseAuth() {
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
-        onAuthStateChanged(auth, (user) => { 
-           if (user) setupFirestoreListeners(); 
-        });
-      } catch (e) {
-        fallbackDevMode(); 
-      }
-    }
-
-    // --- DB Wrappers to handle Cloud vs Local seamlessly ---
-    function getPubCol(name) { return collection(db, 'artifacts', appId, 'public', 'data', name); }
-    function getPubDoc(colName, docId) { return doc(db, 'artifacts', appId, 'public', 'data', colName, docId); }
-
-    async function dbSetUser(phone, data) {
-      if (db) await setDoc(getPubDoc('users', phone), data, { merge: true });
-      else {
-        const idx = fb_users.findIndex(u => u.phone === phone);
-        if (idx > -1) fb_users[idx] = { ...fb_users[idx], ...data };
-        else fb_users.push({ id: phone, ...data });
-        renderUI();
-      }
-    }
-    
-    async function dbUpdateUser(phone, data) {
-      if(db) await updateDoc(getPubDoc('users', phone), data);
-      else await dbSetUser(phone, data); // fallback is identical behavior for this mockup
-    }
-
-    async function dbAdd(colName, data) {
-      if (db) await addDoc(getPubCol(colName), data);
-      else {
-        const fullData = { id: 'loc_' + Date.now(), ...data };
-        if (colName === 'trades') { fb_trades.push(fullData); processTradeEngine(); }
-        if (colName === 'deposits') fb_deposits.push(fullData);
-        if (colName === 'withdrawals') fb_withdrawals.push(fullData);
-        if (colName === 'chats') { fb_chats.push(fullData); renderChats(); }
-        renderUI();
-      }
-    }
-
-    async function dbUpdateDoc(colName, docId, data) {
-      if (db) await updateDoc(getPubDoc(colName, docId), data);
-      else {
-        let arr = colName === 'trades' ? fb_trades : colName === 'deposits' ? fb_deposits : fb_withdrawals;
-        const idx = arr.findIndex(item => item.id === docId);
-        if (idx > -1) arr[idx] = { ...arr[idx], ...data };
-        renderUI();
-      }
-    }
-
-    async function dbSaveSettings(data) {
-      if (db) await setDoc(getPubDoc('settings', 'global'), data, {merge: true});
-      else { fb_settings = { ...fb_settings, ...data }; renderUI(); }
-    }
-
+    // --- CLOUD SYNC LISTENERS ---
     function setupFirestoreListeners() {
-      fb_unsubscribe_funcs.forEach(unsub => unsub()); fb_unsubscribe_funcs = [];
-
-      fb_unsubscribe_funcs.push(onSnapshot(getPubDoc('settings', 'global'), (docSnap) => {
+      // Global Settings
+      onSnapshot(getPubDoc('settings', 'global'), (docSnap) => {
          if(docSnap.exists()) { fb_settings = docSnap.data(); updateUpiDisplay(); renderUI(); }
-      }));
+      });
 
-      fb_unsubscribe_funcs.push(onSnapshot(getPubCol('users'), (snap) => {
+      // Users - Auto Login Logic on Reload happens here
+      onSnapshot(getPubCol('users'), (snap) => {
          fb_users = []; snap.forEach(d => fb_users.push({ id: d.id, ...d.data() }));
-         if(currentUser) { 
-           const latest = fb_users.find(u => u.phone === currentUser.phone); 
-           if(latest) currentUser = latest; else handleLogout();
+         
+         if (!currentUser && sessionSavedPhone) {
+             // We had a session saved in cloud, let's restore it automatically!
+             const restoredUser = fb_users.find(u => u.phone === sessionSavedPhone);
+             if (restoredUser) {
+                 currentUser = restoredUser;
+                 if (activeTab === 'auth') {
+                     switchTab(restoredUser.role === 'ADMIN' ? 'admin' : 'trade');
+                     showToast('Session Restored', 'Auto-login successful.', 'success');
+                 }
+             }
+         } else if (currentUser) { 
+             // Keep current user updated with live cloud changes
+             const latest = fb_users.find(u => u.phone === currentUser.phone); 
+             if(latest) {
+                 if (latest.isBlocked && !currentUser.isBlocked) {
+                     window.handleLogout(); showToast('Account Banned', 'Admin suspended your account.', 'error'); return;
+                 }
+                 currentUser = latest;
+             } else window.handleLogout();
          }
-         checkSession(); hideGlobalLoader(); renderUI();
-      }));
+         hideGlobalLoader(); renderUI();
+      });
 
-      fb_unsubscribe_funcs.push(onSnapshot(getPubCol('trades'), (snap) => {
+      onSnapshot(getPubCol('trades'), (snap) => {
          fb_trades = []; snap.forEach(d => fb_trades.push({ id: d.id, ...d.data() }));
          processTradeEngine(); renderUI();
-      }));
+      });
 
-      fb_unsubscribe_funcs.push(onSnapshot(getPubCol('deposits'), (snap) => {
+      onSnapshot(getPubCol('deposits'), (snap) => {
          fb_deposits = []; snap.forEach(d => fb_deposits.push({ id: d.id, ...d.data() }));
          renderUI();
-      }));
+      });
 
-      fb_unsubscribe_funcs.push(onSnapshot(getPubCol('withdrawals'), (snap) => {
+      onSnapshot(getPubCol('withdrawals'), (snap) => {
          fb_withdrawals = []; snap.forEach(d => fb_withdrawals.push({ id: d.id, ...d.data() }));
          renderUI();
-      }));
+      });
 
-      fb_unsubscribe_funcs.push(onSnapshot(getPubCol('chats'), (snap) => {
+      onSnapshot(getPubCol('chats'), (snap) => {
          fb_chats = []; snap.forEach(d => fb_chats.push({ id: d.id, ...d.data() }));
          fb_chats.sort((a,b) => a.timestamp - b.timestamp); renderChats();
-      }));
+      });
     }
     
     function hideGlobalLoader() { 
@@ -894,11 +869,6 @@
       renderUI(); window.scrollTo(0,0);
     }
 
-    function checkSession() {
-       if(!currentUser && activeTab !== 'auth') switchTab('auth');
-       else if (currentUser && activeTab === 'auth') switchTab(currentUser.role === 'ADMIN' ? 'admin' : 'trade');
-    }
-
     window.toggleAuthMode = function(mode) {
       authMode = mode;
       document.getElementById('authTitle').innerText = mode === 'login' ? 'Sign In Securely' : 'Create Live Account';
@@ -909,7 +879,7 @@
       document.getElementById('authToggleText').innerHTML = mode === 'login' ? `New to Forexaaa? <button type="button" onclick="toggleAuthMode('register')" class="text-emerald-600 font-black hover:underline ml-1">Create Account</button>` : `Already registered? <button type="button" onclick="toggleAuthMode('login')" class="text-emerald-600 font-black hover:underline ml-1">Login</button>`;
     }
 
-    // --- FIX FOR AUTHENTICATION FLOW ---
+    // --- AUTHENTICATION (Includes Session Saving for Page Reloads) ---
     window.handleAuthSubmit = async function(e) {
       e.preventDefault();
       const phone = document.getElementById('authPhoneInput').value.trim();
@@ -921,9 +891,13 @@
         let adminUser = fb_users.find(u => u.phone === phone);
         if(!adminUser) { 
            adminUser = { phone, name: 'Master Admin', role: 'ADMIN', balance: 0, password: pass }; 
-           await dbSetUser(phone, adminUser);
+           await setDoc(getPubDoc('users', phone), adminUser, {merge: true});
         }
-        currentUser = adminUser; switchTab('admin'); showToast('Admin Verified', 'Welcome to Master Console', 'success'); return;
+        
+        // Save session in cloud so reload doesn't logout
+        if (firebaseUid) await setDoc(doc(db, 'artifacts', APP_ID, 'users', firebaseUid, 'session', 'current'), { phone: phone });
+        
+        currentUser = adminUser; sessionSavedPhone = phone; switchTab('admin'); showToast('Admin Verified', 'Welcome to Master Console', 'success'); return;
       }
 
       if (authMode === 'register') {
@@ -934,9 +908,12 @@
           btn.disabled = true;
 
           const newUser = { phone, name, password: pass, role: 'USER', balance: 0, rigMode: 'NONE', kycStatus: 'NOT_UPLOADED', createdAt: Date.now(), isBlocked: false };
+          await setDoc(getPubDoc('users', phone), newUser, {merge: true});
           
-          await dbSetUser(phone, newUser);
+          if (firebaseUid) await setDoc(doc(db, 'artifacts', APP_ID, 'users', firebaseUid, 'session', 'current'), { phone: phone });
+
           currentUser = newUser;
+          sessionSavedPhone = phone;
           
           showToast('Registered', 'Account created successfully!', 'success'); 
           switchTab('deposit');
@@ -950,11 +927,19 @@
         const u = fb_users.find(x => x.phone === phone && x.password === pass);
         if (u) {
           if(u.isBlocked) return showToast('Access Denied', 'Your account is suspended.', 'error');
-          currentUser = u; showToast('Welcome Back', 'Logged in securely.', 'success'); switchTab(u.role === 'ADMIN' ? 'admin' : 'trade');
+          
+          if (firebaseUid) await setDoc(doc(db, 'artifacts', APP_ID, 'users', firebaseUid, 'session', 'current'), { phone: phone });
+          
+          currentUser = u; sessionSavedPhone = phone; showToast('Welcome Back', 'Logged in securely.', 'success'); switchTab(u.role === 'ADMIN' ? 'admin' : 'trade');
         } else showToast('Login Failed', 'Invalid credentials.', 'error');
       }
     }
-    window.handleLogout = function() { currentUser = null; showToast('Logged Out', 'Signed out safely.', 'success'); switchTab('auth'); }
+
+    window.handleLogout = async function() { 
+      // Clear session from cloud
+      if (firebaseUid) await setDoc(doc(db, 'artifacts', APP_ID, 'users', firebaseUid, 'session', 'current'), { phone: null });
+      currentUser = null; sessionSavedPhone = null; showToast('Logged Out', 'Signed out safely.', 'success'); switchTab('auth'); 
+    }
 
     // --- TRADING DESK LOGIC ---
     window.renderAssetPills = function() {
@@ -1108,12 +1093,12 @@
 
       const newBal = currentUser.balance - stake;
       try {
-        await dbAdd('trades', {
+        await addDoc(getPubCol('trades'), {
            userPhone: currentUser.phone, assetName: selectedAsset.name, amount: stake, type: type, 
            strikePrice: currentPrice, closePrice: null, duration: selectedDuration, payout: currentPayout, 
            status: 'ACTIVE', startTime: Date.now(), expiryTime: Date.now() + (selectedDuration * 1000)
         });
-        await dbUpdateUser(currentUser.phone, { balance: newBal });
+        await updateDoc(getPubDoc('users', currentUser.phone), { balance: newBal });
         showToast('Order Placed', `${type} order on ${selectedAsset.name} for ₹${stake}.`, 'success'); 
       } catch(e) { showToast('Error', 'Failed to place trade.', 'error'); }
     }
@@ -1128,10 +1113,10 @@
             const newStatus = isWin ? 'WON' : 'LOST';
             
             try {
-               await dbUpdateDoc('trades', trade.id, { status: newStatus, closePrice: currentPrice, payoutAmount: payoutAmt });
+               await updateDoc(getPubDoc('trades', trade.id), { status: newStatus, closePrice: currentPrice, payoutAmount: payoutAmt });
                if(isWin) {
                    const uObj = fb_users.find(u => u.phone === currentUser.phone);
-                   if(uObj) await dbUpdateUser(currentUser.phone, { balance: uObj.balance + payoutAmt });
+                   if(uObj) await updateDoc(getPubDoc('users', currentUser.phone), { balance: uObj.balance + payoutAmt });
                    fireConfetti(); playBeep('win'); showToast('Trade Won! 🎉', `Profit of ₹${payoutAmt} credited.`, 'success');
                } else { playBeep('loss'); showToast('Trade Lost', `You lost ₹${trade.amount}.`, 'error'); }
             } catch(e) {}
@@ -1190,7 +1175,7 @@
 
       const saveDeposit = async (base64Proof = null) => {
           try {
-             await dbAdd('deposits', { userPhone: currentUser.phone, userName: currentUser.name, amount: amt, utr: utr, proofImg: base64Proof, status: 'PENDING', timestamp: Date.now() });
+             await addDoc(getPubCol('deposits'), { userPhone: currentUser.phone, userName: currentUser.name, amount: amt, utr: utr, proofImg: base64Proof, status: 'PENDING', timestamp: Date.now() });
              document.getElementById('utrInput').value = ''; document.getElementById('depositProofImage').value = ''; 
              window.cancelDeposit(); showToast('Success', 'Deposit request submitted.', 'success'); window.openFullscreenHistory('deposit');
           } catch(err) { showToast('Error', 'Submission failed.', 'error'); }
@@ -1205,8 +1190,8 @@
       if (amt < 500) return showToast('Error', 'Minimum withdrawal is ₹500.', 'error');
       if (amt > currentUser.balance) return showToast('Error', 'Insufficient wallet balance.', 'error');
       try {
-         await dbUpdateUser(currentUser.phone, { balance: currentUser.balance - amt });
-         await dbAdd('withdrawals', { userPhone: currentUser.phone, userName: currentUser.name, amount: amt, targetUpi: upi, status: 'PENDING', timestamp: Date.now() });
+         await updateDoc(getPubDoc('users', currentUser.phone), { balance: currentUser.balance - amt });
+         await addDoc(getPubCol('withdrawals'), { userPhone: currentUser.phone, userName: currentUser.name, amount: amt, targetUpi: upi, status: 'PENDING', timestamp: Date.now() });
          document.getElementById('withdrawAmountInput').value = ''; if(!currentUser.bankDetails) document.getElementById('withdrawUpiInput').value = ''; 
          showToast('Success', 'Payout request submitted.', 'success'); window.openFullscreenHistory('withdraw');
       } catch(err) { showToast('Error', 'Failed to request withdrawal.', 'error'); }
@@ -1215,7 +1200,7 @@
     window.handleBankDetailsSave = async function(e) {
         e.preventDefault();
         const bd = { holder: document.getElementById('bdAccName').value, acc: document.getElementById('bdAccNo').value, ifsc: document.getElementById('bdIfsc').value, upi: document.getElementById('bdUpi').value };
-        try { await dbUpdateUser(currentUser.phone, { bankDetails: bd }); showToast('Saved', 'Bank details successfully saved.', 'success'); } catch(err) {}
+        try { await updateDoc(getPubDoc('users', currentUser.phone), { bankDetails: bd }); showToast('Saved', 'Bank details successfully saved.', 'success'); } catch(err) {}
     }
     window.editBankDetails = function() {
         if(!currentUser || !currentUser.bankDetails) return;
@@ -1227,7 +1212,7 @@
         const file = e.target.files[0]; if(!file || !currentUser) return;
         compressImage(file, async (base64) => {
             try {
-                await dbUpdateUser(currentUser.phone, { kycStatus: 'PENDING', aadharImg: base64 });
+                await updateDoc(getPubDoc('users', currentUser.phone), { kycStatus: 'PENDING', aadharImg: base64 });
                 showToast('Uploaded', 'Aadhar submitted for verification.', 'success');
             } catch(err) { showToast('Error', 'Upload failed.', 'error'); }
         });
@@ -1271,7 +1256,7 @@
 
     window.handleUserChatSend = async function(e) {
        e.preventDefault(); const input = document.getElementById('userChatInput'); const text = input.value.trim(); if(!text || !currentUser) return;
-       try { await dbAdd('chats', { userPhone: currentUser.phone, userName: currentUser.name, sender: 'USER', text, timestamp: Date.now() }); input.value = ''; } catch(err) {}
+       try { await addDoc(getPubCol('chats'), { userPhone: currentUser.phone, userName: currentUser.name, sender: 'USER', text, timestamp: Date.now() }); input.value = ''; } catch(err) {}
     }
     function renderChats() {
        const list = document.getElementById('userChatMessageList'); if(!list || !currentUser) return;
@@ -1282,32 +1267,32 @@
     }
 
     // --- ADMIN FUNCTIONS ---
-    window.saveAdminSettings = async function() { await dbSaveSettings({ upiId: document.getElementById('adminUpiSettingInput').value, globalRig: fb_settings.globalRig || 'AUTO' }); showToast('Saved', 'UPI ID updated globally.', 'success'); }
-    window.setGlobalRigMode = async function(mode) { await dbSaveSettings({ globalRig: mode }); showToast('Rig Updated', `Global Graph set to ${mode}`, 'success'); }
-    window.setAdminUserRig = async function(phone, mode) { await dbUpdateUser(phone, { rigMode: mode }); showToast('Rig Applied', `Specific rig set for ${phone}`, 'success'); }
-    window.toggleUserBlock = async function(phone, currentStatus) { await dbUpdateUser(phone, { isBlocked: !currentStatus }); showToast('Status Updated', 'User access modified.', 'success'); }
-    window.saveUserBalance = async function(phone) { const bal = parseFloat(document.getElementById(`editBal_${phone}`).value); if(isNaN(bal)) return; await dbUpdateUser(phone, { balance: bal }); editingUserPhone = null; showToast('Saved', 'Balance updated.', 'success'); renderUI(); }
+    window.saveAdminSettings = async function() { await setDoc(getPubDoc('settings', 'global'), { upiId: document.getElementById('adminUpiSettingInput').value, globalRig: fb_settings.globalRig || 'AUTO' }, {merge:true}); showToast('Saved', 'UPI ID updated globally.', 'success'); }
+    window.setGlobalRigMode = async function(mode) { await setDoc(getPubDoc('settings', 'global'), { globalRig: mode }, {merge:true}); showToast('Rig Updated', `Global Graph set to ${mode}`, 'success'); }
+    window.setAdminUserRig = async function(phone, mode) { await updateDoc(getPubDoc('users', phone), { rigMode: mode }); showToast('Rig Applied', `Specific rig set for ${phone}`, 'success'); }
+    window.toggleUserBlock = async function(phone, currentStatus) { await updateDoc(getPubDoc('users', phone), { isBlocked: !currentStatus }); showToast('Status Updated', 'User access modified.', 'success'); }
+    window.saveUserBalance = async function(phone) { const bal = parseFloat(document.getElementById(`editBal_${phone}`).value); if(isNaN(bal)) return; await updateDoc(getPubDoc('users', phone), { balance: bal }); editingUserPhone = null; showToast('Saved', 'Balance updated.', 'success'); renderUI(); }
     
     window.approveAction = async function(col, id, userPhone, amt) {
        try { 
-           await dbUpdateDoc(col, id, { status: 'APPROVED' });
+           await updateDoc(getPubDoc(col, id), { status: 'APPROVED' });
            if(col === 'deposits') { 
               const uObj = fb_users.find(u => u.phone === userPhone);
-              if(uObj) await dbUpdateUser(userPhone, { balance: uObj.balance + amt });
+              if(uObj) await updateDoc(getPubDoc('users', userPhone), { balance: uObj.balance + amt });
            }
        } catch(e){}
     }
     window.rejectAction = async function(col, id, userPhone, amt) {
        try { 
-           await dbUpdateDoc(col, id, { status: 'REJECTED' });
+           await updateDoc(getPubDoc(col, id), { status: 'REJECTED' });
            if(col === 'withdrawals') { 
               const uObj = fb_users.find(u => u.phone === userPhone);
-              if(uObj) await dbUpdateUser(userPhone, { balance: uObj.balance + amt });
+              if(uObj) await updateDoc(getPubDoc('users', userPhone), { balance: uObj.balance + amt });
            }
        } catch(e){}
     }
     window.actionKYC = async function(phone, status) {
-        try { await dbUpdateUser(phone, { kycStatus: status }); showToast('KYC Updated', `User KYC ${status}`, 'success'); } catch(e){}
+        try { await updateDoc(getPubDoc('users', phone), { kycStatus: status }); showToast('KYC Updated', `User KYC ${status}`, 'success'); } catch(e){}
     }
 
     window.renderAdminUsers = function() {
@@ -1320,7 +1305,7 @@
 
     window.sendAdminChatReply = async function() {
       const text = document.getElementById('adminReplyInput').value.trim(); if (!text || !adminSelectedChatPhone) return;
-      await dbAdd('chats', { userPhone: adminSelectedChatPhone, userName: 'Support', sender: 'ADMIN', text, timestamp: Date.now() });
+      await addDoc(getPubCol('chats'), { userPhone: adminSelectedChatPhone, userName: 'Support', sender: 'ADMIN', text, timestamp: Date.now() });
       document.getElementById('adminReplyInput').value = '';
     }
 
@@ -1444,4 +1429,5 @@
   </script>
 </body>
 </html>
+
 
