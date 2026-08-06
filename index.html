@@ -3,11 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>FOREXAAA | Indian Forex Trading Terminal</title>
-  <!-- Tailwind CSS CDN -->
+  <title>INDIAN FOREX | Advanced Trading Terminal</title>
+  
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Lucide Icons CDN -->
+  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Confetti JS for Trade Wins -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap');
     
@@ -21,66 +30,101 @@
     
     .font-mono { font-family: 'JetBrains Mono', monospace; }
 
-    ::-webkit-scrollbar { width: 5px; height: 5px; }
-    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
 
-    /* Animated Toasts & Modals */
-    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-    @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
-    @keyframes popIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-    .toast-enter { animation: slideIn 0.3s ease-out forwards; }
-    .toast-exit { animation: slideOut 0.3s ease-in forwards; }
-    .modal-enter { animation: popIn 0.2s ease-out forwards; }
+    /* Animations */
+    @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes slideOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+    
+    .toast-enter { animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .toast-exit { animation: slideOutRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+    .blur-ui { filter: blur(4px); pointer-events: none; opacity: 0.6; transition: all 0.3s; }
   </style>
 </head>
-<body class="min-h-screen flex flex-col bg-slate-50 text-slate-900 pb-16 md:pb-0 selection:bg-emerald-100 selection:text-emerald-900 overflow-x-hidden">
+<body class="min-h-screen flex flex-col bg-slate-50 text-slate-900 pb-16 md:pb-0 overflow-x-hidden">
 
-  <!-- TOAST NOTIFICATION CONTAINER -->
-  <div id="toastContainer" class="fixed top-20 right-4 z-50 flex flex-col gap-3 pointer-events-none"></div>
+  <!-- Fullscreen Loading Overlay -->
+  <div id="globalLoader" class="fixed inset-0 z-[100] bg-slate-900 flex flex-col items-center justify-center text-white transition-opacity duration-300">
+    <div class="w-14 h-14 rounded-2xl bg-white flex items-center justify-center text-emerald-500 font-black shadow-lg mb-4 animate-bounce">
+      <i data-lucide="trending-up" class="w-8 h-8 stroke-[2.5]"></i>
+    </div>
+    <div class="text-xl font-black tracking-widest uppercase">FOREX<span class="text-emerald-500">AAA</span></div>
+    <div class="text-xs text-slate-400 mt-2 font-mono">Securing Live Environment...</div>
+  </div>
 
-  <!-- HISTORY MODAL POPUP -->
-  <div id="historyModal" class="hidden fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl w-full max-w-sm flex flex-col shadow-2xl overflow-hidden modal-enter">
-      <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-        <h3 class="font-black text-lg text-slate-900 flex items-center space-x-2" id="historyModalTitle">
-          <i data-lucide="history" class="w-5 h-5 text-indigo-600"></i>
-          <span>History</span>
-        </h3>
-        <button onclick="closeHistoryModal()" class="text-slate-400 hover:text-rose-500 transition bg-white p-1 rounded-lg border border-slate-200"><i data-lucide="x" class="w-5 h-5"></i></button>
-      </div>
-      <div class="p-4 max-h-[60vh] overflow-y-auto space-y-3" id="historyModalContent">
-        <!-- JS Populated -->
-      </div>
+  <!-- TOAST NOTIFICATIONS -->
+  <div id="toastContainer" class="fixed top-4 right-4 z-[100] flex flex-col gap-3 pointer-events-none"></div>
+
+  <!-- FULLSCREEN BALANCE MODAL (Navi Feature) -->
+  <div id="balanceModal" class="fixed inset-0 z-[90] bg-slate-900 flex flex-col transform translate-y-full transition-transform duration-300 ease-in-out">
+    <div class="border-b border-slate-800 px-4 py-4 flex items-center justify-between shadow-sm pt-safe z-10">
+      <h2 class="text-lg font-black text-white">Wallet Balance</h2>
+      <button type="button" onclick="closeBalanceModal()" class="p-2 bg-slate-800 rounded-full hover:bg-slate-700 text-white transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <div class="flex-1 p-6 flex flex-col items-center justify-center space-y-8 relative z-0">
+       <div class="text-center">
+          <p class="text-slate-400 font-bold uppercase tracking-widest mb-2 text-sm">Available Funds</p>
+          <h1 class="text-5xl font-black font-mono text-emerald-400" id="balanceModalAmt">₹0.00</h1>
+       </div>
+       
+       <div class="w-full max-w-sm space-y-4">
+          <button onclick="switchTab('deposit'); closeBalanceModal();" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 rounded-2xl shadow-lg flex items-center justify-center space-x-2 transition active:scale-95 text-lg">
+             <i data-lucide="arrow-down-left" class="w-6 h-6"></i><span>Deposit Funds</span>
+          </button>
+          <button onclick="switchTab('withdraw'); closeBalanceModal();" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-black py-4 rounded-2xl shadow-lg flex items-center justify-center space-x-2 transition active:scale-95 text-lg border border-slate-700">
+             <i data-lucide="arrow-up-right" class="w-6 h-6 text-blue-400"></i><span>Withdraw Payout</span>
+          </button>
+       </div>
     </div>
   </div>
 
-  <!-- EDIT NAME MODAL POPUP -->
-  <div id="editNameModal" class="hidden fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl w-full max-w-sm flex flex-col shadow-2xl overflow-hidden modal-enter">
-      <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-        <h3 class="font-black text-lg text-slate-900 flex items-center space-x-2">
-          <i data-lucide="user" class="w-5 h-5 text-indigo-600"></i>
-          <span>Edit Profile Name</span>
-        </h3>
-        <button onclick="closeEditNameModal()" class="text-slate-400 hover:text-rose-500 transition bg-white p-1 rounded-lg border border-slate-200"><i data-lucide="x" class="w-5 h-5"></i></button>
-      </div>
-      <div class="p-5 space-y-4">
+  <!-- FULLSCREEN HISTORY MODAL -->
+  <div id="historyModal" class="fixed inset-0 z-[90] bg-slate-50 flex flex-col transform translate-y-full transition-transform duration-300 ease-in-out">
+    <div class="bg-white border-b border-slate-200 px-4 py-4 flex items-center space-x-3 shadow-sm pt-safe z-10">
+      <button type="button" onclick="closeHistoryModal()" class="p-2 -ml-2 rounded-full hover:bg-slate-100 text-slate-600 transition"><i data-lucide="arrow-left" class="w-6 h-6"></i></button>
+      <h2 class="text-lg font-black text-slate-900 flex-1" id="historyModalTitle">History</h2>
+    </div>
+    <div class="flex-1 overflow-y-auto p-4 space-y-3 relative z-0" id="historyModalContent">
+      <!-- JS Populated -->
+    </div>
+  </div>
+
+  <!-- ADMIN IMAGE VIEWER MODAL -->
+  <div id="adminImageModal" class="hidden fixed inset-0 z-[95] bg-black/95 flex flex-col items-center justify-center p-4">
+    <button onclick="closeAdminImage()" class="absolute top-6 right-6 text-white p-2 bg-slate-800/50 rounded-full hover:bg-slate-700"><i data-lucide="x" class="w-6 h-6"></i></button>
+    <img id="adminImagePreview" src="" class="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl">
+    <p id="adminImageTitle" class="text-white mt-4 font-bold tracking-widest uppercase text-sm"></p>
+  </div>
+
+  <!-- FULLSCREEN CHATBOT MODAL -->
+  <div id="chatModal" class="fixed inset-0 z-[90] bg-slate-50 flex flex-col transform translate-y-full transition-transform duration-300 ease-in-out">
+    <div class="bg-slate-900 text-white border-b border-slate-800 px-4 py-4 flex items-center space-x-3 shadow-md pt-safe">
+      <button onclick="closeChatModal()" class="p-2 -ml-2 rounded-full hover:bg-slate-800 text-white transition"><i data-lucide="arrow-left" class="w-6 h-6"></i></button>
+      <div class="flex items-center space-x-2 flex-1">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]"></span>
         <div>
-          <label class="text-xs font-semibold text-slate-700 block mb-1">New Full Name</label>
-          <input type="text" id="newNameInput" placeholder="Enter your full name" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-600">
+          <div class="font-bold leading-tight text-sm">24/7 Live Support</div>
+          <div class="text-[10px] text-slate-300">We typically reply in minutes</div>
         </div>
-        <button type="button" onclick="saveNewName()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold py-3.5 rounded-xl transition shadow-sm text-sm">
-          Save Changes
-        </button>
       </div>
     </div>
+    <div id="userChatMessageList" class="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
+      <!-- Messages here -->
+    </div>
+    <form onsubmit="handleUserChatSend(event)" class="p-3 bg-white border-t border-slate-200 flex space-x-2 pb-safe shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
+      <input type="text" id="userChatInput" required placeholder="Type your message here..." class="flex-1 bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 focus:bg-white transition">
+      <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-xl font-bold shadow-sm active:scale-95 transition"><i data-lucide="send" class="w-5 h-5"></i></button>
+    </form>
   </div>
 
   <!-- TOP HEADER NAVBAR -->
   <header id="mainHeader" class="bg-white border-b border-slate-200/80 sticky top-0 z-40 shadow-xs hidden">
     <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between relative">
       
+      <!-- Clickable Balance Badge -->
       <div id="headerLeftUserBadge" class="flex items-center space-x-2"></div>
 
       <!-- Center Brand Logo -->
@@ -104,651 +148,751 @@
           <button onclick="switchTab('trade')" id="nav-trade" class="nav-btn px-3 py-2 rounded-xl text-xs font-bold bg-slate-900 text-white shadow-sm flex items-center space-x-1"><i data-lucide="activity" class="w-4 h-4"></i><span>Desk</span></button>
           <button onclick="switchTab('deposit')" id="nav-deposit" class="nav-btn px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 flex items-center space-x-1"><i data-lucide="arrow-down-left" class="w-4 h-4 text-emerald-600"></i><span>Deposit</span></button>
           <button onclick="switchTab('withdraw')" id="nav-withdraw" class="nav-btn px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 flex items-center space-x-1"><i data-lucide="arrow-up-right" class="w-4 h-4 text-blue-600"></i><span>Withdraw</span></button>
-          <button onclick="switchTab('history')" id="nav-history" class="nav-btn px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 flex items-center space-x-1"><i data-lucide="history" class="w-4 h-4"></i><span>Logs</span></button>
           <button onclick="switchTab('account')" id="nav-account" class="nav-btn px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 flex items-center space-x-1"><i data-lucide="user" class="w-4 h-4 text-indigo-600"></i><span>Account</span></button>
           <button onclick="switchTab('admin')" id="nav-admin" class="nav-btn hidden px-3 py-2 rounded-xl text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 flex items-center space-x-1"><i data-lucide="shield-check" class="w-4 h-4"></i><span>Admin</span></button>
         </nav>
         <div id="headerAuthContainer"></div>
       </div>
-
     </div>
   </header>
 
-  <!-- AUTH LOGO -->
-  <div id="authLogoHeader" class="py-6 flex flex-col items-center justify-center hidden">
-    <div class="w-12 h-12 rounded-xl bg-slate-900 flex items-center justify-center text-emerald-400 font-black shadow-lg mb-2">
-      <i data-lucide="trending-up" class="w-6 h-6 stroke-[2.5]"></i>
-    </div>
-    <span class="text-3xl font-black tracking-tight text-slate-900 leading-none">FOREX<span class="text-emerald-600">AAA</span></span>
-    <span class="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200/80 px-2 py-0.5 rounded font-mono font-bold uppercase tracking-wider mt-1">INDIAN FOREX</span>
-  </div>
-
   <!-- MAIN WORKSPACE -->
-  <main class="flex-1 max-w-7xl w-full mx-auto p-2.5 sm:p-6 pb-24">
+  <main id="mainWorkspace" class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 pb-24 blur-ui transition-all">
 
     <!-- 1. AUTH TAB -->
-    <section id="tab-auth" class="tab-content max-w-md mx-auto my-6">
-      <div class="bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-8 shadow-md space-y-6">
+    <section id="tab-auth" class="tab-content max-w-md mx-auto my-4 space-y-6">
+      
+      <!-- AUTH LOGO -->
+      <div id="authLogoHeader" class="flex flex-col items-center justify-center">
+        <div class="w-16 h-16 rounded-2xl bg-slate-900 flex items-center justify-center text-emerald-400 font-black shadow-xl mb-3">
+          <i data-lucide="trending-up" class="w-10 h-10 stroke-[2.5]"></i>
+        </div>
+        <span class="text-4xl font-black tracking-tight text-slate-900 leading-none">FOREX<span class="text-emerald-600">AAA</span></span>
+        <span class="text-xs bg-emerald-50 text-emerald-700 border border-emerald-200/80 px-2.5 py-0.5 rounded font-mono font-black uppercase tracking-widest mt-2">INDIAN FOREX</span>
+      </div>
+
+      <div class="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
         <div class="text-center space-y-1">
           <h2 id="authTitle" class="text-2xl font-black text-slate-900">Sign In Securely</h2>
-          <p id="authSubtitle" class="text-xs text-slate-500">Enter your mobile number & password to access terminal</p>
+          <p id="authSubtitle" class="text-sm text-slate-500 font-medium">Enter your credentials to access terminal</p>
         </div>
-
-        <div id="authErrorBox" class="hidden p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-semibold"></div>
 
         <form onsubmit="handleAuthSubmit(event)" class="space-y-4">
           <div id="authNameGroup" class="hidden">
-            <label class="text-xs font-semibold text-slate-700 block mb-1">Full Name</label>
-            <input type="text" id="authNameInput" placeholder="e.g. Rahul Sharma" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-600">
+            <label class="text-xs font-bold text-slate-700 block mb-1.5 uppercase tracking-wide">Full Name (As per Bank)</label>
+            <input type="text" id="authNameInput" placeholder="e.g. Rahul Sharma" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3.5 text-sm font-bold focus:outline-none focus:border-emerald-500 focus:bg-white transition">
           </div>
           <div>
-            <label class="text-xs font-semibold text-slate-700 block mb-1">Mobile Number</label>
-            <input type="text" id="authPhoneInput" required placeholder="Enter mobile number" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm font-mono focus:outline-none focus:border-emerald-600">
+            <label class="text-xs font-bold text-slate-700 block mb-1.5 uppercase tracking-wide">Mobile Number</label>
+            <div class="relative">
+              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-sm font-bold border-r border-slate-300 pr-2">+91</span>
+              <input type="tel" id="authPhoneInput" required placeholder="00000 00000" pattern="[0-9]{10}" class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-16 pr-4 py-3.5 text-sm font-mono font-bold focus:outline-none focus:border-emerald-500 focus:bg-white transition">
+            </div>
           </div>
           <div>
-            <label class="text-xs font-semibold text-slate-700 block mb-1">Password</label>
-            <input type="password" id="authPasswordInput" required placeholder="••••••••" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm font-mono focus:outline-none focus:border-emerald-600">
+            <label class="text-xs font-bold text-slate-700 block mb-1.5 uppercase tracking-wide">Secure Password</label>
+            <input type="password" id="authPasswordInput" required placeholder="••••••••" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3.5 text-sm font-mono font-bold focus:outline-none focus:border-emerald-500 focus:bg-white transition">
           </div>
-          <button type="submit" id="authSubmitBtn" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3.5 rounded-xl transition shadow-sm">
-            Access Terminal
+          
+          <div id="authTermsGroup" class="hidden flex items-start space-x-2 mt-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <input type="checkbox" id="authTermsCheck" class="mt-1 w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500 cursor-pointer">
+            <label for="authTermsCheck" class="text-[11px] text-slate-600 leading-tight font-medium cursor-pointer">
+              I am over 18 years old and agree to the <span class="text-emerald-700 font-bold">Terms of Service</span> and <span class="text-emerald-700 font-bold">Privacy Policy</span>. I acknowledge that trading involves risk.
+            </label>
+          </div>
+
+          <button type="submit" id="authSubmitBtn" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-black py-4 rounded-xl transition shadow-lg mt-2 text-sm uppercase tracking-widest active:scale-95">
+            Login
           </button>
         </form>
-        <div class="pt-4 border-t border-slate-100 text-center">
-          <p id="authToggleText" class="text-xs text-slate-500">
-            Don't have an account? <button type="button" onclick="toggleAuthMode('register')" class="text-emerald-700 font-bold hover:underline">Register Now</button>
+        
+        <div class="pt-5 border-t border-slate-100 text-center">
+          <p id="authToggleText" class="text-sm text-slate-600 font-medium">
+            New to Forexaaa? <button type="button" onclick="toggleAuthMode('register')" class="text-emerald-600 font-black hover:underline ml-1">Create Account</button>
           </p>
         </div>
       </div>
     </section>
 
     <!-- 2. TRADING DESK TAB -->
-    <section id="tab-trade" class="tab-content hidden space-y-3 sm:space-y-4">
-      <div class="grid grid-cols-1 lg:grid-cols-4 gap-3 sm:gap-6">
+    <section id="tab-trade" class="tab-content hidden space-y-4">
+      <div class="grid grid-cols-1 xl:grid-cols-4 gap-4 sm:gap-6">
         
-        <div class="lg:col-span-3 space-y-3 sm:space-y-4">
-          <div class="bg-white border border-slate-200/90 rounded-2xl p-2.5 sm:p-4 flex flex-wrap items-center justify-between gap-2 shadow-xs">
-            <div class="flex items-center space-x-1.5 overflow-x-auto py-1 scrollbar-none max-w-full" id="assetPillsContainer"></div>
+        <!-- Left Column: Chart & Assets -->
+        <div class="xl:col-span-3 space-y-4 flex flex-col">
+          <div class="bg-white border border-slate-200/90 rounded-2xl p-3 sm:p-4 shadow-sm flex flex-col space-y-3">
+            <div class="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 w-full sm:w-1/2">
+                <i data-lucide="search" class="w-4 h-4 text-slate-400 mr-2"></i>
+                <input type="text" id="assetSearchInput" oninput="renderAssetPills()" placeholder="Search pairs (BTC, Gold, EUR...)" class="bg-transparent border-none outline-none text-sm w-full font-bold text-slate-700">
+            </div>
+            
+            <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center space-x-2 overflow-x-auto py-1 scrollbar-none flex-1" id="assetPillsContainer"></div>
 
-            <div class="flex items-center space-x-2.5 ml-auto">
-              <div class="flex bg-slate-100 p-1 rounded-xl border border-slate-200/80">
-                <button type="button" onclick="setChartType('candlestick')" id="btnChartCandle" class="p-1.5 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-xs"><i data-lucide="candlestick-chart" class="w-4 h-4"></i></button>
-                <button type="button" onclick="setChartType('line')" id="btnChartLine" class="p-1.5 rounded-lg text-xs font-bold text-slate-500"><i data-lucide="line-chart" class="w-4 h-4"></i></button>
-              </div>
-              <div class="pl-2 border-l border-slate-200 text-right">
-                <span class="text-[9px] text-slate-400 block font-semibold uppercase tracking-wider">Spot Price</span>
-                <span id="livePriceDisplay" class="text-sm sm:text-base font-black font-mono text-emerald-600">₹0.00</span>
-              </div>
+                <div class="flex items-center space-x-3 shrink-0">
+                  <div class="flex bg-slate-100 p-1 rounded-xl border border-slate-200/80">
+                    <button type="button" onclick="setChartType('candlestick')" id="btnChartCandle" class="p-1.5 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-sm"><i data-lucide="candlestick-chart" class="w-4 h-4"></i></button>
+                    <button type="button" onclick="setChartType('line')" id="btnChartLine" class="p-1.5 rounded-lg text-xs font-bold text-slate-500"><i data-lucide="line-chart" class="w-4 h-4"></i></button>
+                  </div>
+                  <div class="pl-3 border-l border-slate-200 text-right">
+                    <span class="text-[10px] text-slate-400 block font-bold uppercase tracking-widest">Spot Price</span>
+                    <span id="livePriceDisplay" class="text-base sm:text-lg font-black font-mono text-emerald-600 transition-colors duration-200">₹0.00</span>
+                  </div>
+                </div>
             </div>
           </div>
 
-          <div class="bg-white border border-slate-200/90 rounded-2xl p-3 sm:p-4 relative overflow-hidden shadow-xs h-[380px] sm:h-[450px] flex flex-col justify-between">
-            <div class="absolute top-4 left-4 flex items-center space-x-2 bg-slate-900/90 text-white px-3 py-1 rounded-full z-10 shadow-sm backdrop-blur">
-              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span id="chartFeedLabel" class="text-[11px] font-bold font-mono tracking-wide">BTC/INR REALTIME ENGINE</span>
+          <!-- The Chart -->
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 relative overflow-hidden shadow-xl h-[400px] sm:h-[500px] flex flex-col justify-between">
+            <div class="absolute top-4 left-4 flex items-center space-x-2 bg-black/60 text-white px-3 py-1.5 rounded-full z-10 border border-slate-700 backdrop-blur">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
+              <span id="chartFeedLabel" class="text-xs font-bold font-mono tracking-wide">BTC/INR LIVE ENGINE</span>
             </div>
-            <div class="w-full flex-1 relative mt-6">
+            
+            <div class="w-full flex-1 relative mt-8">
               <canvas id="tradingCanvas" class="w-full h-full block"></canvas>
             </div>
-            <div class="flex items-center justify-between text-[11px] text-slate-500 border-t border-slate-100 pt-2 font-mono">
-              <span>Latency: <span class="text-emerald-600 font-bold">&lt; 8ms</span></span>
-              <span>Yield Payout: <span id="payoutRateLabel" class="text-emerald-600 font-bold">+92%</span></span>
+            
+            <div class="flex items-center justify-between text-[11px] text-slate-400 border-t border-slate-800 pt-3 font-mono mt-2">
+              <div class="flex items-center space-x-3">
+                 <span>Latency: <span class="text-emerald-400 font-bold">12ms</span></span>
+                 <span class="hidden sm:inline">|</span>
+                 <span class="hidden sm:inline">MA(10): <span class="text-blue-400 font-bold" id="maIndicatorLabel">--</span></span>
+              </div>
+              <span>Profit Yield: <span id="payoutRateLabel" class="text-emerald-400 font-black transition-colors duration-300">+92%</span></span>
             </div>
           </div>
         </div>
 
-        <div class="lg:col-span-1 space-y-3 sm:space-y-4">
-          <div class="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
-              <span class="text-xs font-extrabold text-slate-800 uppercase tracking-wider">Trading Desk</span>
-              <span class="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">Binary High/Low</span>
+        <!-- Right Column: Trading Controls -->
+        <div class="xl:col-span-1 flex flex-col gap-4">
+          <div class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm space-y-5 relative overflow-hidden">
+            <div class="absolute -right-10 -top-10 w-32 h-32 bg-slate-50 rounded-full blur-2xl opacity-60"></div>
+            
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3 relative z-10">
+              <span class="text-sm font-black text-slate-800 uppercase tracking-wider">Trading Desk</span>
+              <span class="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">Binary Options</span>
             </div>
 
-            <div>
-              <label class="text-xs font-semibold text-slate-600 block mb-1">Trade Stake (₹)</label>
-              <input type="number" id="tradeStakeInput" value="500" min="10" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 font-mono font-bold focus:outline-none focus:border-emerald-600 text-sm">
-              <div class="grid grid-cols-4 gap-1 mt-2">
-                <button type="button" onclick="setStakePreset(200)" class="py-1 text-[11px] font-bold rounded-lg border border-slate-200 bg-slate-50 text-slate-700">₹200</button>
-                <button type="button" onclick="setStakePreset(500)" class="py-1 text-[11px] font-bold rounded-lg border border-slate-200 bg-slate-50 text-slate-700">₹500</button>
-                <button type="button" onclick="setStakePreset(1000)" class="py-1 text-[11px] font-bold rounded-lg border border-slate-200 bg-slate-50 text-slate-700">₹1K</button>
-                <button type="button" onclick="setStakePreset(2000)" class="py-1 text-[11px] font-bold rounded-lg border border-slate-200 bg-slate-50 text-slate-700">₹2K</button>
+            <div class="relative z-10">
+              <div class="flex justify-between mb-1.5">
+                 <label class="text-xs font-bold text-slate-700 uppercase tracking-widest">Investment (₹)</label>
+                 <span class="text-[10px] text-slate-400 font-mono font-bold">Min ₹10</span>
               </div>
-            </div>
-
-            <div>
-              <label class="text-xs font-semibold text-slate-600 block mb-1">Expiration Timer</label>
-              <div class="grid grid-cols-3 gap-1.5">
-                <button type="button" onclick="setDurationPreset(15)" id="dur-15" class="dur-btn py-2 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 text-slate-700">15s</button>
-                <button type="button" onclick="setDurationPreset(30)" id="dur-30" class="dur-btn py-2 text-xs font-bold rounded-xl border border-emerald-600 bg-emerald-50 text-emerald-800">30s</button>
-                <button type="button" onclick="setDurationPreset(60)" id="dur-60" class="dur-btn py-2 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 text-slate-700">60s</button>
+              <input type="number" id="tradeStakeInput" value="500" min="10" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-900 font-mono font-black focus:outline-none focus:border-emerald-500 text-lg shadow-inner">
+              <div class="grid grid-cols-4 gap-1.5 mt-2">
+                <button type="button" onclick="setStakePreset(200)" class="py-2 text-[11px] font-black rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition">₹200</button>
+                <button type="button" onclick="setStakePreset(500)" class="py-2 text-[11px] font-black rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition">₹500</button>
+                <button type="button" onclick="setStakePreset(1000)" class="py-2 text-[11px] font-black rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition">₹1K</button>
+                <button type="button" onclick="setStakePreset(2000)" class="py-2 text-[11px] font-black rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition">₹2K</button>
               </div>
             </div>
 
-            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1">
-              <div class="flex justify-between text-xs text-slate-500">
-                <span>Profit Yield</span><span id="orderPayoutRate" class="text-emerald-700 font-bold font-mono">+92%</span>
-              </div>
-              <div class="flex justify-between text-xs font-semibold text-slate-700">
-                <span>Net Profit</span><span id="orderNetProfit" class="text-emerald-600 font-bold font-mono">+₹460</span>
-              </div>
-              <div class="flex justify-between text-sm font-extrabold text-slate-900 pt-1.5 border-t border-slate-200">
-                <span>Total Return</span><span id="orderTotalReturn" class="text-emerald-600 font-mono">₹960</span>
+            <div class="relative z-10">
+              <label class="text-xs font-bold text-slate-700 block mb-1.5 uppercase tracking-widest">Expiration</label>
+              <div class="grid grid-cols-3 gap-2">
+                <button type="button" onclick="setDurationPreset(15)" id="dur-15" class="dur-btn py-2.5 text-xs font-black rounded-xl border border-slate-200 bg-white text-slate-700 transition">15s</button>
+                <button type="button" onclick="setDurationPreset(30)" id="dur-30" class="dur-btn py-2.5 text-xs font-black rounded-xl border-2 border-emerald-500 bg-emerald-50 text-emerald-800 shadow-sm transition">30s</button>
+                <button type="button" onclick="setDurationPreset(60)" id="dur-60" class="dur-btn py-2.5 text-xs font-black rounded-xl border border-slate-200 bg-white text-slate-700 transition">60s</button>
               </div>
             </div>
 
-            <div class="grid grid-cols-2 lg:grid-cols-1 gap-2 pt-1">
-              <button type="button" onclick="placeTrade('CALL')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3 rounded-xl transition flex items-center justify-center space-x-1.5 shadow-sm active:scale-[0.98]">
-                <i data-lucide="arrow-up-right" class="w-5 h-5 stroke-[3]"></i><span class="text-sm tracking-wide uppercase">CALL</span>
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1.5 relative z-10 transition-all">
+              <div class="flex justify-between text-xs text-slate-500 font-bold">
+                <span>Profit Yield</span><span id="orderPayoutRate" class="text-emerald-600 font-black font-mono transition-colors duration-300">+92%</span>
+              </div>
+              <div class="flex justify-between text-xs font-bold text-slate-700">
+                <span>Net Profit</span><span id="orderNetProfit" class="text-emerald-600 font-black font-mono transition-all">+₹460</span>
+              </div>
+              <div class="flex justify-between text-sm font-black text-slate-900 pt-2 mt-1 border-t border-slate-200">
+                <span>Total Return</span><span id="orderTotalReturn" class="text-emerald-600 font-mono text-base transition-all">₹960</span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 relative z-10">
+              <button type="button" onclick="placeTrade('CALL')" class="group relative w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-4 rounded-xl transition flex flex-col items-center justify-center shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] active:scale-95 overflow-hidden">
+                <div class="absolute inset-0 w-full h-full bg-white/20 scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300"></div>
+                <i data-lucide="trending-up" class="w-6 h-6 stroke-[3] mb-1"></i>
+                <span class="text-sm tracking-widest uppercase">CALL / UP</span>
               </button>
-              <button type="button" onclick="placeTrade('PUT')" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-black py-3 rounded-xl transition flex items-center justify-center space-x-1.5 shadow-sm active:scale-[0.98]">
-                <i data-lucide="arrow-down-right" class="w-5 h-5 stroke-[3]"></i><span class="text-sm tracking-wide uppercase">PUT</span>
+              <button type="button" onclick="placeTrade('PUT')" class="group relative w-full bg-rose-500 hover:bg-rose-600 text-white font-black py-4 rounded-xl transition flex flex-col items-center justify-center shadow-[0_4px_14px_0_rgba(244,63,94,0.39)] active:scale-95 overflow-hidden">
+                <div class="absolute inset-0 w-full h-full bg-white/20 scale-x-0 group-hover:scale-x-100 origin-right transition-transform duration-300"></div>
+                <i data-lucide="trending-down" class="w-6 h-6 stroke-[3] mb-1"></i>
+                <span class="text-sm tracking-widest uppercase">PUT / DOWN</span>
               </button>
             </div>
           </div>
           
-          <div class="bg-white border border-slate-200/90 rounded-2xl p-3.5 sm:p-4 shadow-xs">
-            <h3 class="text-xs font-extrabold text-slate-800 mb-2.5 uppercase tracking-wider flex items-center space-x-2">
+          <div class="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-sm flex-1">
+            <h3 class="text-xs font-black text-slate-800 mb-3 uppercase tracking-wider flex items-center space-x-2 border-b border-slate-100 pb-2">
               <i data-lucide="clock" class="w-4 h-4 text-emerald-600"></i><span>Active Positions</span>
             </h3>
-            <div id="activeTradesList" class="space-y-2"></div>
+            <div id="activeTradesList" class="space-y-2.5 max-h-[250px] overflow-y-auto pr-1"></div>
           </div>
         </div>
       </div>
     </section>
 
     <!-- 3. DEPOSIT TAB -->
-    <section id="tab-deposit" class="tab-content hidden max-w-2xl mx-auto space-y-6">
-      <div class="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-8 shadow-xs space-y-6 relative">
-        <button type="button" onclick="openHistoryModal('deposit')" class="absolute top-4 right-4 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1 transition shadow-sm border border-slate-200">
-          <i data-lucide="history" class="w-3.5 h-3.5"></i><span>History</span>
+    <section id="tab-deposit" class="tab-content hidden max-w-2xl mx-auto space-y-6 pt-4">
+      <div class="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-10 shadow-lg space-y-8 relative overflow-hidden">
+        <div class="absolute -right-20 -top-20 w-64 h-64 bg-emerald-50 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
+
+        <button type="button" onclick="openFullscreenHistory('deposit')" class="absolute top-6 right-6 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition shadow-sm border border-slate-200 z-10">
+          <i data-lucide="history" class="w-4 h-4"></i><span class="hidden sm:inline">Deposit History</span><span class="sm:hidden">History</span>
         </button>
 
-        <div class="text-center space-y-1">
-          <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-2 border border-emerald-200">
-            <i data-lucide="arrow-down-left" class="w-6 h-6"></i>
+        <div class="text-center space-y-2 relative z-10">
+          <div class="w-16 h-16 bg-gradient-to-br from-emerald-400 to-emerald-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-200">
+            <i data-lucide="arrow-down-left" class="w-8 h-8 stroke-[2.5]"></i>
           </div>
-          <h2 class="text-2xl font-black text-slate-900">Add Funds</h2>
-          <p class="text-xs text-slate-500">Secure UPI Payment Gateway</p>
+          <h2 class="text-3xl font-black text-slate-900 tracking-tight">Add Funds</h2>
+          <p class="text-sm text-slate-500 font-medium">Secure UPI & Bank Payment Gateway</p>
         </div>
 
-        <div id="depositStep1" class="space-y-5">
-          <div>
-            <label class="text-xs font-semibold text-slate-700 block mb-2">Select Deposit Amount (Min ₹500):</label>
-            <div class="grid grid-cols-3 sm:grid-cols-5 gap-2">
-              <button type="button" data-amt="500" onclick="selectDepositPreset(500)" class="dep-preset-btn py-2 text-xs font-bold rounded-xl border border-emerald-600 bg-emerald-50 text-emerald-800">₹500</button>
-              <button type="button" data-amt="1000" onclick="selectDepositPreset(1000)" class="dep-preset-btn py-2 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 text-slate-800">₹1000</button>
-              <button type="button" data-amt="2000" onclick="selectDepositPreset(2000)" class="dep-preset-btn py-2 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 text-slate-800">₹2000</button>
-              <button type="button" data-amt="5000" onclick="selectDepositPreset(5000)" class="dep-preset-btn py-2 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 text-slate-800">₹5000</button>
-              <button type="button" data-amt="10000" onclick="selectDepositPreset(10000)" class="dep-preset-btn py-2 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 text-slate-800">₹10K</button>
+        <div id="depositStep1" class="space-y-6 relative z-10">
+          <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+            <label class="text-sm font-bold text-slate-800 block mb-3">Select or Enter Amount (Min ₹500)</label>
+            <div class="grid grid-cols-3 sm:grid-cols-5 gap-2.5 mb-4">
+              <button type="button" data-amt="500" onclick="selectDepositPreset(500)" class="dep-preset-btn py-3 text-sm font-black rounded-xl border border-emerald-600 bg-emerald-50 text-emerald-800 shadow-sm transition">₹500</button>
+              <button type="button" data-amt="1000" onclick="selectDepositPreset(1000)" class="dep-preset-btn py-3 text-sm font-black rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition">₹1K</button>
+              <button type="button" data-amt="2000" onclick="selectDepositPreset(2000)" class="dep-preset-btn py-3 text-sm font-black rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition">₹2K</button>
+              <button type="button" data-amt="5000" onclick="selectDepositPreset(5000)" class="dep-preset-btn py-3 text-sm font-black rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition">₹5K</button>
+              <button type="button" data-amt="10000" onclick="selectDepositPreset(10000)" class="dep-preset-btn py-3 text-sm font-black rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition">₹10K</button>
             </div>
-            <div class="mt-3">
-              <input type="number" id="customDepositInput" oninput="handleCustomDepositInput()" placeholder="Or enter custom amount (Min ₹500)" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-600">
+            <div>
+              <div class="relative">
+                 <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-black text-lg">₹</span>
+                 <input type="number" id="customDepositInput" oninput="handleCustomDepositInput()" placeholder="Enter custom amount" class="w-full bg-white border border-slate-300 rounded-xl pl-10 pr-4 py-3.5 text-base font-black text-slate-900 focus:outline-none focus:border-emerald-500 transition shadow-inner">
+              </div>
             </div>
           </div>
-          <button type="button" onclick="proceedToDepositStep2()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3.5 rounded-xl transition shadow-sm text-sm">
-            Generate Payment Link
+          <button type="button" onclick="proceedToDepositStep2()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-black py-4 rounded-xl transition shadow-xl text-sm uppercase tracking-widest active:scale-95">
+            Proceed to Payment
           </button>
         </div>
 
-        <div id="depositStep2" class="hidden space-y-6">
-          <div class="flex items-center justify-between bg-emerald-50 border border-emerald-200 p-3 rounded-xl">
-            <span class="text-xs font-bold text-emerald-800">Paying Amount:</span>
-            <span class="text-lg font-black font-mono text-emerald-700" id="qrAmountDisplay">₹500</span>
+        <div id="depositStep2" class="hidden space-y-6 relative z-10">
+          <div class="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 p-4 rounded-2xl flex items-center justify-between shadow-sm">
+            <span class="text-sm font-bold text-emerald-900">Total Amount to Pay:</span>
+            <span class="text-2xl font-black font-mono text-emerald-700" id="qrAmountDisplay">₹500</span>
           </div>
 
-          <div class="grid grid-cols-3 gap-2">
-            <button type="button" onclick="payViaApp('gpay')" class="flex flex-col items-center justify-center py-3 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition shadow-sm">
-              <img src="https://upload.wikimedia.org/wikipedia/commons/f/f2/Google_Pay_Logo.svg" class="h-5 mb-1" alt="GPay">
-              <span class="text-[10px] font-bold text-slate-700">GPay</span>
-            </button>
-            <button type="button" onclick="payViaApp('phonepe')" class="flex flex-col items-center justify-center py-3 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition shadow-sm">
-              <img src="https://download.logo.wine/logo/PhonePe/PhonePe-Logo.wine.png" class="h-6 object-cover" alt="PhonePe">
-              <span class="text-[10px] font-bold text-slate-700 -mt-1">PhonePe</span>
-            </button>
-            <button type="button" onclick="payViaApp('paytm')" class="flex flex-col items-center justify-center py-3 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition shadow-sm">
-              <img src="https://upload.wikimedia.org/wikipedia/commons/2/24/Paytm_Logo_%28standalone%29.svg" class="h-4 mb-1.5 mt-0.5" alt="Paytm">
-              <span class="text-[10px] font-bold text-slate-700">Paytm</span>
-            </button>
-          </div>
-
-          <div class="text-center text-xs text-slate-400 font-bold uppercase tracking-wider">OR SCAN QR CODE</div>
-
-          <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 text-center flex flex-col items-center justify-center">
-            <div class="inline-block bg-white p-2.5 rounded-2xl shadow-sm border border-slate-200 mb-3">
-              <img id="upiQrImage" src="" alt="QR Code" class="w-40 h-40 object-contain">
+          <div class="bg-white border border-slate-200 rounded-2xl p-6 text-center shadow-sm">
+            <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Scan QR or Copy UPI ID</p>
+            <div class="inline-block bg-white p-3 rounded-2xl shadow-md border border-slate-100 mb-4">
+              <img id="upiQrImage" src="" alt="QR Code" class="w-48 h-48 object-contain">
             </div>
-            <div class="inline-flex items-center space-x-2 bg-white border border-slate-300 px-3.5 py-1.5 rounded-xl shadow-xs">
-              <span class="text-xs font-bold font-mono text-slate-900">paytmqr6n4gde@ptys</span>
-              <button type="button" onclick="copyUpiId()" class="text-slate-400 hover:text-slate-700"><i data-lucide="copy" class="w-4 h-4"></i></button>
+            
+            <div class="flex items-center justify-center mb-4">
+               <div class="inline-flex items-center space-x-3 bg-slate-50 border border-slate-200 pl-4 pr-1 py-1 rounded-xl">
+                 <span class="text-sm font-bold font-mono text-slate-800 select-all" id="displayUpiId">admin@upi</span>
+                 <button type="button" onclick="copyUpiId()" class="bg-white border border-slate-200 p-2 rounded-lg text-slate-600 hover:text-emerald-600 hover:border-emerald-300 transition shadow-sm"><i data-lucide="copy" class="w-4 h-4"></i></button>
+               </div>
             </div>
+            <p class="text-[10px] text-rose-500 font-bold bg-rose-50 p-2 rounded-lg inline-block border border-rose-100">DO NOT change amount while paying, otherwise deposit will fail.</p>
           </div>
 
-          <form onsubmit="handleDepositSubmit(event)" class="space-y-3 bg-white border border-slate-200 p-4 rounded-2xl shadow-sm">
+          <form onsubmit="handleDepositSubmit(event)" class="space-y-4 bg-slate-50 border border-slate-200 p-5 rounded-2xl shadow-sm">
             <div>
-              <label class="text-xs font-extrabold text-slate-800 block mb-1">Step 2: Submit 12-Digit UTR Number</label>
-              <input type="text" id="utrInput" required placeholder="e.g. 423985710293" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-emerald-600 font-mono">
+              <label class="text-sm font-black text-slate-800 block mb-2">Step 2: Submit 12-Digit UTR Number</label>
+              <input type="text" id="utrInput" pattern="[0-9]{12}" title="Must be exactly 12 digits" placeholder="e.g. 423985710293" class="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-base text-slate-900 focus:outline-none focus:border-emerald-500 font-mono font-bold shadow-inner transition">
             </div>
-            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3.5 rounded-xl transition shadow-xs">
-              Confirm & Submit Deposit
-            </button>
-          </form>
-          <button type="button" onclick="cancelDeposit()" class="w-full text-xs font-bold text-slate-500 hover:text-slate-800">Cancel & Change Amount</button>
-        </div>
+            
+            <div class="flex items-center space-x-3 my-2">
+                <div class="flex-1 h-px bg-slate-300"></div>
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">OR</span>
+                <div class="flex-1 h-px bg-slate-300"></div>
+            </div>
 
+            <div>
+              <label class="text-sm font-black text-slate-800 block mb-2">Upload Payment Screenshot</label>
+              <input type="file" id="depositProofImage" accept="image/*" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-emerald-500 shadow-inner transition file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 pt-3">
+               <button type="button" onclick="cancelDeposit()" class="w-full bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold py-3.5 rounded-xl transition shadow-sm text-sm">
+                 Go Back
+               </button>
+               <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3.5 rounded-xl transition shadow-md text-sm">
+                 Confirm Payment
+               </button>
+            </div>
+          </form>
+        </div>
       </div>
     </section>
 
     <!-- 4. WITHDRAWAL TAB -->
-    <section id="tab-withdraw" class="tab-content hidden max-w-2xl mx-auto space-y-6">
-      <div class="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-8 shadow-xs space-y-6 relative">
-        <button type="button" onclick="openHistoryModal('withdraw')" class="absolute top-4 right-4 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1 transition shadow-sm border border-slate-200">
-          <i data-lucide="history" class="w-3.5 h-3.5"></i><span>History</span>
+    <section id="tab-withdraw" class="tab-content hidden max-w-2xl mx-auto space-y-6 pt-4">
+      <div class="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-10 shadow-lg space-y-8 relative overflow-hidden">
+        <div class="absolute -left-20 -bottom-20 w-64 h-64 bg-blue-50 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
+
+        <button type="button" onclick="openFullscreenHistory('withdraw')" class="absolute top-6 right-6 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition shadow-sm border border-slate-200 z-10">
+          <i data-lucide="history" class="w-4 h-4"></i><span class="hidden sm:inline">Withdraw History</span><span class="sm:hidden">History</span>
         </button>
 
-        <div class="text-center space-y-1">
-          <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-2 border border-blue-200">
-            <i data-lucide="arrow-up-right" class="w-6 h-6"></i>
+        <div class="text-center space-y-2 relative z-10">
+          <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-200">
+            <i data-lucide="arrow-up-right" class="w-8 h-8 stroke-[2.5]"></i>
           </div>
-          <h2 class="text-2xl font-black text-slate-900">Withdraw Funds</h2>
-          <p class="text-xs text-slate-500">Request payout directly to your UPI ID or Bank account</p>
+          <h2 class="text-3xl font-black text-slate-900 tracking-tight">Withdraw Funds</h2>
+          <p class="text-sm text-slate-500 font-medium">Fast payout to your Bank/UPI</p>
         </div>
 
-        <form onsubmit="handleWithdrawSubmit(event)" class="space-y-4">
-          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex justify-between items-center">
-            <span class="text-xs font-semibold text-slate-600">Available Balance:</span>
-            <span id="withdrawAvailBalance" class="text-base font-extrabold font-mono text-emerald-600">₹0.00</span>
+        <form onsubmit="handleWithdrawSubmit(event)" class="space-y-5 relative z-10">
+          <div class="bg-slate-900 p-5 rounded-2xl flex justify-between items-center shadow-lg">
+            <span class="text-sm font-bold text-slate-300">Withdrawable Balance:</span>
+            <span id="withdrawAvailBalance" class="text-xl font-black font-mono text-emerald-400">₹0.00</span>
           </div>
 
-          <div>
-            <label class="text-xs font-semibold text-slate-700 block mb-1">Withdrawal Amount (₹) *</label>
-            <input type="number" id="withdrawAmountInput" required placeholder="Min ₹500" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-blue-600 font-mono">
+          <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
+             <div>
+               <label class="text-sm font-bold text-slate-800 block mb-2">Withdrawal Amount (₹)</label>
+               <input type="number" id="withdrawAmountInput" required min="500" placeholder="Min ₹500" class="w-full bg-white border border-slate-300 rounded-xl px-4 py-3.5 text-base text-slate-900 font-black focus:outline-none focus:border-blue-500 font-mono shadow-inner transition">
+             </div>
+
+             <div id="withdrawTargetContainer">
+               <label class="text-sm font-bold text-slate-800 block mb-2">Payout Method (UPI or Account)</label>
+               <input type="text" id="withdrawUpiInput" required placeholder="e.g. yourname@okicici OR A/C + IFSC" class="w-full bg-white border border-slate-300 rounded-xl px-4 py-3.5 text-sm text-slate-900 focus:outline-none focus:border-blue-500 shadow-inner transition font-bold">
+               <p class="text-[10px] text-slate-500 mt-2 font-medium bg-white p-2 rounded-lg border border-slate-200 inline-block">If you added Bank Details in Account Tab, it will auto-fill here.</p>
+             </div>
           </div>
 
-          <div>
-            <label class="text-xs font-semibold text-slate-700 block mb-1">Target UPI ID or Bank Details *</label>
-            <input type="text" id="withdrawUpiInput" required placeholder="e.g. mobile@upi or Account + IFSC" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-blue-600">
-          </div>
-
-          <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3.5 rounded-xl transition shadow-xs">
-            Request Payout
+          <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl transition shadow-xl text-sm uppercase tracking-widest active:scale-95">
+            Submit Request
           </button>
         </form>
 
       </div>
     </section>
 
-    <!-- 5. TRADE LOGS TAB -->
-    <section id="tab-history" class="tab-content hidden max-w-4xl mx-auto space-y-4">
-      <div class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs space-y-4">
-        <h2 class="text-lg font-black text-slate-900 flex items-center space-x-2">
-          <i data-lucide="history" class="w-5 h-5 text-indigo-600"></i>
-          <span>Trading History & Logs</span>
-        </h2>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse">
-            <thead>
-              <tr class="border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider">
-                <th class="py-3 px-2">Asset</th>
-                <th class="py-3 px-2">Type</th>
-                <th class="py-3 px-2">Stake</th>
-                <th class="py-3 px-2">Strike Price</th>
-                <th class="py-3 px-2">Close Price</th>
-                <th class="py-3 px-2">Outcome</th>
-              </tr>
-            </thead>
-            <tbody id="tradeLogsTableBody" class="divide-y divide-slate-100 text-xs font-medium"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- 6. ACCOUNT & PROFILE TAB -->
-    <section id="tab-account" class="tab-content hidden max-w-4xl mx-auto space-y-4">
-      <div class="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div class="flex items-center space-x-4">
-          <div class="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-black text-2xl" id="accInitials">G</div>
+    <!-- 5. ACCOUNT & PROFILE TAB -->
+    <section id="tab-account" class="tab-content hidden max-w-4xl mx-auto space-y-5 pt-2">
+      <div class="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-5 relative overflow-hidden">
+        <div class="absolute right-0 top-0 w-32 h-32 bg-indigo-50 rounded-bl-full pointer-events-none opacity-50"></div>
+        <div class="flex items-center space-x-5 relative z-10">
+          <div class="w-20 h-20 bg-gradient-to-tr from-indigo-500 to-purple-600 text-white rounded-full flex items-center justify-center font-black text-3xl shadow-lg border-4 border-white" id="accInitials">G</div>
           <div>
-            <h2 class="text-xl font-black text-slate-900 flex items-center space-x-2">
-              <span id="accFullName">Guest User</span>
-              <button onclick="openEditNameModal()" class="text-slate-400 hover:text-indigo-600 transition" title="Edit Name"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+            <h2 class="text-2xl font-black text-slate-900 flex items-center space-x-2">
+              <span id="accFullName">User</span>
             </h2>
-            <p class="text-sm text-slate-500 font-mono mt-0.5" id="accPhone">+91 xxxxx</p>
+            <p class="text-sm text-slate-500 font-mono font-medium mt-1 bg-slate-100 px-2 py-0.5 rounded-md inline-block" id="accPhone">+91 xxxxx</p>
           </div>
         </div>
-        <div class="text-center sm:text-right bg-slate-50 p-4 rounded-xl border border-slate-200 w-full sm:w-auto">
-          <p class="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Total Wallet Balance</p>
-          <p class="text-2xl font-black font-mono text-emerald-600" id="accBalance">₹0.00</p>
+        <div class="text-center sm:text-right bg-slate-900 p-5 rounded-2xl w-full sm:w-auto shadow-lg relative z-10">
+          <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-1">Total Assets</p>
+          <p class="text-3xl font-black font-mono text-white" id="accBalance">₹0.00</p>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs space-y-4">
-          <h3 class="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
-            <i data-lucide="building" class="w-4 h-4 text-indigo-600"></i><span>Bank & UPI Details</span>
-          </h3>
-          <form onsubmit="saveBankDetails(event)" class="space-y-3">
-            <div>
-              <label class="text-[11px] font-semibold text-slate-500">Account Holder Name</label>
-              <input type="text" id="bankHolderInput" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-indigo-500 focus:outline-none">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        
+        <!-- Bank Details & KYC -->
+        <div class="space-y-5">
+            <div class="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm">
+               <h3 class="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center space-x-2 border-b border-slate-100 pb-3 mb-4">
+                 <i data-lucide="building" class="w-5 h-5 text-indigo-500"></i><span>Bank & UPI Details</span>
+               </h3>
+               
+               <form id="bankDetailsForm" onsubmit="handleBankDetailsSave(event)" class="space-y-3 hidden">
+                   <input type="text" id="bdAccName" required placeholder="Account Holder Name" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold focus:border-indigo-500 outline-none">
+                   <input type="text" id="bdAccNo" required placeholder="Account Number" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-mono font-bold focus:border-indigo-500 outline-none">
+                   <input type="text" id="bdIfsc" required placeholder="IFSC Code" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-mono font-bold uppercase focus:border-indigo-500 outline-none">
+                   <input type="text" id="bdUpi" required placeholder="UPI ID" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold focus:border-indigo-500 outline-none">
+                   <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-sm transition">Save Details</button>
+               </form>
+
+               <div id="bankDetailsCompleted" class="hidden bg-emerald-50 border border-emerald-200 p-4 rounded-2xl flex items-center justify-between">
+                   <div class="flex items-center space-x-3">
+                       <div class="p-2 bg-emerald-100 text-emerald-600 rounded-full"><i data-lucide="check-circle" class="w-6 h-6"></i></div>
+                       <div>
+                           <span class="font-black text-emerald-800 block text-sm">Details Completed</span>
+                           <span class="text-[10px] text-emerald-600 font-bold uppercase tracking-wide" id="bdSavedUpi">Linked for Payouts</span>
+                       </div>
+                   </div>
+                   <button onclick="editBankDetails()" class="text-xs font-bold text-slate-500 hover:text-indigo-600 underline">Edit</button>
+               </div>
             </div>
-            <div>
-              <label class="text-[11px] font-semibold text-slate-500">Account Number</label>
-              <input type="text" id="bankAccInput" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono focus:border-indigo-500 focus:outline-none">
+
+            <!-- KYC / Aadhar Section -->
+            <div class="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm">
+               <h3 class="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center space-x-2 border-b border-slate-100 pb-3 mb-4">
+                 <i data-lucide="shield-check" class="w-5 h-5 text-emerald-500"></i><span>Identity Verification</span>
+               </h3>
+               <div id="kycContainer" class="space-y-3"></div>
+               <input type="file" id="aadharFileInput" accept="image/*" capture="environment" class="hidden" onchange="processAadharImage(event)">
             </div>
-            <div class="grid grid-cols-2 gap-2">
-              <div>
-                <label class="text-[11px] font-semibold text-slate-500">IFSC Code</label>
-                <input type="text" id="bankIfscInput" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono uppercase focus:border-indigo-500 focus:outline-none">
-              </div>
-              <div>
-                <label class="text-[11px] font-semibold text-slate-500">UPI ID</label>
-                <input type="text" id="bankUpiInput" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-indigo-500 focus:outline-none">
-              </div>
-            </div>
-            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 rounded-lg transition">Save Details</button>
-          </form>
         </div>
 
-        <div class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs space-y-4 flex flex-col justify-between">
-          <div>
-            <h3 class="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center space-x-2 mb-3">
-              <i data-lucide="file-text" class="w-4 h-4 text-amber-600"></i><span>Legal & Policies</span>
-            </h3>
-            <div class="space-y-2 text-xs text-slate-600">
-              <details class="bg-slate-50 border border-slate-200 rounded-lg p-2 cursor-pointer">
-                <summary class="font-bold text-slate-800 outline-none">Terms and Conditions</summary>
-                <p class="mt-2 text-[10px] leading-relaxed">Minimum deposit & withdrawal is ₹500. Trading involves high risk. Users must be 18+ years of age.</p>
-              </details>
-              <details class="bg-slate-50 border border-slate-200 rounded-lg p-2 cursor-pointer">
-                <summary class="font-bold text-slate-800 outline-none">Privacy Policy</summary>
-                <p class="mt-2 text-[10px] leading-relaxed">Your data including mobile number and bank details are encrypted. We do not sell your personal data.</p>
-              </details>
-            </div>
+        <!-- Full Transactions View (Navi Feature) -->
+        <div class="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm flex flex-col space-y-4">
+          <h3 class="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center space-x-2 border-b border-slate-100 pb-3">
+            <i data-lucide="bar-chart-2" class="w-5 h-5 text-blue-500"></i><span>Transaction History</span>
+          </h3>
+          
+          <div class="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[400px]" id="accTransactionsList">
+             <!-- JS Populated Combined List -->
           </div>
-          <button type="button" onclick="handleLogout()" class="w-full mt-4 bg-rose-50 text-rose-600 border border-rose-200 text-xs font-bold py-2.5 rounded-lg transition hover:bg-rose-100 flex justify-center items-center space-x-2">
-            <i data-lucide="log-out" class="w-4 h-4"></i><span>Secure Logout</span>
+          
+          <button type="button" onclick="handleLogout()" class="w-full bg-rose-50 text-rose-600 border border-rose-200 text-sm font-black py-4 rounded-xl transition hover:bg-rose-100 hover:shadow-md flex justify-center items-center space-x-2 mt-4">
+            <i data-lucide="log-out" class="w-5 h-5 stroke-[2.5]"></i><span>SECURE LOGOUT</span>
           </button>
         </div>
       </div>
-
-      <div class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs space-y-4">
-        <h3 class="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
-          <i data-lucide="arrow-right-left" class="w-4 h-4 text-blue-600"></i><span>Financial Transactions</span>
-        </h3>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr class="border-b border-slate-200 text-slate-500 uppercase tracking-wider">
-                <th class="py-2 px-2">Type</th>
-                <th class="py-2 px-2">Amount</th>
-                <th class="py-2 px-2">Date/Time</th>
-                <th class="py-2 px-2">Ref / UTR</th>
-                <th class="py-2 px-2">Status</th>
-              </tr>
-            </thead>
-            <tbody id="accTransactionsBody" class="divide-y divide-slate-100 font-medium"></tbody>
-          </table>
-        </div>
-      </div>
     </section>
 
-    <!-- 7. MASTER ADMIN CONSOLE TAB -->
-    <section id="tab-admin" class="tab-content hidden space-y-5">
-      <div class="bg-slate-900 text-white rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
-        <div>
-          <span class="text-xs font-bold text-amber-400 uppercase tracking-widest block">Master Terminal</span>
-          <h2 class="text-xl sm:text-2xl font-black">Forexaaa Administration</h2>
-        </div>
-        <div class="flex space-x-3">
-          <div class="bg-slate-800 p-2.5 rounded-xl border border-slate-700 flex flex-col justify-center items-center">
-            <span class="text-[10px] font-semibold text-slate-300 mb-1">Chatbot Support</span>
-            <label class="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" id="adminBotToggle" class="sr-only peer" onchange="toggleBotVisibility()">
-              <div class="w-9 h-5 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
-            </label>
-          </div>
-          <div class="bg-slate-800 p-2.5 rounded-xl border border-slate-700 space-y-1">
-            <span class="text-[11px] font-semibold text-slate-300 block">Graph Control (Trade Rigging):</span>
-            <div class="flex space-x-1">
-              <button type="button" onclick="setAdminRigMode('UP')" id="rig-UP" class="rig-btn px-2.5 py-1 rounded text-xs font-bold text-slate-400 hover:bg-slate-700">Buy (UP)</button>
-              <button type="button" onclick="setAdminRigMode('DOWN')" id="rig-DOWN" class="rig-btn px-2.5 py-1 rounded text-xs font-bold text-slate-400 hover:bg-slate-700">Sell (DOWN)</button>
-              <button type="button" onclick="setAdminRigMode('AUTO')" id="rig-AUTO" class="rig-btn px-2.5 py-1 rounded text-xs font-bold bg-emerald-600 text-white">Auto (Loss)</button>
-            </div>
-          </div>
+    <!-- 6. MASTER ADMIN CONSOLE TAB -->
+    <section id="tab-admin" class="tab-content hidden space-y-6 pt-2">
+      <div class="bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-xl relative overflow-hidden">
+        <div class="absolute right-0 top-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="relative z-10">
+          <span class="text-[10px] font-black text-amber-400 uppercase tracking-widest block mb-1 bg-amber-400/10 inline-block px-2 py-1 rounded">Level 99 Authorization</span>
+          <h2 class="text-2xl sm:text-3xl font-black">Admin Console</h2>
+          <p class="text-slate-400 text-xs mt-1 font-mono">Firebase Connected: Live Sync Active</p>
         </div>
       </div>
-
-      <div class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs space-y-3">
-        <h3 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
-          <i data-lucide="message-square" class="w-4 h-4 text-emerald-600"></i><span>Live Chat Manager</span>
-        </h3>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 h-[280px]">
-          <div id="adminChatUserList" class="border border-slate-200 rounded-xl p-2 overflow-y-auto space-y-1.5 text-xs bg-slate-50"></div>
-          <div class="md:col-span-2 border border-slate-200 rounded-xl flex flex-col justify-between bg-white overflow-hidden">
-            <div id="adminChatMessagesBox" class="p-3 overflow-y-auto space-y-2 text-xs flex-1"></div>
-            <div class="p-2 border-t border-slate-200 flex space-x-2 bg-slate-50">
-              <input type="text" id="adminReplyInput" placeholder="Type reply..." class="flex-1 border border-slate-300 rounded-xl px-3 py-1.5 text-xs focus:outline-none">
-              <button type="button" onclick="sendAdminChatReply()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-xl text-xs font-bold">Reply</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div class="bg-white border border-slate-200/90 p-4 rounded-2xl shadow-xs">
-          <span class="text-xs text-slate-500 block">Total Users</span>
+      
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm text-center">
+          <span class="text-[10px] text-slate-500 font-bold uppercase tracking-widest block mb-1">Users</span>
           <span id="adminTotalUsersCount" class="text-2xl font-black font-mono text-slate-900">0</span>
         </div>
-        <div class="bg-white border border-slate-200/90 p-4 rounded-2xl shadow-xs">
-          <span class="text-xs text-slate-500 block">Pending Deposits</span>
-          <span id="adminPendingDepositsCount" class="text-2xl font-black font-mono text-amber-600">0</span>
+        <div class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm text-center">
+          <span class="text-[10px] text-slate-500 font-bold uppercase tracking-widest block mb-1">Pend Dep</span>
+          <span id="adminPendingDepositsCount" class="text-2xl font-black font-mono text-amber-500">0</span>
         </div>
-        <div class="bg-white border border-slate-200/90 p-4 rounded-2xl shadow-xs">
-          <span class="text-xs text-slate-500 block">Pending Withdrawals</span>
-          <span id="adminPendingWithdrawalsCount" class="text-2xl font-black font-mono text-blue-600">0</span>
+        <div class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm text-center">
+          <span class="text-[10px] text-slate-500 font-bold uppercase tracking-widest block mb-1">Pend W/D</span>
+          <span id="adminPendingWithdrawalsCount" class="text-2xl font-black font-mono text-blue-500">0</span>
+        </div>
+        <div class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm text-center bg-emerald-50">
+          <span class="text-[10px] text-emerald-700 font-bold uppercase tracking-widest block mb-1">Total P/L</span>
+          <span id="adminTotalProfit" class="text-2xl font-black font-mono text-emerald-700">₹0</span>
         </div>
       </div>
 
-      <div class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs space-y-3">
-        <h3 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="credit-card" class="w-4 h-4 text-amber-600"></i><span>Pending Deposits</span></h3>
-        <div id="adminPendingDepositsList" class="space-y-2.5"></div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+         <!-- Settings -->
+         <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
+            <h3 class="text-sm font-black text-slate-900 uppercase tracking-widest border-b border-slate-100 pb-2"><i data-lucide="settings" class="w-4 h-4 inline mr-2 text-slate-500"></i>Global Settings</h3>
+            
+            <div class="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+               <label class="text-xs font-bold text-slate-700 block">Payment UPI ID (Shown to users)</label>
+               <div class="flex space-x-2">
+                  <input type="text" id="adminUpiSettingInput" placeholder="admin@upi" class="flex-1 bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm focus:border-emerald-500 outline-none font-bold">
+                  <button onclick="saveAdminSettings()" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm">Save</button>
+               </div>
+            </div>
+            
+            <div class="space-y-2 bg-rose-50 p-4 rounded-2xl border border-rose-200">
+               <label class="text-xs font-bold text-rose-800 block">Global Trade Rigging</label>
+               <div class="flex space-x-2">
+                 <button type="button" onclick="setGlobalRigMode('UP')" id="rig-UP" class="rig-btn flex-1 py-2 rounded-lg text-xs font-bold border border-rose-200 bg-white text-slate-600">Force UP</button>
+                 <button type="button" onclick="setGlobalRigMode('DOWN')" id="rig-DOWN" class="rig-btn flex-1 py-2 rounded-lg text-xs font-bold border border-rose-200 bg-white text-slate-600">Force DOWN</button>
+                 <button type="button" onclick="setGlobalRigMode('AUTO')" id="rig-AUTO" class="rig-btn flex-1 py-2 rounded-lg text-xs font-bold bg-rose-600 text-white shadow-sm">AUTO (Loss)</button>
+               </div>
+               <p class="text-[9px] text-rose-600 font-medium pt-1">Auto mode ensures active users lose dynamically.</p>
+            </div>
+         </div>
+         
+         <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col">
+            <h3 class="text-sm font-black text-slate-900 uppercase tracking-widest border-b border-slate-100 pb-2 mb-4"><i data-lucide="bell" class="w-4 h-4 inline mr-2 text-amber-500"></i>Pending Actions</h3>
+            <div class="flex-1 overflow-y-auto space-y-3 max-h-[300px] pr-2" id="adminPendingList"></div>
+         </div>
       </div>
 
-      <div class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs space-y-3">
-        <h3 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="arrow-up-right" class="w-4 h-4 text-blue-600"></i><span>Pending Withdrawals</span></h3>
-        <div id="adminPendingWithdrawalsList" class="space-y-2.5"></div>
-      </div>
-
-      <div class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs space-y-3">
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-          <h3 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="users" class="w-4 h-4 text-emerald-600"></i><span>User Accounts</span></h3>
-          <input type="text" id="adminUserSearchInput" oninput="renderAdminUsers()" placeholder="Search user..." class="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs w-full sm:w-60 focus:outline-none">
+      <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-3">
+           <h3 class="text-sm font-black text-slate-900 uppercase tracking-widest"><i data-lucide="users" class="w-4 h-4 inline mr-2 text-indigo-500"></i>User Database</h3>
+           <input type="text" id="adminSearchInput" oninput="renderAdminUsers()" placeholder="Search user..." class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm w-full sm:w-64 focus:border-indigo-500 outline-none font-bold">
         </div>
         <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs">
+          <table class="w-full text-left text-sm whitespace-nowrap">
             <thead>
-              <tr class="border-b border-slate-200 text-slate-500 uppercase tracking-wider">
-                <th class="py-2">Name</th>
-                <th class="py-2">Phone</th>
-                <th class="py-2">Role</th>
-                <th class="py-2">Balance</th>
-                <th class="py-2">Action</th>
+              <tr class="border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-widest">
+                <th class="py-3 px-2">User Details</th>
+                <th class="py-3 px-2">Wallet Bal</th>
+                <th class="py-3 px-2">Rig Mode</th>
+                <th class="py-3 px-2 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody id="adminUserTableBody" class="divide-y divide-slate-100 font-medium"></tbody>
+            <tbody id="adminUserTableBody" class="divide-y divide-slate-100"></tbody>
           </table>
         </div>
+      </div>
+      
+      <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
+         <h3 class="text-sm font-black text-slate-900 uppercase tracking-widest border-b border-slate-100 pb-3"><i data-lucide="message-square" class="w-4 h-4 inline mr-2 text-emerald-500"></i>Support Center</h3>
+         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 h-[400px]">
+           <div id="adminChatUserList" class="border border-slate-200 rounded-2xl p-2 overflow-y-auto space-y-2 bg-slate-50"></div>
+           <div class="md:col-span-2 border border-slate-200 rounded-2xl flex flex-col bg-white overflow-hidden shadow-inner">
+             <div id="adminChatMessagesBox" class="p-4 overflow-y-auto space-y-3 flex-1 text-sm bg-slate-50/50"></div>
+             <div class="p-3 border-t border-slate-200 flex space-x-2 bg-white">
+               <input type="text" id="adminReplyInput" placeholder="Type reply..." class="flex-1 bg-slate-100 border border-slate-200 rounded-xl px-4 py-2 focus:outline-none focus:border-emerald-500 font-bold">
+               <button type="button" onclick="sendAdminChatReply()" class="bg-slate-900 hover:bg-slate-800 text-white px-5 py-2 rounded-xl font-bold shadow-sm transition">Send</button>
+             </div>
+           </div>
+         </div>
       </div>
     </section>
 
   </main>
 
-  <!-- 24/7 LIVE SUPPORT CHATBOT WIDGET -->
-  <div id="chatbotWidgetContainer" class="fixed bottom-6 right-4 md:bottom-6 md:right-6 z-50 transition-all duration-300">
-    <button type="button" onclick="toggleChatWindow()" class="flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full px-4 py-3 shadow-xl border border-emerald-400 transition transform hover:scale-105 active:scale-95">
-      <i data-lucide="message-square" class="w-6 h-6"></i>
-      <span class="font-bold text-sm tracking-wide">Live Support</span>
-    </button>
-    <div id="chatWindow" class="hidden absolute bottom-16 right-0 w-[320px] sm:w-[350px] bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-xs">
-      <div class="bg-slate-900 text-white p-3.5 flex items-center justify-between">
-        <div class="flex items-center space-x-2">
-          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-          <div>
-            <div class="font-bold leading-tight text-sm">24/7 Support</div>
-            <div class="text-[10px] text-slate-300">Agent Online</div>
-          </div>
-        </div>
-        <button type="button" onclick="toggleChatWindow()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
-      </div>
-      <div id="userChatMessageList" class="p-3 h-64 overflow-y-auto space-y-2.5 bg-slate-50"></div>
-      <form onsubmit="handleUserChatSend(event)" class="p-2 bg-white border-t border-slate-200 flex space-x-1.5">
-        <input type="text" id="userChatInput" required placeholder="Type deposit/withdraw query..." class="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-600">
-        <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl font-bold"><i data-lucide="send" class="w-4 h-4"></i></button>
-      </form>
-    </div>
-  </div>
+  <button id="floatingChatBtn" onclick="openChatModal()" class="hidden fixed bottom-24 right-4 sm:bottom-6 sm:right-6 bg-emerald-600 text-white p-4 rounded-full shadow-2xl z-40 hover:scale-105 active:scale-95 transition-transform flex items-center justify-center border-2 border-white/20">
+     <i data-lucide="message-square" class="w-6 h-6"></i>
+  </button>
 
-  <!-- MOBILE BOTTOM NAV -->
-  <nav id="mobileBottomNav" class="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur border-t border-slate-200 flex justify-around py-2 z-40 shadow-lg hidden">
-    <button type="button" onclick="switchTab('trade')" id="m-nav-trade" class="mobile-nav-item flex flex-col items-center text-emerald-600"><i data-lucide="activity" class="w-5 h-5"></i><span class="text-[10px] font-extrabold mt-0.5">Desk</span></button>
-    <button type="button" onclick="switchTab('deposit')" id="m-nav-deposit" class="mobile-nav-item flex flex-col items-center text-slate-500"><i data-lucide="arrow-down-left" class="w-5 h-5"></i><span class="text-[10px] font-extrabold mt-0.5">Deposit</span></button>
-    <button type="button" onclick="switchTab('withdraw')" id="m-nav-withdraw" class="mobile-nav-item flex flex-col items-center text-slate-500"><i data-lucide="arrow-up-right" class="w-5 h-5"></i><span class="text-[10px] font-extrabold mt-0.5">Withdraw</span></button>
-    <button type="button" onclick="switchTab('history')" id="m-nav-history" class="mobile-nav-item flex flex-col items-center text-slate-500"><i data-lucide="history" class="w-5 h-5"></i><span class="text-[10px] font-extrabold mt-0.5">Logs</span></button>
-    <button type="button" onclick="switchTab('account')" id="m-nav-account" class="mobile-nav-item flex flex-col items-center text-slate-500"><i data-lucide="user" class="w-5 h-5"></i><span class="text-[10px] font-extrabold mt-0.5">Account</span></button>
+  <nav id="mobileBottomNav" class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around py-1.5 z-50 shadow-[0_-10px_20px_rgba(0,0,0,0.03)] hidden pb-safe">
+    <button type="button" onclick="switchTab('trade')" id="m-nav-trade" class="mobile-nav-item flex flex-col items-center justify-center w-full py-1.5 text-emerald-600 transition"><i data-lucide="activity" class="w-5 h-5 mb-1"></i><span class="text-[10px] font-black uppercase">Trade</span></button>
+    <button type="button" onclick="switchTab('deposit')" id="m-nav-deposit" class="mobile-nav-item flex flex-col items-center justify-center w-full py-1.5 text-slate-400 transition hover:text-slate-700"><i data-lucide="arrow-down-left" class="w-5 h-5 mb-1"></i><span class="text-[10px] font-black uppercase">Deposit</span></button>
+    <button type="button" onclick="switchTab('withdraw')" id="m-nav-withdraw" class="mobile-nav-item flex flex-col items-center justify-center w-full py-1.5 text-slate-400 transition hover:text-slate-700"><i data-lucide="arrow-up-right" class="w-5 h-5 mb-1"></i><span class="text-[10px] font-black uppercase">Payout</span></button>
+    <button type="button" onclick="switchTab('account')" id="m-nav-account" class="mobile-nav-item flex flex-col items-center justify-center w-full py-1.5 text-slate-400 transition hover:text-slate-700"><i data-lucide="user" class="w-5 h-5 mb-1"></i><span class="text-[10px] font-black uppercase">Profile</span></button>
   </nav>
 
-  <!-- JS ENGINE -->
   <script>
-    // --- STORAGE SYNC ENGINE ---
-    function getStore(key, defaultVal) { try { const item = localStorage.getItem(key); return item ? JSON.parse(item) : defaultVal; } catch (e) { return defaultVal; } }
-    function setStore(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { console.error(e); } }
+    const firebaseConfigStr = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+    let db, auth;
+    
+    let fb_users = [];
+    let fb_trades = [];
+    let fb_deposits = [];
+    let fb_withdrawals = [];
+    let fb_chats = [];
+    let fb_settings = { upiId: 'admin@okaxis', globalRig: 'AUTO' };
+    
+    let currentUser = null; 
+    let fb_unsubscribe_funcs = [];
 
-    let users = [];
-    let currentUser = null;
-    let deposits = [];
-    let withdrawals = [];
-    let trades = [];
-    let chatMessages = [];
-    let botEnabled = true;
-
-    function syncData() {
-      users = getStore('fx_users', []);
-      currentUser = getStore('fx_current_user', null);
-      deposits = getStore('fx_deposits', []);
-      withdrawals = getStore('fx_withdrawals', []);
-      trades = getStore('fx_trades', []);
-      chatMessages = getStore('fx_chats', []);
-      botEnabled = getStore('fx_bot_enabled', true);
-    }
-
-    let activeTab = 'trade';
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'forexaaa-pro';
+    
+    let activeTab = 'auth';
     let authMode = 'login';
     let selectedDuration = 30;
     let selectedDepositAmount = 500;
-    let adminRigMode = 'AUTO'; 
-    let editingUserPhone = null;
     let adminSelectedChatPhone = null;
+    let editingUserPhone = null;
 
-    const assetsCatalog = [
-      { id: 'btcinr', name: 'BTC/INR', price: 5980000, payout: 92, volatility: 380.0 },
-      { id: 'ethusd', name: 'ETH/USD', price: 3450.00, payout: 89, volatility: 2.50 },
-      { id: 'xauusd', name: 'XAU/USD', price: 2410.50, payout: 86, volatility: 1.20 },
-      { id: 'usdinr', name: 'USD/INR', price: 83.72, payout: 82, volatility: 0.04 }
+    const fullAssetsCatalog = [
+      { id: 'btcinr', name: 'BTC/INR', price: 5980000, payout: 92, volatility: 450.0 },
+      { id: 'ethinr', name: 'ETH/INR', price: 285000, payout: 90, volatility: 250.0 },
+      { id: 'solinr', name: 'SOL/INR', price: 14500, payout: 88, volatility: 50.0 },
+      { id: 'xrpinr', name: 'XRP/INR', price: 52.40, payout: 85, volatility: 0.5 },
+      { id: 'xauusd', name: 'GOLD (XAU/USD)', price: 2450.50, payout: 89, volatility: 4.5 },
+      { id: 'xagusd', name: 'SILVER (XAG/USD)', price: 30.20, payout: 85, volatility: 0.2 },
+      { id: 'usoil', name: 'Crude Oil', price: 82.50, payout: 86, volatility: 1.1 },
+      { id: 'eurusd', name: 'EUR/USD', price: 1.0850, payout: 88, volatility: 0.0015 },
+      { id: 'gbpusd', name: 'GBP/USD', price: 1.2650, payout: 88, volatility: 0.0020 },
+      { id: 'usdjpy', name: 'USD/JPY', price: 155.40, payout: 85, volatility: 0.6 }
     ];
+    let assetsCatalog = [...fullAssetsCatalog];
     let selectedAsset = assetsCatalog[0];
+    let currentPayout = selectedAsset.payout; // Dynamic payout tracker
+    
     let chartType = 'candlestick';
     let priceHistory = [], candles = [], currentPrice = selectedAsset.price;
+    let audioCtx = null;
 
-    window.addEventListener('DOMContentLoaded', () => {
-      syncData();
+    window.addEventListener('DOMContentLoaded', async () => {
       lucide.createIcons();
       initChartData();
-      renderAssetPills();
       startPriceLoop();
-      startTradeEngineLoop();
+      renderAssetPills();
       window.addEventListener('resize', resizeCanvas);
       
-      document.getElementById('adminBotToggle').checked = botEnabled;
-      applyBotVisibility();
-
-      if (!currentUser) {
-        switchTab('auth');
-      } else {
-        switchTab('trade');
-      }
-      renderUserChatMessages();
+      if (firebaseConfigStr) {
+        try {
+          const config = JSON.parse(firebaseConfigStr);
+          firebase.initializeApp(config);
+          db = firebase.firestore();
+          auth = firebase.auth();
+          await initFirebaseAuth();
+        } catch(e) { hideGlobalLoader(); showToast('Network Error', 'Secure cloud connection failed.', 'error'); }
+      } else { hideGlobalLoader(); showToast('Dev Mode', 'Running locally.', 'error'); }
     });
 
+    async function initFirebaseAuth() {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await auth.signInWithCustomToken(__initial_auth_token);
+        else await auth.signInAnonymously();
+        auth.onAuthStateChanged((user) => { if (user) setupFirestoreListeners(); });
+      } catch (e) { hideGlobalLoader(); }
+    }
+
+    function getPubCol(name) { return db.collection('artifacts').doc(appId).collection('public').doc('data').collection(name); }
+
+    function setupFirestoreListeners() {
+      fb_unsubscribe_funcs.forEach(unsub => unsub()); fb_unsubscribe_funcs = [];
+
+      fb_unsubscribe_funcs.push(getPubCol('settings').doc('global').onSnapshot(doc => {
+         if(doc.exists) { fb_settings = doc.data(); updateUpiDisplay(); renderUI(); }
+      }));
+
+      fb_unsubscribe_funcs.push(getPubCol('users').onSnapshot(snap => {
+         fb_users = []; snap.forEach(doc => fb_users.push({ id: doc.id, ...doc.data() }));
+         if(currentUser) { 
+           const latest = fb_users.find(u => u.phone === currentUser.phone); 
+           if(latest) currentUser = latest; else handleLogout();
+         }
+         checkSession(); hideGlobalLoader(); renderUI();
+      }));
+
+      fb_unsubscribe_funcs.push(getPubCol('trades').onSnapshot(snap => {
+         fb_trades = []; snap.forEach(doc => fb_trades.push({ id: doc.id, ...doc.data() }));
+         processTradeEngine(); renderUI();
+      }));
+
+      fb_unsubscribe_funcs.push(getPubCol('deposits').onSnapshot(snap => {
+         fb_deposits = []; snap.forEach(doc => fb_deposits.push({ id: doc.id, ...doc.data() }));
+         renderUI();
+      }));
+
+      fb_unsubscribe_funcs.push(getPubCol('withdrawals').onSnapshot(snap => {
+         fb_withdrawals = []; snap.forEach(doc => fb_withdrawals.push({ id: doc.id, ...doc.data() }));
+         renderUI();
+      }));
+
+      fb_unsubscribe_funcs.push(getPubCol('chats').onSnapshot(snap => {
+         fb_chats = []; snap.forEach(doc => fb_chats.push({ id: doc.id, ...doc.data() }));
+         fb_chats.sort((a,b) => a.timestamp - b.timestamp); renderChats();
+      }));
+    }
+    
+    function hideGlobalLoader() { document.getElementById('globalLoader').style.opacity = '0'; setTimeout(() => { document.getElementById('globalLoader').style.display = 'none'; document.getElementById('mainWorkspace').classList.remove('blur-ui'); }, 300); }
+
+    function initAudio() { if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    function playBeep(type) {
+       if(!audioCtx) return;
+       try {
+         const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+         osc.connect(gain); gain.connect(audioCtx.destination);
+         if(type === 'win') { osc.type = 'sine'; osc.frequency.setValueAtTime(400, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.3); gain.gain.setValueAtTime(0.2, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3); osc.start(); osc.stop(audioCtx.currentTime + 0.3); }
+         else if(type === 'loss') { osc.type = 'triangle'; osc.frequency.setValueAtTime(300, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.3); gain.gain.setValueAtTime(0.2, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3); osc.start(); osc.stop(audioCtx.currentTime + 0.3); }
+       } catch(e){}
+    }
+    function fireConfetti() { typeof confetti !== 'undefined' && confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#10B981', '#34D399', '#ffffff'] }); }
+
     function showToast(title, msg, type) {
-      const container = document.getElementById('toastContainer');
-      const toast = document.createElement('div');
+      const container = document.getElementById('toastContainer'); const toast = document.createElement('div');
       const isSuccess = type === 'success';
-      toast.className = `p-3.5 rounded-xl shadow-xl border transform transition-all duration-300 toast-enter flex items-start gap-3 w-80 bg-white ${isSuccess ? 'border-emerald-300' : 'border-rose-300'}`;
-      toast.innerHTML = `<div class="${isSuccess ? 'text-emerald-500 bg-emerald-50' : 'text-rose-500 bg-rose-50'} p-2 rounded-lg"><i data-lucide="${isSuccess ? 'check-circle' : 'alert-circle'}" class="w-5 h-5"></i></div><div class="flex-1 mt-0.5"><h4 class="font-bold text-sm text-slate-900">${title}</h4><p class="text-xs text-slate-500 mt-1">${msg}</p></div>`;
-      container.appendChild(toast);
-      lucide.createIcons();
-      setTimeout(() => { toast.classList.replace('toast-enter', 'toast-exit'); setTimeout(() => toast.remove(), 300); }, 4500);
+      toast.className = `p-4 rounded-2xl shadow-2xl border bg-white ${isSuccess ? 'border-emerald-200' : 'border-rose-200'} toast-enter flex items-start gap-3 w-[320px] relative overflow-hidden`;
+      toast.innerHTML = `<div class="absolute left-0 top-0 bottom-0 w-1.5 ${isSuccess ? 'bg-emerald-500' : 'bg-rose-500'}"></div><div class="${isSuccess ? 'text-emerald-500 bg-emerald-50' : 'text-rose-500 bg-rose-50'} p-2 rounded-xl"><i data-lucide="${isSuccess ? 'check-circle' : 'alert-circle'}" class="w-6 h-6"></i></div><div class="flex-1 mt-0.5"><h4 class="font-black text-sm text-slate-900">${title}</h4><p class="text-[11px] text-slate-500 mt-1 font-bold leading-snug">${msg}</p></div>`;
+      container.appendChild(toast); lucide.createIcons();
+      setTimeout(() => { toast.classList.replace('toast-enter', 'toast-exit'); setTimeout(() => toast.remove(), 300); }, 4000);
+    }
+
+    function compressImage(file, callback) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 600; let scaleSize = 1;
+                if(img.width > MAX_WIDTH) scaleSize = MAX_WIDTH / img.width;
+                canvas.width = img.width * scaleSize; canvas.height = img.height * scaleSize;
+                const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                callback(canvas.toDataURL('image/jpeg', 0.5));
+            }
+            img.src = event.target.result;
+        }
+        reader.readAsDataURL(file);
     }
 
     function switchTab(tabId) {
-      if (!currentUser && tabId !== 'auth') {
-        tabId = 'auth';
-      }
+      if (!currentUser && tabId !== 'auth') tabId = 'auth';
       activeTab = tabId;
-
       document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-      const activeEl = document.getElementById(`tab-${tabId}`);
-      if (activeEl) activeEl.classList.remove('hidden');
+      const activeEl = document.getElementById(`tab-${tabId}`); if (activeEl) activeEl.classList.remove('hidden');
 
-      if (tabId === 'auth') {
-        document.getElementById('mainHeader').classList.add('hidden');
-        document.getElementById('mobileBottomNav').classList.add('hidden');
-        document.getElementById('authLogoHeader').classList.remove('hidden');
-        
-        const botWidget = document.getElementById('chatbotWidgetContainer');
-        botWidget.classList.remove('bottom-20');
-        botWidget.classList.add('bottom-6');
-      } else {
-        document.getElementById('mainHeader').classList.remove('hidden');
-        document.getElementById('mobileBottomNav').classList.remove('hidden');
-        document.getElementById('authLogoHeader').classList.add('hidden');
-        
-        const botWidget = document.getElementById('chatbotWidgetContainer');
-        botWidget.classList.remove('bottom-6');
-        botWidget.classList.add('bottom-20');
-      }
+      const isAuth = tabId === 'auth';
+      document.getElementById('mainHeader').classList.toggle('hidden', isAuth);
+      document.getElementById('mobileBottomNav').classList.toggle('hidden', isAuth || (currentUser && currentUser.role==='ADMIN'));
+      document.getElementById('floatingChatBtn').classList.toggle('hidden', isAuth || (currentUser && currentUser.role==='ADMIN'));
 
-      document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.classList.remove('bg-slate-900', 'text-white', 'shadow-sm');
-        btn.classList.add('text-slate-600', 'hover:bg-slate-100');
-      });
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.className = 'nav-btn px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 flex items-center space-x-1 transition');
       const currentNavBtn = document.getElementById(`nav-${tabId}`);
-      if (currentNavBtn && tabId !== 'admin') {
-        currentNavBtn.classList.remove('text-slate-600', 'hover:bg-slate-100');
-        currentNavBtn.classList.add('bg-slate-900', 'text-white', 'shadow-sm');
-      }
+      if (currentNavBtn && tabId !== 'admin') currentNavBtn.className = 'nav-btn px-3 py-2 rounded-xl text-xs font-bold bg-slate-900 text-white shadow-sm flex items-center space-x-1 transition';
 
-      document.querySelectorAll('.mobile-nav-item').forEach(b => {
-        b.classList.remove('text-emerald-600', 'text-indigo-600');
-        b.classList.add('text-slate-500');
-      });
+      document.querySelectorAll('.mobile-nav-item').forEach(b => { b.classList.remove('text-emerald-600', 'text-indigo-600', 'text-blue-600'); b.classList.add('text-slate-400'); });
       const mBtn = document.getElementById(`m-nav-${tabId}`);
-      if (mBtn) {
-        mBtn.classList.remove('text-slate-500');
-        mBtn.classList.add(tabId === 'account' ? 'text-indigo-600' : 'text-emerald-600');
-      }
+      if (mBtn) { mBtn.classList.remove('text-slate-400'); mBtn.classList.add(tabId==='account'?'text-indigo-600':tabId==='withdraw'?'text-blue-600':'text-emerald-600'); }
 
       if (tabId === 'trade') setTimeout(resizeCanvas, 100);
       if (tabId === 'deposit') { document.getElementById('depositStep1').classList.remove('hidden'); document.getElementById('depositStep2').classList.add('hidden'); }
       
-      renderUI();
+      renderUI(); window.scrollTo(0,0);
     }
 
-    // --- CHART ENGINE ---
+    function checkSession() {
+       if(!currentUser && activeTab !== 'auth') switchTab('auth');
+       else if (currentUser && activeTab === 'auth') switchTab(currentUser.role === 'ADMIN' ? 'admin' : 'trade');
+    }
+
+    function toggleAuthMode(mode) {
+      authMode = mode;
+      document.getElementById('authTitle').innerText = mode === 'login' ? 'Sign In Securely' : 'Create Live Account';
+      document.getElementById('authNameGroup').className = mode === 'register' ? 'block' : 'hidden';
+      document.getElementById('authTermsGroup').className = mode === 'register' ? 'flex items-start space-x-2 mt-2 bg-slate-50 p-3 rounded-xl border border-slate-200' : 'hidden';
+      document.getElementById('authTermsCheck').required = mode === 'register';
+      document.getElementById('authSubmitBtn').innerText = mode === 'login' ? 'Login' : 'Open Account';
+      document.getElementById('authToggleText').innerHTML = mode === 'login' ? `New to Forexaaa? <button type="button" onclick="toggleAuthMode('register')" class="text-emerald-600 font-black hover:underline ml-1">Create Account</button>` : `Already registered? <button type="button" onclick="toggleAuthMode('login')" class="text-emerald-600 font-black hover:underline ml-1">Login</button>`;
+    }
+
+    async function handleAuthSubmit(e) {
+      e.preventDefault();
+      const phone = document.getElementById('authPhoneInput').value.trim();
+      const pass = document.getElementById('authPasswordInput').value.trim();
+      const name = document.getElementById('authNameInput').value.trim();
+      
+      if (phone === '9529951116' && pass === 'Ritesh555') {
+        let adminUser = fb_users.find(u => u.phone === phone);
+        if(!adminUser) { adminUser = { phone, name: 'Master Admin', role: 'ADMIN', balance: 0, password: pass }; await getPubCol('users').doc(phone).set(adminUser); }
+        currentUser = adminUser; switchTab('admin'); showToast('Admin Verified', 'Welcome to Master Console', 'success'); return;
+      }
+
+      if (authMode === 'register') {
+        if (fb_users.find(u => u.phone === phone)) return showToast('Error', 'Phone number already registered.', 'error');
+        try {
+          const newUser = { phone, name, password: pass, role: 'USER', balance: 0, rigMode: 'NONE', kycStatus: 'NOT_UPLOADED', createdAt: Date.now(), isBlocked: false };
+          await getPubCol('users').doc(phone).set(newUser);
+          currentUser = newUser;
+          showToast('Registered', 'Account created successfully!', 'success'); switchTab('deposit');
+        } catch(err) { showToast('Error', 'Registration failed.', 'error'); }
+      } else {
+        const u = fb_users.find(x => x.phone === phone && x.password === pass);
+        if (u) {
+          if(u.isBlocked) return showToast('Access Denied', 'Your account is suspended.', 'error');
+          currentUser = u; showToast('Welcome Back', 'Logged in securely.', 'success'); switchTab(u.role === 'ADMIN' ? 'admin' : 'trade');
+        } else showToast('Login Failed', 'Invalid credentials.', 'error');
+      }
+    }
+    function handleLogout() { currentUser = null; showToast('Logged Out', 'Signed out safely.', 'success'); switchTab('auth'); }
+
+    function renderAssetPills() {
+      const searchTxt = document.getElementById('assetSearchInput')?.value.toLowerCase() || '';
+      const filtered = fullAssetsCatalog.filter(a => a.name.toLowerCase().includes(searchTxt) || a.id.toLowerCase().includes(searchTxt));
+      const container = document.getElementById('assetPillsContainer');
+      if(filtered.length === 0) { container.innerHTML = `<span class="text-xs text-slate-400 font-bold p-2">No assets found.</span>`; return; }
+      container.innerHTML = filtered.map(asset => `
+        <button type="button" onclick="selectAsset('${asset.id}')" class="px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center space-x-2 whitespace-nowrap ${selectedAsset.id === asset.id ? 'bg-slate-900 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+          <span>${asset.name}</span><span class="text-[10px] ${selectedAsset.id === asset.id ? 'text-emerald-400' : 'text-emerald-600'} font-mono bg-black/10 px-1 rounded">+${asset.payout}%</span>
+        </button>`).join('');
+    }
+
+    function selectAsset(id) {
+      selectedAsset = fullAssetsCatalog.find(a => a.id === id) || fullAssetsCatalog[0];
+      currentPayout = selectedAsset.payout;
+      document.getElementById('chartFeedLabel').innerText = `${selectedAsset.name} LIVE ENGINE`;
+      document.getElementById('payoutRateLabel').innerText = `+${currentPayout}%`;
+      document.getElementById('orderPayoutRate').innerText = `+${currentPayout}%`;
+      initChartData(); renderAssetPills(); calculateOrderReturns();
+    }
+
     function initChartData() {
       let base = selectedAsset.price; priceHistory = []; candles = [];
-      for (let i = 0; i < 40; i++) {
-        const open = base; const delta = (Math.random() - 0.495) * selectedAsset.volatility * 8; const close = parseFloat((open + delta).toFixed(2));
-        const high = Math.max(open, close) + Math.abs(Math.random() * selectedAsset.volatility * 2.5); const low = Math.min(open, close) - Math.abs(Math.random() * selectedAsset.volatility * 2.5);
+      for (let i = 0; i < 50; i++) {
+        const open = base; const delta = (Math.random() - 0.495) * selectedAsset.volatility * 5; const close = parseFloat((open + delta).toFixed(selectedAsset.price < 10 ? 4 : 2));
+        const high = Math.max(open, close) + Math.abs(Math.random() * selectedAsset.volatility * 2); const low = Math.min(open, close) - Math.abs(Math.random() * selectedAsset.volatility * 2);
         candles.push({ open, high, low, close }); priceHistory.push(close); base = close;
       }
       currentPrice = base;
@@ -757,558 +901,447 @@
     function startPriceLoop() {
       setInterval(() => {
         if (candles.length === 0) return;
+        
+        // --- DYNAMIC PAYOUT % LOGIC ---
+        if(Math.random() > 0.6) {
+           currentPayout = selectedAsset.payout + Math.floor(Math.random() * 5) - 2; // -2 to +2 variation
+           currentPayout = Math.min(98, Math.max(60, currentPayout)); // Limit boundaries
+           document.getElementById('payoutRateLabel').innerText = `+${currentPayout}%`;
+           document.getElementById('orderPayoutRate').innerText = `+${currentPayout}%`;
+           calculateOrderReturns();
+        }
+
         const lastCandle = { ...candles[candles.length - 1] };
-        
-        let tickChange = (Math.random() - 0.49) * selectedAsset.volatility * 3.5;
-        
-        // ADMIN RIGGING LOGIC
-        if (adminRigMode === 'UP') {
-          tickChange = Math.abs((Math.random() * selectedAsset.volatility * 4));
-        } else if (adminRigMode === 'DOWN') {
-          tickChange = -Math.abs((Math.random() * selectedAsset.volatility * 4));
-        } else if (adminRigMode === 'AUTO') {
-          if (currentUser) {
-            syncData(); // Ensure fresh trades
-            const activeTrades = trades.filter(t => t.userPhone === currentUser.phone && t.status === 'ACTIVE');
-            if (activeTrades.length > 0) {
-              const hasCall = activeTrades.some(t => t.type === 'CALL');
-              const hasPut = activeTrades.some(t => t.type === 'PUT');
-              if (hasCall && !hasPut) {
-                tickChange = -Math.abs((Math.random() * selectedAsset.volatility * 5)); 
-              } else if (hasPut && !hasCall) {
-                tickChange = Math.abs((Math.random() * selectedAsset.volatility * 5)); 
-              }
-            }
+        let tickChange = (Math.random() - 0.49) * selectedAsset.volatility * 2.5;
+        let activeRig = fb_settings.globalRig || 'AUTO';
+        if(currentUser && currentUser.rigMode && currentUser.rigMode !== 'NONE') activeRig = currentUser.rigMode;
+
+        if (activeRig === 'UP') tickChange = Math.abs((Math.random() * selectedAsset.volatility * 3));
+        else if (activeRig === 'DOWN') tickChange = -Math.abs((Math.random() * selectedAsset.volatility * 3));
+        else if (activeRig === 'AUTO' && currentUser) {
+          const activeMyTrades = fb_trades.filter(t => t.userPhone === currentUser.phone && t.status === 'ACTIVE');
+          if (activeMyTrades.length > 0) {
+            const hasCall = activeMyTrades.some(t => t.type === 'CALL'); const hasPut = activeMyTrades.some(t => t.type === 'PUT');
+            if (hasCall && !hasPut) tickChange = -Math.abs((Math.random() * selectedAsset.volatility * 4)); 
+            else if (hasPut && !hasCall) tickChange = Math.abs((Math.random() * selectedAsset.volatility * 4)); 
           }
         }
 
-        const nextPrice = parseFloat((lastCandle.close + tickChange).toFixed(2));
-        currentPrice = nextPrice;
+        const nextPrice = parseFloat((lastCandle.close + tickChange).toFixed(selectedAsset.price < 10 ? 4 : 2)); currentPrice = nextPrice;
         lastCandle.close = nextPrice; lastCandle.high = Math.max(lastCandle.high, nextPrice); lastCandle.low = Math.min(lastCandle.low, nextPrice);
         candles[candles.length - 1] = lastCandle;
 
-        if (Math.random() > 0.65 && candles.length < 50) { candles.push({ open: nextPrice, high: nextPrice, low: nextPrice, close: nextPrice }); }
-        if (candles.length > 40) candles.shift();
+        if (Math.random() > 0.7 && candles.length < 60) candles.push({ open: nextPrice, high: nextPrice, low: nextPrice, close: nextPrice });
+        if (candles.length > 50) candles.shift();
         priceHistory = candles.map(c => c.close);
 
-        document.getElementById('livePriceDisplay').innerText = `₹${currentPrice.toFixed(2)}`;
+        let dispPrice = selectedAsset.price < 10 ? currentPrice.toFixed(4) : currentPrice.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+        document.getElementById('livePriceDisplay').innerText = (selectedAsset.id.includes('usd') ? '$' : '₹') + dispPrice;
+        
+        if(priceHistory.length >= 10) {
+            let sum = 0; for(let i=priceHistory.length-10; i<priceHistory.length; i++) sum+=priceHistory[i];
+            document.getElementById('maIndicatorLabel').innerText = (sum/10).toFixed(selectedAsset.price < 10 ? 4 : 2);
+        }
         renderCanvasChart();
       }, 1000);
     }
 
     function setChartType(type) {
       chartType = type;
-      document.getElementById('btnChartCandle').className = type === 'candlestick' ? 'p-1.5 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-xs' : 'p-1.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-900';
-      document.getElementById('btnChartLine').className = type === 'line' ? 'p-1.5 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-xs' : 'p-1.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-900';
+      document.getElementById('btnChartCandle').className = type === 'candlestick' ? 'p-1.5 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-sm' : 'p-1.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-900 transition';
+      document.getElementById('btnChartLine').className = type === 'line' ? 'p-1.5 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-sm' : 'p-1.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-900 transition';
       renderCanvasChart();
     }
-
-    function resizeCanvas() {
-      const canvas = document.getElementById('tradingCanvas'); if (!canvas) return;
-      const rect = canvas.parentElement.getBoundingClientRect(); const dpr = window.devicePixelRatio || 1;
-      canvas.width = rect.width * dpr; canvas.height = rect.height * dpr; canvas.getContext('2d').scale(dpr, dpr);
-      renderCanvasChart();
-    }
+    function resizeCanvas() { const c = document.getElementById('tradingCanvas'); if(!c) return; const r = c.parentElement.getBoundingClientRect(); const d = window.devicePixelRatio||1; c.width = r.width*d; c.height = r.height*d; c.getContext('2d').scale(d,d); renderCanvasChart(); }
 
     function renderCanvasChart() {
       const canvas = document.getElementById('tradingCanvas'); if (!canvas || priceHistory.length === 0) return;
       const dpr = window.devicePixelRatio || 1; const width = canvas.width / dpr, height = canvas.height / dpr;
       const ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, width, height);
 
-      const minPrice = Math.min(...priceHistory) * 0.9992, maxPrice = Math.max(...priceHistory) * 1.0008;
+      const minPrice = Math.min(...priceHistory) * 0.9995, maxPrice = Math.max(...priceHistory) * 1.0005;
       const priceRange = maxPrice - minPrice || 1;
 
-      ctx.strokeStyle = '#f1f5f9'; ctx.lineWidth = 1;
-      for (let y = 0; y < height; y += 35) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke(); }
-      for (let x = 0; x < width; x += 55) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke(); }
+      ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 1;
+      for (let y = 0; y < height; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke(); }
+      for (let x = 0; x < width; x += 60) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke(); }
+
+      if(priceHistory.length >= 10) {
+         ctx.beginPath(); ctx.strokeStyle = 'rgba(96, 165, 250, 0.5)'; ctx.lineWidth = 2;
+         for(let i=9; i<priceHistory.length; i++) {
+             let sum=0; for(let j=i-9; j<=i; j++) sum+=priceHistory[j]; let ma = sum/10;
+             const x = (i / (priceHistory.length - 1)) * width, y = height - ((ma - minPrice) / priceRange) * height;
+             if(i===9) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+         }
+         ctx.stroke();
+      }
 
       if (chartType === 'candlestick') {
-        const candleWidth = Math.max(5, (width / candles.length) - 4);
+        const candleWidth = Math.max(4, (width / candles.length) - 3);
         candles.forEach((candle, i) => {
           const x = i * (width / candles.length) + candleWidth / 2;
           const openY = height - ((candle.open - minPrice) / priceRange) * height, closeY = height - ((candle.close - minPrice) / priceRange) * height;
           const highY = height - ((candle.high - minPrice) / priceRange) * height, lowY = height - ((candle.low - minPrice) / priceRange) * height;
-          const color = candle.close >= candle.open ? '#059669' : '#e11d48';
-
+          const color = candle.close >= candle.open ? '#10B981' : '#F43F5E';
           ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x + candleWidth / 2, highY); ctx.lineTo(x + candleWidth / 2, lowY); ctx.stroke();
-          ctx.fillStyle = color; ctx.fillRect(x, Math.min(openY, closeY), candleWidth, Math.max(Math.abs(closeY - openY), 2.5));
+          ctx.fillStyle = color; ctx.fillRect(x, Math.min(openY, closeY), candleWidth, Math.max(Math.abs(closeY - openY), 3));
         });
       } else {
         ctx.beginPath(); priceHistory.forEach((price, i) => {
           const x = (i / (priceHistory.length - 1)) * width, y = height - ((price - minPrice) / priceRange) * height;
           if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
         });
-        const isUp = priceHistory[priceHistory.length - 1] >= priceHistory[0]; ctx.strokeStyle = isUp ? '#059669' : '#e11d48'; ctx.lineWidth = 2.5; ctx.stroke();
-        const gradient = ctx.createLinearGradient(0, 0, 0, height); gradient.addColorStop(0, isUp ? 'rgba(5, 150, 105, 0.15)' : 'rgba(225, 29, 72, 0.15)'); gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        const isUp = priceHistory[priceHistory.length - 1] >= priceHistory[0]; ctx.strokeStyle = isUp ? '#10B981' : '#F43F5E'; ctx.lineWidth = 3; ctx.stroke();
+        const gradient = ctx.createLinearGradient(0, 0, 0, height); gradient.addColorStop(0, isUp ? 'rgba(16, 185, 129, 0.3)' : 'rgba(244, 63, 94, 0.3)'); gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
         ctx.lineTo(width, height); ctx.lineTo(0, height); ctx.closePath(); ctx.fillStyle = gradient; ctx.fill();
       }
 
-      trades.filter(t => t.userPhone === currentUser?.phone && t.status === 'ACTIVE').forEach(trade => {
-        const strikeY = height - ((trade.strikePrice - minPrice) / priceRange) * height;
-        ctx.strokeStyle = trade.type === 'CALL' ? '#059669' : '#e11d48'; ctx.lineWidth = 1.5; ctx.setLineDash([5, 3]);
-        ctx.beginPath(); ctx.moveTo(0, strikeY); ctx.lineTo(width, strikeY); ctx.stroke(); ctx.setLineDash([]);
-      });
+      if(currentUser) {
+          fb_trades.filter(t => t.userPhone === currentUser.phone && t.status === 'ACTIVE').forEach(trade => {
+            const strikeY = height - ((trade.strikePrice - minPrice) / priceRange) * height;
+            ctx.strokeStyle = trade.type === 'CALL' ? '#10B981' : '#F43F5E'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]);
+            ctx.beginPath(); ctx.moveTo(0, strikeY); ctx.lineTo(width, strikeY); ctx.stroke(); ctx.setLineDash([]);
+            ctx.fillStyle = trade.type === 'CALL' ? '#10B981' : '#F43F5E';
+            ctx.fillRect(0, strikeY - 10, 42, 20); ctx.fillStyle='white'; ctx.font='bold 10px sans-serif'; ctx.fillText('ORDER', 3, strikeY+3);
+          });
+      }
 
       const lastY = height - ((currentPrice - minPrice) / priceRange) * height;
-      ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(0, lastY); ctx.lineTo(width, lastY); ctx.stroke(); ctx.setLineDash([]);
-      ctx.beginPath(); ctx.arc(width - 4, lastY, 4.5, 0, Math.PI * 2); ctx.fillStyle = '#2563eb'; ctx.fill();
+      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1; ctx.setLineDash([2, 2]); ctx.beginPath(); ctx.moveTo(0, lastY); ctx.lineTo(width, lastY); ctx.stroke(); ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(width - 5, lastY, 5, 0, Math.PI * 2); ctx.fillStyle = '#f8fafc'; ctx.fill();
     }
 
-    function startTradeEngineLoop() {
-      setInterval(() => {
-        const now = Date.now(); let stateChanged = false;
-        syncData();
-        trades.forEach(trade => {
-          if (trade.status === 'ACTIVE' && now >= trade.expiryTime) {
-            stateChanged = true; 
-            
-            let isWin = false;
-            if (trade.type === 'CALL') {
-               isWin = currentPrice > trade.strikePrice;
-            } else {
-               isWin = currentPrice < trade.strikePrice;
-            }
-            
-            trade.closePrice = currentPrice;
-            if (isWin) {
-              trade.status = 'WON'; trade.payoutAmount = Math.round(trade.amount * (1 + trade.payout / 100));
-              const targetUser = users.find(u => u.phone === trade.userPhone);
-              if (targetUser) {
-                targetUser.balance += trade.payoutAmount; setStore('fx_users', users);
-                if (currentUser?.phone === targetUser.phone) { currentUser.balance = targetUser.balance; setStore('fx_current_user', currentUser); showToast('Trade Won! 🎉', `Profit of ₹${trade.payoutAmount} added to wallet.`, 'success'); }
-              }
-            } else {
-              trade.status = 'LOST'; trade.payoutAmount = 0;
-              if (currentUser?.phone === trade.userPhone) showToast('Trade Lost', `You lost ₹${trade.amount} in ${trade.assetName}.`, 'error');
-            }
-          }
-        });
-        if (stateChanged) { setStore('fx_trades', trades); renderUI(); } else renderActiveTradesList();
-      }, 1000);
-    }
-
-    function placeTrade(type) {
+    async function placeTrade(type) {
       if (!currentUser) return switchTab('auth');
-      syncData();
+      initAudio();
       const stake = parseFloat(document.getElementById('tradeStakeInput').value) || 0;
       if (stake < 10) return showToast('Error', 'Min stake is ₹10.', 'error');
-      if (currentUser.balance < stake) { showToast('Insufficient Balance', 'Please deposit funds to trade.', 'error'); return switchTab('deposit'); }
+      if (currentUser.balance < stake) { showToast('Low Balance', 'Deposit funds to place trade.', 'error'); return switchTab('deposit'); }
 
-      currentUser.balance -= stake; const userObj = users.find(u => u.phone === currentUser.phone); if (userObj) userObj.balance = currentUser.balance;
-      setStore('fx_users', users); setStore('fx_current_user', currentUser);
-
-      trades.unshift({ id: 'TRD-' + Math.floor(100000 + Math.random() * 900000), userPhone: currentUser.phone, assetName: selectedAsset.name, amount: stake, type: type, strikePrice: currentPrice, closePrice: null, duration: selectedDuration, payout: selectedAsset.payout, status: 'ACTIVE', startTime: Date.now(), expiryTime: Date.now() + (selectedDuration * 1000) });
-      setStore('fx_trades', trades); showToast('Order Executed', `${type} order placed on ${selectedAsset.name} for ₹${stake}.`, 'success'); renderUI();
+      const newBal = currentUser.balance - stake;
+      try {
+        await getPubCol('trades').add({
+           userPhone: currentUser.phone, assetName: selectedAsset.name, amount: stake, type: type, 
+           strikePrice: currentPrice, closePrice: null, duration: selectedDuration, payout: currentPayout, 
+           status: 'ACTIVE', startTime: Date.now(), expiryTime: Date.now() + (selectedDuration * 1000)
+        });
+        await getPubCol('users').doc(currentUser.phone).update({ balance: newBal });
+        showToast('Order Placed', `${type} order on ${selectedAsset.name} for ₹${stake}.`, 'success'); 
+      } catch(e) { showToast('Error', 'Failed to place trade.', 'error'); }
     }
 
-    function renderAssetPills() {
-      document.getElementById('assetPillsContainer').innerHTML = assetsCatalog.map(asset => `
-        <button type="button" onclick="selectAsset('${asset.id}')" class="px-3 py-1 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 whitespace-nowrap ${selectedAsset.id === asset.id ? 'bg-slate-900 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}">
-          <span>${asset.name}</span><span class="text-[10px] text-emerald-600 font-mono">+${asset.payout}%</span>
-        </button>`).join('');
-    }
-
-    function selectAsset(id) {
-      selectedAsset = assetsCatalog.find(a => a.id === id);
-      document.getElementById('chartFeedLabel').innerText = `${selectedAsset.name} REALTIME ENGINE`;
-      document.getElementById('payoutRateLabel').innerText = `+${selectedAsset.payout}%`; document.getElementById('orderPayoutRate').innerText = `+${selectedAsset.payout}%`;
-      initChartData(); renderAssetPills(); calculateOrderReturns();
+    function processTradeEngine() {
+      if(!currentUser) return;
+      const now = Date.now();
+      fb_trades.forEach(async trade => {
+        if (trade.userPhone === currentUser.phone && trade.status === 'ACTIVE' && now >= trade.expiryTime) {
+            let isWin = trade.type === 'CALL' ? currentPrice > trade.strikePrice : currentPrice < trade.strikePrice;
+            const payoutAmt = isWin ? Math.round(trade.amount * (1 + trade.payout / 100)) : 0;
+            const newStatus = isWin ? 'WON' : 'LOST';
+            
+            try {
+               await getPubCol('trades').doc(trade.id).update({ status: newStatus, closePrice: currentPrice, payoutAmount: payoutAmt });
+               if(isWin) {
+                   const uSnap = await getPubCol('users').doc(currentUser.phone).get();
+                   if(uSnap.exists) await getPubCol('users').doc(currentUser.phone).update({ balance: uSnap.data().balance + payoutAmt });
+                   fireConfetti(); playBeep('win'); showToast('Trade Won! 🎉', `Profit of ₹${payoutAmt} credited.`, 'success');
+               } else { playBeep('loss'); showToast('Trade Lost', `You lost ₹${trade.amount}.`, 'error'); }
+            } catch(e) {}
+        }
+      });
     }
 
     function setStakePreset(val) { document.getElementById('tradeStakeInput').value = val; calculateOrderReturns(); }
     function setDurationPreset(sec) {
-      selectedDuration = sec; document.querySelectorAll('.dur-btn').forEach(b => b.className = 'dur-btn py-2 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 text-slate-700');
-      document.getElementById(`dur-${sec}`).className = 'dur-btn py-2 text-xs font-bold rounded-xl border border-emerald-600 bg-emerald-50 text-emerald-800';
+      selectedDuration = sec; document.querySelectorAll('.dur-btn').forEach(b => b.className = 'dur-btn py-2.5 text-xs font-black rounded-xl border border-slate-200 bg-white text-slate-700 transition');
+      document.getElementById(`dur-${sec}`).className = 'dur-btn py-2.5 text-xs font-black rounded-xl border-2 border-emerald-500 bg-emerald-50 text-emerald-800 shadow-sm transition';
     }
     document.getElementById('tradeStakeInput')?.addEventListener('input', calculateOrderReturns);
-
     function calculateOrderReturns() {
-      const stake = parseFloat(document.getElementById('tradeStakeInput').value) || 0; const profit = Math.round(stake * (selectedAsset.payout / 100));
+      const stake = parseFloat(document.getElementById('tradeStakeInput').value) || 0; const profit = Math.round(stake * (currentPayout / 100));
       document.getElementById('orderNetProfit').innerText = `+₹${profit}`; document.getElementById('orderTotalReturn').innerText = `₹${stake + profit}`;
     }
 
-    function renderActiveTradesList() {
-      const container = document.getElementById('activeTradesList'); const active = trades.filter(t => t.userPhone === currentUser?.phone && t.status === 'ACTIVE');
-      if (active.length === 0) return container.innerHTML = `<p class="text-xs text-slate-400 italic py-2">No active market positions.</p>`;
-      container.innerHTML = active.map(t => {
-        const remaining = Math.max(0, Math.ceil((t.expiryTime - Date.now()) / 1000));
-        return `<div class="bg-slate-50 border border-slate-200 p-2.5 rounded-xl flex items-center justify-between text-xs">
-          <div class="flex items-center space-x-2"><span class="px-2 py-0.5 rounded text-[10px] font-extrabold ${t.type === 'CALL' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">${t.type}</span><span class="font-bold text-slate-800">${t.assetName}</span><span class="text-slate-500 font-mono">@ ₹${t.strikePrice}</span></div>
-          <div class="flex items-center space-x-3"><span class="font-mono text-emerald-700 font-bold">₹${t.amount}</span><span class="bg-white px-2 py-0.5 rounded-lg text-amber-700 font-mono font-extrabold animate-pulse border border-slate-200">${remaining}s</span></div>
-        </div>`;
-      }).join('');
-    }
-
-    // --- DEPOSIT & WITHDRAWAL ---
+    // DEPOSIT & WITHDRAWAL
     function selectDepositPreset(amt) {
       selectedDepositAmount = amt; document.getElementById('customDepositInput').value = '';
       document.querySelectorAll('.dep-preset-btn').forEach(btn => {
-        if (parseInt(btn.getAttribute('data-amt')) === amt) { btn.className = 'dep-preset-btn py-2 text-xs font-bold rounded-xl border border-emerald-600 bg-emerald-50 text-emerald-800 transition transform scale-[1.02] shadow-sm'; } 
-        else { btn.className = 'dep-preset-btn py-2 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100 transition'; }
+        if (parseInt(btn.getAttribute('data-amt')) === amt) btn.className = 'dep-preset-btn py-3 text-sm font-black rounded-xl border border-emerald-600 bg-emerald-50 text-emerald-800 shadow-sm transition scale-105'; 
+        else btn.className = 'dep-preset-btn py-3 text-sm font-black rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition';
       });
     }
-
     function handleCustomDepositInput() {
       const val = parseFloat(document.getElementById('customDepositInput').value);
-      if (val) { document.querySelectorAll('.dep-preset-btn').forEach(btn => btn.className = 'dep-preset-btn py-2 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100 transition'); }
+      if (val) document.querySelectorAll('.dep-preset-btn').forEach(btn => btn.className = 'dep-preset-btn py-3 text-sm font-black rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition');
     }
-
     function proceedToDepositStep2() {
-      const customVal = parseFloat(document.getElementById('customDepositInput').value);
-      const effectiveAmt = customVal && customVal > 0 ? customVal : selectedDepositAmount;
+      const customVal = parseFloat(document.getElementById('customDepositInput').value); const effectiveAmt = customVal && customVal > 0 ? customVal : selectedDepositAmount;
       if (effectiveAmt < 500) return showToast('Error', 'Minimum deposit limit is ₹500.', 'error');
-      
-      document.getElementById('qrAmountDisplay').innerText = `₹${effectiveAmt}`;
-      const uri = `upi://pay?pa=paytmqr6n4gde@ptys&pn=ForexaaaMerchant&am=${effectiveAmt}&cu=INR`;
-      document.getElementById('upiQrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(uri)}`;
-      
-      document.getElementById('depositStep1').classList.add('hidden');
-      document.getElementById('depositStep2').classList.remove('hidden');
+      updateUpiDisplay(); document.getElementById('qrAmountDisplay').innerText = `₹${effectiveAmt}`;
+      document.getElementById('depositStep1').classList.add('hidden'); document.getElementById('depositStep2').classList.remove('hidden');
     }
-
-    function cancelDeposit() {
-      document.getElementById('depositStep2').classList.add('hidden');
-      document.getElementById('depositStep1').classList.remove('hidden');
-      document.getElementById('utrInput').value = '';
+    function cancelDeposit() { document.getElementById('depositStep2').classList.add('hidden'); document.getElementById('depositStep1').classList.remove('hidden'); document.getElementById('utrInput').value = ''; document.getElementById('depositProofImage').value = ''; }
+    function updateUpiDisplay() {
+        const upi = fb_settings.upiId || 'admin@upi'; document.getElementById('displayUpiId').innerText = upi;
+        document.getElementById('upiQrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`upi://pay?pa=${upi}&pn=IndianForex&cu=INR`)}`;
     }
+    function copyUpiId() { navigator.clipboard.writeText(fb_settings.upiId || 'admin@upi'); showToast('Copied', 'UPI ID copied. Go to Payment App.', 'success'); }
 
-    function copyUpiId() { navigator.clipboard.writeText('paytmqr6n4gde@ptys'); showToast('Copied', 'UPI ID copied to clipboard.', 'success'); }
-
-    function payViaApp(app) {
-      const customVal = parseFloat(document.getElementById('customDepositInput').value);
-      const amt = customVal && customVal > 0 ? customVal : selectedDepositAmount;
-      const upiId = 'paytmqr6n4gde@ptys';
-      let url = `upi://pay?pa=${upiId}&pn=ForexaaaMerchant&am=${amt}&cu=INR`;
-      
-      if(app === 'gpay') url = `gpay://upi/pay?pa=${upiId}&pn=ForexaaaMerchant&am=${amt}&cu=INR`;
-      if(app === 'phonepe') url = `phonepe://pay?pa=${upiId}&pn=ForexaaaMerchant&am=${amt}&cu=INR`;
-      if(app === 'paytm') url = `paytmmp://pay?pa=${upiId}&pn=ForexaaaMerchant&am=${amt}&cu=INR`;
-
-      window.location.href = url;
-      showToast('Opening Payment App', 'Please complete the payment and return here to enter UTR.', 'success');
-    }
-
-    function handleDepositSubmit(e) {
+    async function handleDepositSubmit(e) {
       e.preventDefault(); if (!currentUser) return switchTab('auth');
-      syncData();
-      const customVal = parseFloat(document.getElementById('customDepositInput').value);
-      const amt = customVal && customVal > 0 ? customVal : selectedDepositAmount;
+      const amt = parseFloat(document.getElementById('customDepositInput').value) || selectedDepositAmount;
       const utr = document.getElementById('utrInput').value.trim();
+      const proofFile = document.getElementById('depositProofImage').files[0];
       
-      if (utr.length < 8) return showToast('Error', 'Invalid UTR Number.', 'error');
+      if(!utr && !proofFile) return showToast('Error', 'Provide UTR or Payment Screenshot.', 'error');
 
-      deposits.unshift({ id: 'DEP-' + Math.floor(100000 + Math.random() * 900000), userPhone: currentUser.phone, userName: currentUser.name, amount: amt, utr: utr, status: 'PENDING', timestamp: new Date().toLocaleString() });
-      setStore('fx_deposits', deposits); document.getElementById('utrInput').value = ''; cancelDeposit();
-      showToast('Deposit Placed', 'Request sent to Admin.', 'success'); 
-      renderUI();
-      openHistoryModal('deposit');
+      const saveDeposit = async (base64Proof = null) => {
+          try {
+             await getPubCol('deposits').add({ userPhone: currentUser.phone, userName: currentUser.name, amount: amt, utr: utr, proofImg: base64Proof, status: 'PENDING', timestamp: Date.now() });
+             document.getElementById('utrInput').value = ''; document.getElementById('depositProofImage').value = ''; 
+             cancelDeposit(); showToast('Success', 'Deposit request submitted.', 'success'); openFullscreenHistory('deposit');
+          } catch(err) { showToast('Error', 'Submission failed.', 'error'); }
+      };
+
+      if(proofFile) compressImage(proofFile, (base64) => saveDeposit(base64)); else saveDeposit(null);
     }
 
-    function handleWithdrawSubmit(e) {
+    async function handleWithdrawSubmit(e) {
       e.preventDefault(); if (!currentUser) return;
-      syncData();
       const amt = parseFloat(document.getElementById('withdrawAmountInput').value); const upi = document.getElementById('withdrawUpiInput').value.trim();
       if (amt < 500) return showToast('Error', 'Minimum withdrawal is ₹500.', 'error');
-      if (amt > currentUser.balance) return showToast('Error', 'Insufficient balance.', 'error');
-
-      currentUser.balance -= amt; const u = users.find(x => x.phone === currentUser.phone); if (u) u.balance = currentUser.balance;
-      setStore('fx_users', users); setStore('fx_current_user', currentUser);
-      withdrawals.unshift({ id: 'WD-' + Math.floor(100000 + Math.random() * 900000), userPhone: currentUser.phone, userName: currentUser.name, amount: amt, targetUpi: upi, status: 'PENDING', timestamp: new Date().toLocaleString() });
-      setStore('fx_withdrawals', withdrawals); document.getElementById('withdrawAmountInput').value = ''; document.getElementById('withdrawUpiInput').value = '';
-      showToast('Withdrawal Placed', 'Payout request submitted.', 'success'); 
-      renderUI();
-      openHistoryModal('withdraw');
+      if (amt > currentUser.balance) return showToast('Error', 'Insufficient wallet balance.', 'error');
+      try {
+         await getPubCol('users').doc(currentUser.phone).update({ balance: currentUser.balance - amt });
+         await getPubCol('withdrawals').add({ userPhone: currentUser.phone, userName: currentUser.name, amount: amt, targetUpi: upi, status: 'PENDING', timestamp: Date.now() });
+         document.getElementById('withdrawAmountInput').value = ''; if(!currentUser.bankDetails) document.getElementById('withdrawUpiInput').value = ''; 
+         showToast('Success', 'Payout request submitted.', 'success'); openFullscreenHistory('withdraw');
+      } catch(err) { showToast('Error', 'Failed to request withdrawal.', 'error'); }
     }
     
-    // --- HISTORY MODALS ---
-    function openHistoryModal(type) {
-       syncData();
-       document.getElementById('historyModal').classList.remove('hidden');
-       document.getElementById('historyModalTitle').innerHTML = `<i data-lucide="history" class="w-5 h-5 text-indigo-600"></i><span>${type === 'deposit' ? 'Deposit History' : 'Withdrawal History'}</span>`;
-       
+    async function handleBankDetailsSave(e) {
+        e.preventDefault();
+        const bd = { holder: document.getElementById('bdAccName').value, acc: document.getElementById('bdAccNo').value, ifsc: document.getElementById('bdIfsc').value, upi: document.getElementById('bdUpi').value };
+        try { await getPubCol('users').doc(currentUser.phone).update({ bankDetails: bd }); showToast('Saved', 'Bank details successfully saved.', 'success'); } catch(err) {}
+    }
+    function editBankDetails() {
+        if(!currentUser || !currentUser.bankDetails) return;
+        document.getElementById('bdAccName').value = currentUser.bankDetails.holder; document.getElementById('bdAccNo').value = currentUser.bankDetails.acc;
+        document.getElementById('bdIfsc').value = currentUser.bankDetails.ifsc; document.getElementById('bdUpi').value = currentUser.bankDetails.upi;
+        document.getElementById('bankDetailsForm').classList.remove('hidden'); document.getElementById('bankDetailsCompleted').classList.add('hidden');
+    }
+    function processAadharImage(e) {
+        const file = e.target.files[0]; if(!file || !currentUser) return;
+        compressImage(file, async (base64) => {
+            try {
+                await getPubCol('users').doc(currentUser.phone).update({ kycStatus: 'PENDING', aadharImg: base64 });
+                showToast('Uploaded', 'Aadhar submitted for verification.', 'success');
+            } catch(err) { showToast('Error', 'Upload failed.', 'error'); }
+        });
+    }
+
+    // FULLSCREEN MODALS
+    function openBalanceModal() {
+       if(!currentUser) return;
+       document.getElementById('balanceModalAmt').innerText = `₹${currentUser.balance.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+       document.getElementById('balanceModal').classList.remove('translate-y-full');
+    }
+    function closeBalanceModal() { document.getElementById('balanceModal').classList.add('translate-y-full'); }
+
+    function openFullscreenHistory(type) {
+       document.getElementById('historyModalTitle').innerText = type === 'deposit' ? 'Deposit History' : 'Withdrawal History';
        const content = document.getElementById('historyModalContent');
-       let data = type === 'deposit' ? deposits.filter(d => d.userPhone === currentUser.phone) : withdrawals.filter(w => w.userPhone === currentUser.phone);
-       
-       if(data.length === 0) {
-          content.innerHTML = `<p class="text-center text-slate-500 text-xs py-4">No records found.</p>`;
-          lucide.createIcons();
-          return;
+       let data = type === 'deposit' ? fb_deposits.filter(d => d.userPhone === currentUser.phone) : fb_withdrawals.filter(w => w.userPhone === currentUser.phone);
+       data.sort((a,b) => b.timestamp - a.timestamp);
+       if(data.length === 0) { content.innerHTML = `<div class="flex flex-col items-center justify-center h-40 text-slate-400"><i data-lucide="file-x" class="w-10 h-10 mb-2 opacity-50"></i><p class="text-xs font-bold uppercase tracking-widest">No records found</p></div>`; lucide.createIcons(); }
+       else {
+         content.innerHTML = data.map(item => {
+            let stColor = item.status === 'APPROVED' ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : item.status === 'REJECTED' ? 'text-rose-700 bg-rose-50 border-rose-200' : 'text-amber-700 bg-amber-50 border-amber-200';
+            let detail = type === 'deposit' ? (item.utr ? `Ref: ${item.utr}` : 'Proof Uploaded') : `To: ${item.targetUpi}`;
+            let dateStr = new Date(item.timestamp).toLocaleString();
+            return `<div class="bg-white border border-slate-200 rounded-2xl p-4 flex justify-between items-center shadow-sm"><div><div class="font-black text-slate-900 text-lg">₹${item.amount}</div><div class="text-[10px] text-slate-400 font-mono mt-1">${dateStr}</div><div class="text-[11px] font-bold text-slate-600 mt-0.5">${detail}</div></div><div class="px-3 py-1.5 rounded-xl text-[10px] font-black tracking-wider uppercase border shadow-sm ${stColor}">${item.status}</div></div>`;
+         }).join(''); lucide.createIcons();
        }
+       document.getElementById('historyModal').classList.remove('translate-y-full');
+    }
+    function closeHistoryModal() { document.getElementById('historyModal').classList.add('translate-y-full'); }
 
-       content.innerHTML = data.map(item => {
-          let statusColor = item.status === 'APPROVED' ? 'text-emerald-600 bg-emerald-50 border-emerald-200' : item.status === 'REJECTED' ? 'text-rose-600 bg-rose-50 border-rose-200' : 'text-amber-600 bg-amber-50 border-amber-200';
-          let statusText = item.status === 'PENDING' ? 'Processing' : item.status;
-          let detailText = type === 'deposit' ? `UTR: ${item.utr}` : `To: ${item.targetUpi}`;
-          
-          return `
-          <div class="border border-slate-200 rounded-xl p-3 flex justify-between items-center bg-white shadow-sm">
-             <div>
-                <div class="font-bold text-slate-800 text-sm">₹${item.amount}</div>
-                <div class="text-[10px] text-slate-500 font-mono mt-0.5">${item.timestamp}</div>
-                <div class="text-[10px] text-slate-500 mt-0.5">${detailText}</div>
-             </div>
-             <div class="px-2.5 py-1 rounded-lg text-[10px] font-bold border ${statusColor}">
-                ${statusText}
-             </div>
-          </div>`;
-       }).join('');
-       lucide.createIcons();
-    }
-    
-    function closeHistoryModal() {
-       document.getElementById('historyModal').classList.add('hidden');
-    }
+    function openChatModal() { document.getElementById('chatModal').classList.remove('translate-y-full'); renderChats(); }
+    function closeChatModal() { document.getElementById('chatModal').classList.add('translate-y-full'); }
 
-    // --- ACCOUNT PAGE ---
-    function openEditNameModal() {
-        document.getElementById('newNameInput').value = currentUser.name;
-        document.getElementById('editNameModal').classList.remove('hidden');
+    function openAdminImage(base64, title) {
+        if(!base64) return showToast('Not Found', 'No image uploaded.', 'error');
+        document.getElementById('adminImagePreview').src = base64; document.getElementById('adminImageTitle').innerText = title;
+        document.getElementById('adminImageModal').classList.remove('hidden');
     }
-    
-    function closeEditNameModal() {
-        document.getElementById('editNameModal').classList.add('hidden');
+    function closeAdminImage() { document.getElementById('adminImageModal').classList.add('hidden'); document.getElementById('adminImagePreview').src = ''; }
+
+    async function handleUserChatSend(e) {
+       e.preventDefault(); const input = document.getElementById('userChatInput'); const text = input.value.trim(); if(!text || !currentUser) return;
+       try { await getPubCol('chats').add({ userPhone: currentUser.phone, userName: currentUser.name, sender: 'USER', text, timestamp: Date.now() }); input.value = ''; } catch(err) {}
     }
-    
-    function saveNewName() {
-        const newName = document.getElementById('newNameInput').value.trim();
-        if(newName) {
-            syncData();
-            currentUser.name = newName;
-            const u = users.find(x => x.phone === currentUser.phone);
-            if (u) u.name = newName;
-            setStore('fx_users', users);
-            setStore('fx_current_user', currentUser);
-            renderUI();
-            showToast('Success', 'Profile name updated.', 'success');
-            closeEditNameModal();
-        } else {
-            showToast('Error', 'Name cannot be empty.', 'error');
-        }
-    }
-    
-    function saveBankDetails(e) {
-      e.preventDefault();
-      syncData();
-      currentUser.bankDetails = { holder: document.getElementById('bankHolderInput').value, acc: document.getElementById('bankAccInput').value, ifsc: document.getElementById('bankIfscInput').value, upi: document.getElementById('bankUpiInput').value };
-      const u = users.find(x => x.phone === currentUser.phone); if(u) u.bankDetails = currentUser.bankDetails;
-      setStore('fx_users', users); setStore('fx_current_user', currentUser); showToast('Success', 'Bank details securely saved.', 'success');
+    function renderChats() {
+       const list = document.getElementById('userChatMessageList'); if(!list || !currentUser) return;
+       const myMsgs = fb_chats.filter(m => m.userPhone === currentUser.phone);
+       if(myMsgs.length === 0) { list.innerHTML = `<div class="bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-2xl font-medium text-sm shadow-sm">👋 Welcome to Pro Support! Let us know if you face any issues.</div>`; return; }
+       list.innerHTML = myMsgs.map(m => `<div class="flex flex-col ${m.sender === 'USER' ? 'items-end' : 'items-start'}"><div class="${m.sender === 'USER' ? 'bg-slate-900 text-white rounded-br-sm' : 'bg-white border border-slate-200 text-slate-800 rounded-bl-sm'} px-4 py-2.5 rounded-2xl max-w-[85%] font-medium text-sm shadow-sm">${m.text}</div><span class="text-[10px] text-slate-400 mt-1 px-1 font-mono">${new Date(m.timestamp).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div>`).join('');
+       list.scrollTop = list.scrollHeight;
     }
 
-    function renderAccountTab() {
+    // ADMIN FUNCTIONS
+    async function saveAdminSettings() { await getPubCol('settings').doc('global').set({ upiId: document.getElementById('adminUpiSettingInput').value, globalRig: fb_settings.globalRig || 'AUTO' }, {merge: true}); showToast('Saved', 'UPI ID updated globally.', 'success'); }
+    async function setGlobalRigMode(mode) { await getPubCol('settings').doc('global').set({ globalRig: mode }, {merge: true}); showToast('Rig Updated', `Global Graph set to ${mode}`, 'success'); }
+    async function setAdminUserRig(phone, mode) { await getPubCol('users').doc(phone).update({ rigMode: mode }); showToast('Rig Applied', `Specific rig set for ${phone}`, 'success'); }
+    async function toggleUserBlock(phone, currentStatus) { await getPubCol('users').doc(phone).update({ isBlocked: !currentStatus }); showToast('Status Updated', 'User access modified.', 'success'); }
+    async function saveUserBalance(phone) { const bal = parseFloat(document.getElementById(`editBal_${phone}`).value); if(isNaN(bal)) return; await getPubCol('users').doc(phone).update({ balance: bal }); editingUserPhone = null; showToast('Saved', 'Balance updated.', 'success'); }
+    
+    async function approveAction(col, id, userPhone, amt) {
+       try { await getPubCol(col).doc(id).update({ status: 'APPROVED' });
+           if(col === 'deposits') { const uSnap = await getPubCol('users').doc(userPhone).get(); if(uSnap.exists) await getPubCol('users').doc(userPhone).update({ balance: uSnap.data().balance + amt }); }
+       } catch(e){}
+    }
+    async function rejectAction(col, id, userPhone, amt) {
+       try { await getPubCol(col).doc(id).update({ status: 'REJECTED' });
+           if(col === 'withdrawals') { const uSnap = await getPubCol('users').doc(userPhone).get(); if(uSnap.exists) await getPubCol('users').doc(userPhone).update({ balance: uSnap.data().balance + amt }); }
+       } catch(e){}
+    }
+    async function actionKYC(phone, status) {
+        try { await getPubCol('users').doc(phone).update({ kycStatus: status }); showToast('KYC Updated', `User KYC ${status}`, 'success'); } catch(e){}
+    }
+
+    function renderAdminUsers() {
+      const search = document.getElementById('adminSearchInput')?.value.toLowerCase() || '';
+      document.getElementById('adminUserTableBody').innerHTML = fb_users.filter(u => u.name?.toLowerCase().includes(search) || u.phone?.includes(search)).map(u => {
+         const isB = u.isBlocked;
+         return `<tr class="hover:bg-slate-50 transition"><td class="py-3 px-2"><div class="font-bold text-slate-900">${u.name} <span class="text-[9px] font-black px-1.5 py-0.5 rounded bg-slate-100">${u.role}</span> ${isB?'<span class="text-rose-600 font-bold text-[10px]">[BANNED]</span>':''}</div><div class="text-[11px] font-mono text-slate-500">${u.phone}</div></td><td class="py-3 px-2 font-black text-emerald-600">₹${u.balance?.toLocaleString('en-IN')}</td><td class="py-3 px-2"><select onchange="setAdminUserRig('${u.phone}', this.value)" class="text-[10px] p-1 border rounded bg-slate-50 font-bold outline-none"><option value="NONE" ${u.rigMode==='NONE'||!u.rigMode?'selected':''}>NONE</option><option value="UP" ${u.rigMode==='UP'?'selected':''}>UP (Win)</option><option value="DOWN" ${u.rigMode==='DOWN'?'selected':''}>DOWN (Win)</option><option value="AUTO" ${u.rigMode==='AUTO'?'selected':''}>AUTO (Loss)</option></select></td><td class="py-3 px-2 text-right">${editingUserPhone === u.phone ? `<input type="number" id="editBal_${u.phone}" value="${u.balance}" class="w-16 border rounded text-xs px-1 py-1 mr-1 font-mono font-bold"><button onclick="saveUserBalance('${u.phone}')" class="bg-emerald-600 text-white px-2 py-1 rounded-lg text-[10px] font-bold">Save</button>` : `<button onclick="editingUserPhone='${u.phone}'; renderAdminUsers();" class="bg-slate-100 hover:bg-slate-200 px-2 py-1.5 rounded-lg text-[10px] font-bold text-slate-700 mr-1 transition">Edit</button><button onclick="toggleUserBlock('${u.phone}', ${isB})" class="${isB?'bg-emerald-100 text-emerald-700':'bg-rose-100 text-rose-700'} px-2 py-1.5 rounded-lg text-[10px] font-bold transition">${isB?'Unban':'Ban'}</button>`}</td></tr>`
+      }).join('') || `<tr><td colspan="4" class="py-4 text-center text-slate-400 text-xs font-bold">No users found.</td></tr>`;
+    }
+
+    async function sendAdminChatReply() {
+      const text = document.getElementById('adminReplyInput').value.trim(); if (!text || !adminSelectedChatPhone) return;
+      await getPubCol('chats').add({ userPhone: adminSelectedChatPhone, userName: 'Support', sender: 'ADMIN', text, timestamp: Date.now() });
+      document.getElementById('adminReplyInput').value = '';
+    }
+
+    // MAIN RENDER UI LOOP
+    function renderUI() {
       if (!currentUser) return;
+      
+      // Update Header Badge (Now Clickable)
+      const hl = document.getElementById('headerLeftUserBadge'), hc = document.getElementById('headerAuthContainer');
+      hl.innerHTML = `<div onclick="openBalanceModal()" class="cursor-pointer bg-slate-100 hover:bg-slate-200 border border-slate-200/80 px-3 py-1 rounded-xl flex items-center space-x-2 transition"><i data-lucide="wallet" class="w-4 h-4 text-slate-400"></i><div><span class="text-[9px] text-slate-400 block font-bold leading-none uppercase">Balance</span><span class="text-xs font-black text-emerald-700 font-mono">₹${currentUser.balance.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</span></div></div>`;
+      hc.innerHTML = `<button type="button" onclick="handleLogout()" class="p-2.5 bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 rounded-xl transition shadow-sm"><i data-lucide="power" class="w-4 h-4"></i></button>`;
+      document.getElementById('nav-admin').classList.toggle('hidden', currentUser.role !== 'ADMIN');
+      
+      // Update Texts
+      document.getElementById('withdrawAvailBalance').innerText = `₹${currentUser.balance.toLocaleString('en-IN')}`;
       document.getElementById('accFullName').innerText = currentUser.name; 
-      
-      // FULL MOBILE NUMBER FIX
       document.getElementById('accPhone').innerText = '+91 ' + currentUser.phone;
-      
       document.getElementById('accInitials').innerText = currentUser.name.charAt(0).toUpperCase(); 
       document.getElementById('accBalance').innerText = `₹${currentUser.balance.toLocaleString('en-IN')}`;
-      
+
+      // Bank Details Sync
       if(currentUser.bankDetails) {
-        document.getElementById('bankHolderInput').value = currentUser.bankDetails.holder || ''; document.getElementById('bankAccInput').value = currentUser.bankDetails.acc || '';
-        document.getElementById('bankIfscInput').value = currentUser.bankDetails.ifsc || ''; document.getElementById('bankUpiInput').value = currentUser.bankDetails.upi || '';
-      }
-      
-      const txns = [...deposits.filter(d => d.userPhone === currentUser.phone).map(d => ({ ...d, type: 'Deposit', sortTime: new Date(d.timestamp).getTime() })), ...withdrawals.filter(w => w.userPhone === currentUser.phone).map(w => ({ ...w, type: 'Withdraw', sortTime: new Date(w.timestamp).getTime() }))].sort((a,b) => b.sortTime - a.sortTime);
-      const tbody = document.getElementById('accTransactionsBody');
-      if (txns.length === 0) tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-400">No financial transactions found.</td></tr>`;
-      else tbody.innerHTML = txns.map(t => {
-        let stColor = t.status==='APPROVED'?'text-emerald-600':t.status==='REJECTED'?'text-rose-600':'text-amber-600';
-        return `<tr class="hover:bg-slate-50"><td class="py-2.5 px-2"><span class="bg-slate-100 font-bold px-2 py-0.5 rounded text-[10px] ${t.type==='Deposit'?'text-emerald-700':'text-blue-700'}">${t.type}</span></td><td class="py-2.5 px-2 font-mono font-bold text-slate-800">₹${t.amount}</td><td class="py-2.5 px-2 text-[10px] text-slate-500">${t.timestamp}</td><td class="py-2.5 px-2 font-mono text-[10px]">${t.utr || t.targetUpi}</td><td class="py-2.5 px-2 font-bold text-[10px] ${stColor}">${t.status}</td></tr>`;
-      }).join('');
-    }
-
-    // --- TRADE LOGS TAB FIX ---
-    function renderTradeLogs() {
-      const tbody = document.getElementById('tradeLogsTableBody');
-      if (!tbody) return;
-      const myTrades = trades.filter(t => t.userPhone === currentUser?.phone).sort((a, b) => b.startTime - a.startTime);
-      if (myTrades.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-400 text-xs">No trading history found.</td></tr>`;
-        return;
-      }
-      tbody.innerHTML = myTrades.map(t => {
-        let statusColor = t.status === 'WON' ? 'text-emerald-600' : t.status === 'LOST' ? 'text-rose-600' : 'text-amber-600';
-        return `<tr class="hover:bg-slate-50 border-b border-slate-50 last:border-0">
-          <td class="py-3 px-2 font-bold text-slate-800">${t.assetName}</td>
-          <td class="py-3 px-2"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${t.type === 'CALL' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">${t.type}</span></td>
-          <td class="py-3 px-2 font-mono font-bold text-slate-700">₹${t.amount}</td>
-          <td class="py-3 px-2 font-mono text-slate-500">₹${t.strikePrice}</td>
-          <td class="py-3 px-2 font-mono text-slate-500">${t.closePrice ? '₹' + t.closePrice : '-'}</td>
-          <td class="py-3 px-2 font-bold text-[11px] ${statusColor}">${t.status === 'WON' ? '+₹' + t.payoutAmount : t.status}</td>
-        </tr>`;
-      }).join('');
-    }
-
-    // --- SUPPORT CHATBOT ---
-    function toggleChatWindow() { document.getElementById('chatWindow').classList.toggle('hidden'); renderUserChatMessages(); }
-    
-    function toggleBotVisibility() {
-      botEnabled = document.getElementById('adminBotToggle').checked;
-      setStore('fx_bot_enabled', botEnabled);
-      applyBotVisibility();
-    }
-    
-    function applyBotVisibility() {
-      document.getElementById('chatbotWidgetContainer').style.display = botEnabled ? 'block' : 'none';
-    }
-
-    function handleUserChatSend(e) {
-      e.preventDefault(); const input = document.getElementById('userChatInput'); const text = input.value.trim(); if (!text) return;
-      syncData();
-      const uPhone = currentUser ? currentUser.phone : 'Guest';
-      const uName = currentUser ? currentUser.name : 'Guest User';
-
-      chatMessages.push({ id: 'MSG-'+Date.now(), userPhone: uPhone, userName: uName, sender: 'USER', text, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) });
-      setStore('fx_chats', chatMessages); input.value = ''; renderUserChatMessages(); renderAdminChatConsole();
-
-      const lcText = text.toLowerCase();
-      if(lcText.includes('deposit')) {
-        setTimeout(() => {
-          chatMessages.push({ id: 'MSG-'+Date.now(), userPhone: uPhone, userName: 'Support', sender: 'ADMIN', text: 'Deposit requests are approved within 5-15 mins of UTR submission. Please check your Account history.', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) });
-          setStore('fx_chats', chatMessages); renderUserChatMessages(); renderAdminChatConsole();
-        }, 1000);
-      } else if (lcText.includes('withdraw')) {
-        setTimeout(() => {
-          chatMessages.push({ id: 'MSG-'+Date.now(), userPhone: uPhone, userName: 'Support', sender: 'ADMIN', text: 'Withdrawal payouts are processed within 2-4 hours to your saved Bank/UPI details.', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) });
-          setStore('fx_chats', chatMessages); renderUserChatMessages(); renderAdminChatConsole();
-        }, 1000);
-      }
-    }
-
-    function renderUserChatMessages() {
-      const list = document.getElementById('userChatMessageList'); 
-      const uPhone = currentUser ? currentUser.phone : 'Guest';
-      const myMsgs = chatMessages.filter(m => m.userPhone === uPhone);
-
-      if (myMsgs.length === 0) { list.innerHTML = `<div class="bg-emerald-50 border border-emerald-200 text-emerald-800 p-2.5 rounded-xl font-medium">👋 Welcome to 24/7 Forexaaa Support! Ask us about your deposit or withdrawal query.</div>`; return; }
-      list.innerHTML = myMsgs.map(m => `<div class="flex flex-col ${m.sender === 'USER' ? 'items-end' : 'items-start'}"><div class="${m.sender === 'USER' ? 'bg-slate-900 text-white' : 'bg-emerald-100 text-emerald-900 border border-emerald-200'} px-3 py-2 rounded-xl max-w-[85%] font-medium leading-relaxed shadow-sm">${m.text}</div><span class="text-[9px] text-slate-400 mt-0.5 px-1">${m.time}</span></div>`).join('');
-      list.scrollTop = list.scrollHeight;
-    }
-
-    function renderAdminChatConsole() {
-      if (currentUser?.role !== 'ADMIN') return;
-      const userListEl = document.getElementById('adminChatUserList'); const chatPhoneSet = [...new Set(chatMessages.map(m => m.userPhone))];
-      if (chatPhoneSet.length === 0) { userListEl.innerHTML = `<p class="text-slate-400 italic text-center py-4">No support queries.</p>`; return; }
-      userListEl.innerHTML = chatPhoneSet.map(phone => {
-        const lastMsg = chatMessages.filter(m => m.userPhone === phone).slice(-1)[0];
-        return `<div onclick="adminSelectedChatPhone='${phone}'; renderAdminChatConsole();" class="p-2 rounded-lg cursor-pointer transition border ${adminSelectedChatPhone === phone ? 'bg-emerald-100 border-emerald-300 font-bold' : 'bg-white border-slate-200 hover:bg-slate-100'}"><div class="text-slate-900 font-semibold">${lastMsg ? lastMsg.userName : phone}</div><div class="text-[10px] text-slate-500 font-mono">${phone}</div></div>`;
-      }).join('');
-      const msgBox = document.getElementById('adminChatMessagesBox');
-      if (!adminSelectedChatPhone) { msgBox.innerHTML = `<p class="text-slate-400 italic text-center py-8">Select user to reply.</p>`; return; }
-      msgBox.innerHTML = chatMessages.filter(m => m.userPhone === adminSelectedChatPhone).map(m => `<div class="flex flex-col ${m.sender === 'ADMIN' ? 'items-end' : 'items-start'}"><div class="${m.sender === 'ADMIN' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-800 border border-slate-200'} px-3 py-1.5 rounded-xl max-w-[80%]">${m.text}</div><span class="text-[9px] text-slate-400 mt-0.5">${m.sender === 'ADMIN' ? 'Support' : m.userName} (${m.time})</span></div>`).join('');
-      msgBox.scrollTop = msgBox.scrollHeight;
-    }
-
-    function sendAdminChatReply() {
-      const text = document.getElementById('adminReplyInput').value.trim(); if (!text || !adminSelectedChatPhone) return;
-      syncData();
-      chatMessages.push({ id: 'MSG-'+Date.now(), userPhone: adminSelectedChatPhone, userName: 'Support', sender: 'ADMIN', text, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) });
-      setStore('fx_chats', chatMessages); document.getElementById('adminReplyInput').value = ''; renderAdminChatConsole(); renderUserChatMessages();
-    }
-
-    // --- AUTHENTICATION ---
-    function toggleAuthMode(mode) {
-      authMode = mode;
-      document.getElementById('authTitle').innerText = mode === 'login' ? 'Sign In Securely' : 'Create New Account';
-      document.getElementById('authNameGroup').className = mode === 'register' ? 'block' : 'hidden';
-      document.getElementById('authSubmitBtn').innerText = mode === 'login' ? 'Access Terminal' : 'Create Account';
-      document.getElementById('authToggleText').innerHTML = mode === 'login' ? `Don't have an account? <button type="button" onclick="toggleAuthMode('register')" class="text-emerald-600 font-bold hover:underline">Register</button>` : `Already registered? <button type="button" onclick="toggleAuthMode('login')" class="text-emerald-600 font-bold hover:underline">Sign In</button>`;
-    }
-
-    function handleAuthSubmit(e) {
-      e.preventDefault();
-      syncData();
-      const phone = document.getElementById('authPhoneInput').value.trim();
-      const pass = document.getElementById('authPasswordInput').value.trim();
-      const name = document.getElementById('authNameInput').value.trim();
-      
-      document.getElementById('authErrorBox').classList.add('hidden');
-
-      if (phone === '9529951116' && pass === 'Ritesh555') {
-        currentUser = { name: 'Master Admin', phone, role: 'ADMIN', balance: 9999999 };
-        setStore('fx_current_user', currentUser); switchTab('admin'); showToast('Admin Verified', 'Welcome to Master Console', 'success'); return;
-      }
-
-      if (authMode === 'register') {
-        if (!name) return showToast('Error', 'Name required', 'error');
-        if (users.find(u => u.phone === phone)) return showToast('Error', 'Phone already registered.', 'error');
-        
-        currentUser = { name, phone, password: pass, role: 'USER', balance: 0 };
-        users.push(currentUser); setStore('fx_users', users); setStore('fx_current_user', currentUser);
-        showToast('Registered', 'Account created successfully!', 'success'); switchTab('deposit');
+          document.getElementById('bankDetailsForm').classList.add('hidden'); document.getElementById('bankDetailsCompleted').classList.remove('hidden');
+          document.getElementById('bdSavedUpi').innerText = currentUser.bankDetails.upi;
+          if(document.getElementById('withdrawUpiInput').value === '') document.getElementById('withdrawUpiInput').value = currentUser.bankDetails.upi;
       } else {
-        const u = users.find(x => x.phone === phone && x.password === pass);
-        if (u) {
-          currentUser = u; setStore('fx_users', users); setStore('fx_current_user', currentUser);
-          showToast('Welcome Back', 'Logged in securely.', 'success'); switchTab('trade');
-        } else {
-          showToast('Login Failed', 'Invalid credentials.', 'error');
+          document.getElementById('bankDetailsForm').classList.remove('hidden'); document.getElementById('bankDetailsCompleted').classList.add('hidden');
+      }
+
+      // KYC Sync
+      const kycCont = document.getElementById('kycContainer');
+      if(currentUser.kycStatus === 'VERIFIED') {
+          kycCont.innerHTML = `<div class="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl flex items-center space-x-3"><div class="p-2 bg-emerald-100 text-emerald-600 rounded-full"><i data-lucide="shield-check" class="w-6 h-6"></i></div><div><span class="font-black text-emerald-800 block text-sm">Verified Secure Account</span><span class="text-[10px] text-emerald-600 font-bold uppercase tracking-wide">Aadhar Verified</span></div></div>`;
+      } else if (currentUser.kycStatus === 'PENDING') {
+          kycCont.innerHTML = `<div class="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex items-center space-x-3"><div class="p-2 bg-amber-100 text-amber-600 rounded-full"><i data-lucide="clock" class="w-6 h-6"></i></div><div><span class="font-black text-amber-800 block text-sm">Verification Pending</span><span class="text-[10px] text-amber-600 font-bold uppercase tracking-wide">Under Review</span></div></div>`;
+      } else {
+          kycCont.innerHTML = `<p class="text-xs text-slate-500 font-bold mb-3">Upload your Aadhar card (Front & Back) to remove withdrawal limits.</p><button onclick="document.getElementById('aadharFileInput').click()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 rounded-xl shadow-sm transition flex items-center justify-center space-x-2"><i data-lucide="upload-cloud" class="w-4 h-4"></i><span>Upload Aadhar Details</span></button>`;
+      }
+
+      // Full Transactions Feature (Navi Feature)
+      const myTrades = fb_trades.filter(t => t.userPhone === currentUser.phone);
+      
+      let allTxns = [];
+      fb_deposits.filter(d => d.userPhone === currentUser.phone).forEach(d => { allTxns.push({ type: 'DEPOSIT', amount: d.amount, status: d.status, time: d.timestamp, desc: d.utr ? 'UTR: '+d.utr : 'Proof Uploaded' }); });
+      fb_withdrawals.filter(w => w.userPhone === currentUser.phone).forEach(w => { allTxns.push({ type: 'WITHDRAW', amount: w.amount, status: w.status, time: w.timestamp, desc: 'To: '+w.targetUpi }); });
+      myTrades.forEach(t => { allTxns.push({ type: 'TRADE ('+t.type+')', amount: t.amount, status: t.status, time: t.startTime, desc: t.assetName + (t.status==='WON'?` (+₹${t.payoutAmount})`:'') }); });
+      
+      allTxns.sort((a,b) => b.time - a.time); // Sort new to old
+
+      document.getElementById('accTransactionsList').innerHTML = allTxns.map(tx => {
+          let color = 'text-slate-500'; let bg = 'bg-slate-50';
+          if(tx.status === 'APPROVED' || tx.status === 'WON') { color = 'text-emerald-600'; bg = 'bg-emerald-50'; }
+          if(tx.status === 'REJECTED' || tx.status === 'LOST') { color = 'text-rose-600'; bg = 'bg-rose-50'; }
+          if(tx.status === 'PENDING' || tx.status === 'ACTIVE') { color = 'text-amber-500'; bg = 'bg-amber-50'; }
+          
+          return `<div class="bg-white border border-slate-200 p-3 rounded-xl flex justify-between items-center shadow-sm">
+             <div><div class="font-black text-xs text-slate-800">${tx.type}</div><div class="text-[10px] text-slate-400 font-mono mt-0.5">${new Date(tx.time).toLocaleString()}</div><div class="text-[10px] font-bold text-slate-500 mt-1">${tx.desc}</div></div>
+             <div class="text-right"><div class="font-black font-mono text-sm ${color}">₹${tx.amount}</div><div class="text-[9px] font-bold mt-1 px-2 py-0.5 rounded-full inline-block ${bg} ${color}">${tx.status}</div></div>
+          </div>`;
+      }).join('') || '<p class="text-xs text-slate-400 font-bold p-2">No transactions yet.</p>';
+
+      // Stats Update
+      document.getElementById('statTotalTrades').innerText = myTrades.length;
+      const wonTrades = myTrades.filter(t => t.status === 'WON').length;
+      document.getElementById('statWinRate').innerText = myTrades.length > 0 ? Math.round((wonTrades/myTrades.length)*100) + '%' : '0%';
+
+      // Active trades widget on Desk
+      document.getElementById('activeTradesList').innerHTML = myTrades.filter(t => t.status === 'ACTIVE').map(t => {
+        const rem = Math.max(0, Math.ceil((t.expiryTime - Date.now()) / 1000));
+        return `<div class="bg-slate-50 border border-slate-200 p-3 rounded-xl flex items-center justify-between shadow-sm"><div class="flex items-center space-x-2"><span class="px-2 py-0.5 rounded-md text-[10px] font-black ${t.type === 'CALL' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${t.type}</span><span class="font-black text-slate-800 text-sm">${t.assetName}</span><span class="text-slate-400 font-mono text-xs font-bold">₹${t.amount}</span></div><div class="bg-white px-2 py-1 rounded-lg text-amber-600 font-mono font-black border border-slate-200 shadow-inner w-12 text-center">${rem}s</div></div>`;
+      }).join('') || `<p class="text-xs text-slate-400 font-bold py-2">No active market positions.</p>`;
+
+      // Admin Logic
+      if(currentUser.role === 'ADMIN') {
+        document.getElementById('adminTotalUsersCount').innerText = fb_users.length;
+        const pd = fb_deposits.filter(d => d.status === 'PENDING'); const pw = fb_withdrawals.filter(w => w.status === 'PENDING');
+        document.getElementById('adminPendingDepositsCount').innerText = pd.length;
+        document.getElementById('adminPendingWithdrawalsCount').innerText = pw.length;
+        
+        let totDep = fb_deposits.filter(d=>d.status==='APPROVED').reduce((s,d)=>s+d.amount,0);
+        let totWd = fb_withdrawals.filter(w=>w.status==='APPROVED').reduce((s,w)=>s+w.amount,0);
+        document.getElementById('adminTotalProfit').innerText = `₹${(totDep-totWd).toLocaleString()}`;
+        
+        document.getElementById('adminUpiSettingInput').value = fb_settings.upiId || '';
+        document.querySelectorAll('.rig-btn').forEach(b => b.className = 'rig-btn flex-1 py-2 rounded-lg text-xs font-bold border border-rose-200 bg-white text-slate-600 transition');
+        const activeRigBtn = document.getElementById(`rig-${fb_settings.globalRig || 'AUTO'}`);
+        if(activeRigBtn) activeRigBtn.className = 'rig-btn flex-1 py-2 rounded-lg text-xs font-bold bg-rose-600 text-white shadow-sm transition';
+
+        const kycReqs = fb_users.filter(u => u.kycStatus === 'PENDING').map(u => ({_t:'kyc', id: u.phone, userName: u.name, userPhone: u.phone, timestamp: Date.now(), img: u.aadharImg }));
+        const pendingList = [...pd.map(d=>({...d, _t:'deposits'})), ...pw.map(w=>({...w, _t:'withdrawals'})), ...kycReqs].sort((a,b)=>a.timestamp-b.timestamp);
+        
+        document.getElementById('adminPendingList').innerHTML = pendingList.map(req => {
+           let isDep = req._t === 'deposits'; let isWd = req._t === 'withdrawals'; let isKyc = req._t === 'kyc';
+           let proofBtn = (isDep && req.proofImg) ? `<button onclick="openAdminImage('${req.proofImg}', 'Deposit Proof')" class="text-[10px] bg-slate-200 hover:bg-slate-300 px-2 py-1 rounded font-bold ml-2">View Proof</button>` : '';
+           let kycBtn = isKyc ? `<button onclick="openAdminImage('${req.img}', 'Aadhar Card')" class="text-[10px] bg-indigo-100 text-indigo-700 hover:bg-indigo-200 px-2 py-1 rounded font-bold ml-2 mt-1">View Aadhar</button>` : '';
+
+           return `<div class="bg-slate-50 border border-slate-200 p-3 rounded-2xl flex justify-between items-center text-xs shadow-sm"><div><span class="px-1.5 py-0.5 rounded text-[9px] font-black text-white ${isDep?'bg-emerald-500':isWd?'bg-blue-500':'bg-indigo-500'} mb-1 inline-block">${isDep?'DEPOSIT':isWd?'PAYOUT':'KYC AADHAR'}</span><br><b class="text-sm">${req.userName}</b><br><span class="font-mono text-slate-500">${req.userPhone}</span><br>${!isKyc?`<span class="font-black text-lg ${isDep?'text-emerald-600':'text-blue-600'}">₹${req.amount}</span><br><span class="text-[10px] text-slate-500 mt-1 font-bold block">${isDep?'UTR: '+(req.utr||'N/A'):'UPI: '+req.targetUpi}</span>`:''}${proofBtn}${kycBtn}</div><div class="flex flex-col space-y-2"><button onclick="${isKyc?`actionKYC('${req.id}', 'VERIFIED')`:`approveAction('${req._t}', '${req.id}', '${req.userPhone}', ${req.amount})`}" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold shadow-sm transition">APROVE</button><button onclick="${isKyc?`actionKYC('${req.id}', 'REJECTED')`:`rejectAction('${req._t}', '${req.id}', '${req.userPhone}', ${req.amount})`}" class="px-4 py-2 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-xl font-bold transition">REJECT</button></div></div>`;
+        }).join('') || '<p class="text-xs text-slate-400 font-bold p-2">No pending requests.</p>';
+
+        renderAdminUsers();
+
+        const chatPhoneSet = [...new Set(fb_chats.map(m => m.userPhone))];
+        document.getElementById('adminChatUserList').innerHTML = chatPhoneSet.map(phone => {
+          const lastMsg = fb_chats.filter(m => m.userPhone === phone).slice(-1)[0];
+          return `<div onclick="adminSelectedChatPhone='${phone}'; renderUI();" class="p-3 rounded-xl cursor-pointer transition border shadow-sm ${adminSelectedChatPhone === phone ? 'bg-emerald-100 border-emerald-300' : 'bg-white border-slate-200 hover:bg-slate-50'}"><div class="text-slate-900 font-bold text-sm">${lastMsg ? lastMsg.userName : phone}</div><div class="text-[10px] text-slate-500 font-mono">${phone}</div></div>`;
+        }).join('') || `<p class="text-slate-400 font-bold text-center py-4 text-xs">Empty.</p>`;
+        
+        const msgBox = document.getElementById('adminChatMessagesBox');
+        if (!adminSelectedChatPhone) { msgBox.innerHTML = `<p class="text-slate-400 font-bold text-center py-8 text-xs">Select user to reply.</p>`; }
+        else {
+           msgBox.innerHTML = fb_chats.filter(m => m.userPhone === adminSelectedChatPhone).map(m => {
+              const time = new Date(m.timestamp).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+              return `<div class="flex flex-col ${m.sender === 'ADMIN' ? 'items-end' : 'items-start'}"><div class="${m.sender === 'ADMIN' ? 'bg-emerald-600 text-white rounded-br-sm' : 'bg-white border border-slate-200 text-slate-800 rounded-bl-sm'} px-3 py-2 rounded-2xl max-w-[80%] shadow-sm">${m.text}</div><span class="text-[9px] text-slate-400 mt-1 font-mono">${m.sender === 'ADMIN' ? 'Me' : m.userName} (${time})</span></div>`;
+           }).join('');
+           msgBox.scrollTop = msgBox.scrollHeight;
         }
       }
-      renderUI();
-    }
 
-    function handleLogout() { currentUser = null; localStorage.removeItem('fx_current_user'); showToast('Logged Out', 'Signed out safely.', 'success'); switchTab('auth'); }
-
-    // --- ADMIN PANEL ACTIONS ---
-    function setAdminRigMode(mode) {
-      adminRigMode = mode; 
-      document.querySelectorAll('.rig-btn').forEach(b => b.className = 'rig-btn px-2.5 py-1 rounded text-xs font-bold text-slate-400 hover:bg-slate-700');
-      document.getElementById(`rig-${mode}`).className = 'rig-btn px-2.5 py-1 rounded text-xs font-bold bg-emerald-600 text-white';
-    }
-    
-    function approveDeposit(id) { syncData(); const d = deposits.find(x => x.id === id); if(d) { d.status = 'APPROVED'; const u = users.find(x => x.phone === d.userPhone); if(u) u.balance += d.amount; if(currentUser?.phone === d.userPhone) currentUser.balance = u.balance; setStore('fx_users', users); setStore('fx_current_user', currentUser); setStore('fx_deposits', deposits); renderUI(); } }
-    function rejectDeposit(id) { syncData(); const d = deposits.find(x => x.id === id); if(d) { d.status = 'REJECTED'; setStore('fx_deposits', deposits); renderUI(); } }
-    function approveWithdrawal(id) { syncData(); const w = withdrawals.find(x => x.id === id); if(w) { w.status = 'APPROVED'; setStore('fx_withdrawals', withdrawals); renderUI(); } }
-    function rejectWithdrawal(id) { syncData(); const w = withdrawals.find(x => x.id === id); if(w && w.status === 'PENDING') { w.status = 'REJECTED'; const u = users.find(x => x.phone === w.userPhone); if(u) u.balance += w.amount; setStore('fx_users', users); setStore('fx_withdrawals', withdrawals); renderUI(); } }
-    function saveUserBalance(phone) { 
-      syncData(); 
-      const amt = parseFloat(document.getElementById(`editBal_${phone}`).value); 
-      if(isNaN(amt)) return; 
-      const u = users.find(x => x.phone === phone); 
-      if(u) { 
-        u.balance = Math.max(0, amt); 
-        if(currentUser?.phone === phone) currentUser.balance = u.balance; 
-      } 
-      editingUserPhone = null; 
-      setStore('fx_users', users); 
-      setStore('fx_current_user', currentUser); 
-      renderUI(); 
-    }
-
-    function renderUI() {
-      syncData();
-      if (!currentUser) return;
-      const hl = document.getElementById('headerLeftUserBadge'), hc = document.getElementById('headerAuthContainer');
-      hl.innerHTML = `<div class="bg-slate-100 border border-slate-200/80 px-2.5 py-1 rounded-xl"><span class="text-[9px] text-slate-400 block font-bold leading-none">Wallet</span><span class="text-xs font-extrabold text-emerald-700 font-mono">₹${currentUser.balance.toLocaleString('en-IN')}</span></div>`;
-      hc.innerHTML = `<button type="button" onclick="handleLogout()" class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-rose-600 rounded-xl transition shadow-xs"><i data-lucide="log-out" class="w-4 h-4"></i></button>`;
-      document.getElementById('nav-admin').classList.toggle('hidden', currentUser.role !== 'ADMIN');
-      document.getElementById('withdrawAvailBalance').innerText = `₹${currentUser.balance.toLocaleString('en-IN')}`;
-
-      // CRITICAL FIX: The missing renderTradeLogs function is now successfully called here, avoiding JavaScript crash.
-      renderTradeLogs(); 
-      renderAccountTab();
-      
-      if(currentUser.role === 'ADMIN') {
-        document.getElementById('adminTotalUsersCount').innerText = users.length;
-        document.getElementById('adminPendingDepositsCount').innerText = deposits.filter(d => d.status === 'PENDING').length;
-        document.getElementById('adminPendingWithdrawalsCount').innerText = withdrawals.filter(w => w.status === 'PENDING').length;
-        
-        document.getElementById('adminPendingDepositsList').innerHTML = deposits.filter(d => d.status === 'PENDING').map(d => `<div class="bg-slate-50 border border-slate-200 p-3 rounded-xl flex justify-between items-center text-xs"><div><b>${d.userName}</b> (${d.userPhone})<br><span class="text-emerald-600 font-bold">₹${d.amount}</span><br>UTR: ${d.utr}</div><div><button onclick="approveDeposit('${d.id}')" class="px-2 py-1 bg-emerald-600 text-white rounded font-bold mr-1">OK</button><button onclick="rejectDeposit('${d.id}')" class="px-2 py-1 bg-rose-100 text-rose-600 rounded font-bold">X</button></div></div>`).join('') || '<p class="text-xs text-slate-400">None</p>';
-        document.getElementById('adminPendingWithdrawalsList').innerHTML = withdrawals.filter(w => w.status === 'PENDING').map(w => `<div class="bg-slate-50 border border-slate-200 p-3 rounded-xl flex justify-between items-center text-xs"><div><b>${w.userName}</b> (${w.userPhone})<br><span class="text-blue-600 font-bold">₹${w.amount}</span><br>To: ${w.targetUpi}</div><div><button onclick="approveWithdrawal('${w.id}')" class="px-2 py-1 bg-blue-600 text-white rounded font-bold mr-1">OK</button><button onclick="rejectWithdrawal('${w.id}')" class="px-2 py-1 bg-rose-100 text-rose-600 rounded font-bold">X</button></div></div>`).join('') || '<p class="text-xs text-slate-400">None</p>';
-        
-        renderAdminUsers(); 
-        renderAdminChatConsole();
-      }
-      calculateOrderReturns(); lucide.createIcons();
-    }
-    
-    function renderAdminUsers() {
-      const search = document.getElementById('adminUserSearchInput')?.value.toLowerCase() || '';
-      document.getElementById('adminUserTableBody').innerHTML = users.filter(u => u.name?.toLowerCase().includes(search) || u.phone?.includes(search)).map(u => `<tr class="hover:bg-slate-50"><td class="py-3 text-slate-900 font-bold">${u.name}</td><td class="py-3 font-mono">${u.phone}</td><td class="py-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${u.role === 'ADMIN' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100'}">${u.role}</span></td><td class="py-3 font-bold text-emerald-600">₹${u.balance?.toLocaleString('en-IN')}</td><td class="py-3">${editingUserPhone === u.phone ? `<input type="number" id="editBal_${u.phone}" value="${u.balance}" class="w-16 border rounded text-xs px-1 py-0.5 mr-1"><button onclick="saveUserBalance('${u.phone}')" class="bg-emerald-600 text-white px-2 py-0.5 rounded text-[10px]">Save</button>` : `<button onclick="editingUserPhone='${u.phone}'; renderUI();" class="bg-slate-200 px-2 py-1 rounded text-[10px] font-bold">Edit</button>`}</td></tr>`).join('') || `<tr><td colspan="5" class="py-4 text-center text-slate-400">No users found.</td></tr>`;
+      lucide.createIcons();
     }
   </script>
 </body>
 </html>
+
 
