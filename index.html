@@ -616,145 +616,49 @@
     <button type="button" onclick="switchTab('account')" id="m-nav-account" class="mobile-nav-item flex flex-col items-center text-slate-500"><i data-lucide="user" class="w-5 h-5"></i><span class="text-[10px] font-extrabold mt-0.5">Account</span></button>
   </nav>
 
-  <!-- FIREBASE CLOUD DATABASE ENGINE -->
+  <!-- FIREBASE CLOUD DATABASE ENGINE (HYBRID) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // Initialize Firebase using environment config
-    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'forexaaa-default-app';
+    // ==========================================
+    // 1. GLOBAL STATE DEFINITIONS
+    // ==========================================
+    window.users = [];
+    window.currentUser = null;
+    window.deposits = [];
+    window.withdrawals = [];
+    window.trades = [];
+    window.chatMessages = [];
+    window.botEnabled = true;
+    window.adminRigMode = 'AUTO'; 
 
-    // Firebase Data Paths for cross-device state (using public to allow admin view)
-    const publicPath = (colName) => collection(db, 'artifacts', appId, 'public', 'data', colName);
-    const publicDoc = (colName, docId) => doc(db, 'artifacts', appId, 'public', 'data', colName, docId.toString());
+    window.activeTab = 'trade';
+    window.authMode = 'login';
+    window.selectedDuration = 30;
+    window.selectedDepositAmount = 500;
+    window.editingUserPhone = null;
+    window.adminSelectedChatPhone = null;
 
-    // STATE ARRAYS (Real-time synced from cloud)
-    let users = [];
-    let currentUser = null; // Local copy of authenticated user state
-    let deposits = [];
-    let withdrawals = [];
-    let trades = [];
-    let chatMessages = [];
-    let botEnabled = true;
-    let adminRigMode = 'AUTO'; 
-
-    let activeTab = 'trade';
-    let authMode = 'login';
-    let selectedDuration = 30;
-    let selectedDepositAmount = 500;
-    let editingUserPhone = null;
-    let adminSelectedChatPhone = null;
-
-    const assetsCatalog = [
+    window.assetsCatalog = [
       { id: 'btcinr', name: 'BTC/INR', price: 5980000, payout: 92, volatility: 380.0 },
       { id: 'ethusd', name: 'ETH/USD', price: 3450.00, payout: 89, volatility: 2.50 },
       { id: 'xauusd', name: 'XAU/USD', price: 2410.50, payout: 86, volatility: 1.20 },
       { id: 'usdinr', name: 'USD/INR', price: 83.72, payout: 82, volatility: 0.04 }
     ];
-    let selectedAsset = assetsCatalog[0];
-    let chartType = 'candlestick';
-    let priceHistory = [], candles = [], currentPrice = selectedAsset.price;
+    window.selectedAsset = window.assetsCatalog[0];
+    window.chartType = 'candlestick';
+    window.priceHistory = [];
+    window.candles = [];
+    window.currentPrice = window.selectedAsset.price;
 
-    // Initialization Logic
-    window.addEventListener('DOMContentLoaded', () => {
-      lucide.createIcons();
-      initChartData();
-      renderAssetPills();
-      startPriceLoop();
-      startTradeEngineLoop();
-      window.addEventListener('resize', resizeCanvas);
-      switchTab('auth');
-      
-      const localPhone = localStorage.getItem('fx_session_phone');
-      if (localPhone && localPhone === '9529951116') {
-         currentUser = { name: 'Master Admin', phone: '9529951116', role: 'ADMIN', balance: 9999999 };
-         switchTab('admin');
-      }
-
-      initAuth();
-    });
-
-    // 1. Firebase Auth Pipeline
-    const initAuth = async () => {
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
-      } catch (err) {
-        console.error("Auth Failed", err);
-      }
-    };
-
-    onAuthStateChanged(auth, (user) => {
-      if (user) setupRealtimeListeners();
-    });
-
-    // 2. Real-time Cloud Listeners (Replaces localStorage)
-    function setupRealtimeListeners() {
-      // Users Listener
-      onSnapshot(publicPath('users'), (snap) => {
-        users = snap.docs.map(d => d.data());
-        if (currentUser && currentUser.phone !== '9529951116') {
-          const freshMe = users.find(u => u.phone === currentUser.phone);
-          if (freshMe) currentUser = freshMe;
-        }
-        renderUI();
-      }, (e) => console.error("Users sync error"));
-
-      // Trades Listener
-      onSnapshot(publicPath('trades'), (snap) => {
-        trades = snap.docs.map(d => d.data()).sort((a, b) => b.startTime - a.startTime);
-        renderUI();
-      });
-
-      // Deposits Listener
-      onSnapshot(publicPath('deposits'), (snap) => {
-        deposits = snap.docs.map(d => d.data()).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
-        renderUI();
-      });
-
-      // Withdrawals Listener
-      onSnapshot(publicPath('withdrawals'), (snap) => {
-        withdrawals = snap.docs.map(d => d.data()).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
-        renderUI();
-      });
-
-      // Chats Listener
-      onSnapshot(publicPath('chats'), (snap) => {
-        chatMessages = snap.docs.map(d => d.data()).sort((a,b) => a.timestamp - b.timestamp);
-        renderUserChatMessages();
-        renderAdminChatConsole();
-      });
-
-      // Global Settings Listener (Bot & Graph Rigging)
-      onSnapshot(publicPath('settings'), (snap) => {
-        const globalDoc = snap.docs.find(d => d.id === 'global');
-        if (globalDoc) {
-           const data = globalDoc.data();
-           botEnabled = data.botEnabled ?? true;
-           adminRigMode = data.adminRigMode ?? 'AUTO';
-           document.getElementById('adminBotToggle').checked = botEnabled;
-           
-           if(currentUser?.role === 'ADMIN') {
-              document.querySelectorAll('.rig-btn').forEach(b => b.className = 'rig-btn px-2.5 py-1 rounded text-xs font-bold text-slate-400 hover:bg-slate-700');
-              const activeRigBtn = document.getElementById(`rig-${adminRigMode}`);
-              if(activeRigBtn) activeRigBtn.className = 'rig-btn px-2.5 py-1 rounded text-xs font-bold bg-emerald-600 text-white';
-           }
-           applyBotVisibility();
-        }
-      });
-    }
-
-    // --- UI/UX Helpers ---
-    function showToast(title, msg, type) {
+    // ==========================================
+    // 2. EXPORT ALL UI FUNCTIONS TO WINDOW (PREVENTS FREEZING)
+    // ==========================================
+    window.showToast = function(title, msg, type) {
       const container = document.getElementById('toastContainer');
+      if(!container) return;
       const toast = document.createElement('div');
       const isSuccess = type === 'success';
       toast.className = `p-3.5 rounded-xl shadow-xl border transform transition-all duration-300 toast-enter flex items-start gap-3 w-80 bg-white ${isSuccess ? 'border-emerald-300' : 'border-rose-300'}`;
@@ -762,11 +666,11 @@
       container.appendChild(toast);
       lucide.createIcons();
       setTimeout(() => { toast.classList.replace('toast-enter', 'toast-exit'); setTimeout(() => toast.remove(), 300); }, 4500);
-    }
+    };
 
     window.switchTab = function(tabId) {
-      if (!currentUser && tabId !== 'auth') tabId = 'auth';
-      activeTab = tabId;
+      if (!window.currentUser && tabId !== 'auth') tabId = 'auth';
+      window.activeTab = tabId;
 
       document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
       const activeEl = document.getElementById(`tab-${tabId}`);
@@ -806,239 +710,116 @@
         mBtn.classList.add(tabId === 'account' ? 'text-indigo-600' : 'text-emerald-600');
       }
 
-      if (tabId === 'trade') setTimeout(resizeCanvas, 100);
+      if (tabId === 'trade') setTimeout(window.resizeCanvas, 100);
       if (tabId === 'deposit') { document.getElementById('depositStep1').classList.remove('hidden'); document.getElementById('depositStep2').classList.add('hidden'); }
       
-      renderUI();
+      window.renderUI();
     };
 
-    // --- CHART ENGINE ---
-    function initChartData() {
-      let base = selectedAsset.price; priceHistory = []; candles = [];
-      for (let i = 0; i < 40; i++) {
-        const open = base; const delta = (Math.random() - 0.495) * selectedAsset.volatility * 8; const close = parseFloat((open + delta).toFixed(2));
-        const high = Math.max(open, close) + Math.abs(Math.random() * selectedAsset.volatility * 2.5); const low = Math.min(open, close) - Math.abs(Math.random() * selectedAsset.volatility * 2.5);
-        candles.push({ open, high, low, close }); priceHistory.push(close); base = close;
+    window.toggleAuthMode = function(mode) {
+      window.authMode = mode;
+      document.getElementById('authTitle').innerText = mode === 'login' ? 'Sign In Securely' : 'Create New Account';
+      document.getElementById('authNameGroup').className = mode === 'register' ? 'block' : 'hidden';
+      document.getElementById('authSubmitBtn').innerText = mode === 'login' ? 'Access Terminal' : 'Create Account';
+      document.getElementById('authToggleText').innerHTML = mode === 'login' ? `Don't have an account? <button type="button" onclick="toggleAuthMode('register')" class="text-emerald-600 font-bold hover:underline">Register Now</button>` : `Already registered? <button type="button" onclick="toggleAuthMode('login')" class="text-emerald-600 font-bold hover:underline">Sign In</button>`;
+    };
+
+    window.handleAuthSubmit = function(e) {
+      e.preventDefault();
+      const phone = document.getElementById('authPhoneInput').value.trim();
+      const pass = document.getElementById('authPasswordInput').value.trim();
+      const name = document.getElementById('authNameInput').value.trim();
+      
+      document.getElementById('authErrorBox').classList.add('hidden');
+
+      // Master Admin Direct Access
+      if (phone === '9529951116' && pass === 'Ritesh555') {
+        window.currentUser = { name: 'Master Admin', phone, role: 'ADMIN', balance: 9999999 };
+        localStorage.setItem('fx_session_phone', phone);
+        window.switchTab('admin'); 
+        window.showToast('Admin Verified', 'Welcome to Master Console', 'success'); 
+        return;
       }
-      currentPrice = base;
-    }
 
-    function startPriceLoop() {
-      setInterval(() => {
-        if (candles.length === 0) return;
-        const lastCandle = { ...candles[candles.length - 1] };
-        let tickChange = (Math.random() - 0.49) * selectedAsset.volatility * 3.5;
+      // Check Local Cache to prevent block if cloud is delayed
+      window.loadLocalData();
+
+      if (window.authMode === 'register') {
+        if (!name) return window.showToast('Error', 'Name required', 'error');
+        if (window.users.find(u => u.phone === phone)) return window.showToast('Error', 'Phone already registered.', 'error');
         
-        // ADMIN RIGGING LOGIC (using globally synced state)
-        if (adminRigMode === 'UP') {
-          tickChange = Math.abs((Math.random() * selectedAsset.volatility * 4));
-        } else if (adminRigMode === 'DOWN') {
-          tickChange = -Math.abs((Math.random() * selectedAsset.volatility * 4));
-        } else if (adminRigMode === 'AUTO') {
-          if (currentUser && currentUser.phone !== '9529951116') {
-            const activeTrades = trades.filter(t => t.userPhone === currentUser.phone && t.status === 'ACTIVE');
-            if (activeTrades.length > 0) {
-              const hasCall = activeTrades.some(t => t.type === 'CALL');
-              const hasPut = activeTrades.some(t => t.type === 'PUT');
-              if (hasCall && !hasPut) {
-                tickChange = -Math.abs((Math.random() * selectedAsset.volatility * 5)); 
-              } else if (hasPut && !hasCall) {
-                tickChange = Math.abs((Math.random() * selectedAsset.volatility * 5)); 
-              }
-            }
-          }
+        const newUser = { id: phone, name, phone, password: pass, role: 'USER', balance: 0 };
+        window.saveData('users', phone, newUser);
+        
+        window.currentUser = newUser;
+        localStorage.setItem('fx_session_phone', phone);
+        window.showToast('Registered', 'Account created successfully!', 'success'); 
+        window.switchTab('deposit');
+      } else {
+        const u = window.users.find(x => x.phone === phone && x.password === pass);
+        if (u) {
+          window.currentUser = u; 
+          localStorage.setItem('fx_session_phone', phone);
+          window.showToast('Welcome Back', 'Logged in securely.', 'success'); 
+          window.switchTab('trade');
+        } else {
+          window.showToast('Login Failed', 'Invalid credentials or user not synced yet.', 'error');
         }
+      }
+      window.renderUI();
+    };
 
-        const nextPrice = parseFloat((lastCandle.close + tickChange).toFixed(2));
-        currentPrice = nextPrice;
-        lastCandle.close = nextPrice; lastCandle.high = Math.max(lastCandle.high, nextPrice); lastCandle.low = Math.min(lastCandle.low, nextPrice);
-        candles[candles.length - 1] = lastCandle;
+    window.handleLogout = function() { window.currentUser = null; localStorage.removeItem('fx_session_phone'); window.showToast('Logged Out', 'Signed out safely.', 'success'); window.switchTab('auth'); };
 
-        if (Math.random() > 0.65 && candles.length < 50) { candles.push({ open: nextPrice, high: nextPrice, low: nextPrice, close: nextPrice }); }
-        if (candles.length > 40) candles.shift();
-        priceHistory = candles.map(c => c.close);
-
-        const priceEl = document.getElementById('livePriceDisplay');
-        if (priceEl) priceEl.innerText = `₹${currentPrice.toFixed(2)}`;
-        renderCanvasChart();
-      }, 1000);
-    }
-
+    // --- Trading Logic ---
     window.setChartType = function(type) {
-      chartType = type;
+      window.chartType = type;
       document.getElementById('btnChartCandle').className = type === 'candlestick' ? 'p-1.5 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-xs' : 'p-1.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-900';
       document.getElementById('btnChartLine').className = type === 'line' ? 'p-1.5 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-xs' : 'p-1.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-900';
-      renderCanvasChart();
+      window.renderCanvasChart();
     };
 
-    function resizeCanvas() {
-      const canvas = document.getElementById('tradingCanvas'); if (!canvas) return;
-      const rect = canvas.parentElement.getBoundingClientRect(); const dpr = window.devicePixelRatio || 1;
-      canvas.width = rect.width * dpr; canvas.height = rect.height * dpr; canvas.getContext('2d').scale(dpr, dpr);
-      renderCanvasChart();
-    }
+    window.selectAsset = function(id) {
+      window.selectedAsset = window.assetsCatalog.find(a => a.id === id);
+      document.getElementById('chartFeedLabel').innerText = `${window.selectedAsset.name} REALTIME ENGINE`;
+      document.getElementById('payoutRateLabel').innerText = `+${window.selectedAsset.payout}%`; document.getElementById('orderPayoutRate').innerText = `+${window.selectedAsset.payout}%`;
+      window.initChartData(); window.renderAssetPills(); window.calculateOrderReturns();
+    };
 
-    function renderCanvasChart() {
-      const canvas = document.getElementById('tradingCanvas'); if (!canvas || priceHistory.length === 0) return;
-      const dpr = window.devicePixelRatio || 1; const width = canvas.width / dpr, height = canvas.height / dpr;
-      const ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, width, height);
-
-      const minPrice = Math.min(...priceHistory) * 0.9992, maxPrice = Math.max(...priceHistory) * 1.0008;
-      const priceRange = maxPrice - minPrice || 1;
-
-      ctx.strokeStyle = '#f1f5f9'; ctx.lineWidth = 1;
-      for (let y = 0; y < height; y += 35) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke(); }
-      for (let x = 0; x < width; x += 55) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke(); }
-
-      if (chartType === 'candlestick') {
-        const candleWidth = Math.max(5, (width / candles.length) - 4);
-        candles.forEach((candle, i) => {
-          const x = i * (width / candles.length) + candleWidth / 2;
-          const openY = height - ((candle.open - minPrice) / priceRange) * height, closeY = height - ((candle.close - minPrice) / priceRange) * height;
-          const highY = height - ((candle.high - minPrice) / priceRange) * height, lowY = height - ((candle.low - minPrice) / priceRange) * height;
-          const color = candle.close >= candle.open ? '#059669' : '#e11d48';
-
-          ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x + candleWidth / 2, highY); ctx.lineTo(x + candleWidth / 2, lowY); ctx.stroke();
-          ctx.fillStyle = color; ctx.fillRect(x, Math.min(openY, closeY), candleWidth, Math.max(Math.abs(closeY - openY), 2.5));
-        });
-      } else {
-        ctx.beginPath(); priceHistory.forEach((price, i) => {
-          const x = (i / (priceHistory.length - 1)) * width, y = height - ((price - minPrice) / priceRange) * height;
-          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-        });
-        const isUp = priceHistory[priceHistory.length - 1] >= priceHistory[0]; ctx.strokeStyle = isUp ? '#059669' : '#e11d48'; ctx.lineWidth = 2.5; ctx.stroke();
-        const gradient = ctx.createLinearGradient(0, 0, 0, height); gradient.addColorStop(0, isUp ? 'rgba(5, 150, 105, 0.15)' : 'rgba(225, 29, 72, 0.15)'); gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-        ctx.lineTo(width, height); ctx.lineTo(0, height); ctx.closePath(); ctx.fillStyle = gradient; ctx.fill();
-      }
-
-      trades.filter(t => t.userPhone === currentUser?.phone && t.status === 'ACTIVE').forEach(trade => {
-        const strikeY = height - ((trade.strikePrice - minPrice) / priceRange) * height;
-        ctx.strokeStyle = trade.type === 'CALL' ? '#059669' : '#e11d48'; ctx.lineWidth = 1.5; ctx.setLineDash([5, 3]);
-        ctx.beginPath(); ctx.moveTo(0, strikeY); ctx.lineTo(width, strikeY); ctx.stroke(); ctx.setLineDash([]);
-      });
-
-      const lastY = height - ((currentPrice - minPrice) / priceRange) * height;
-      ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(0, lastY); ctx.lineTo(width, lastY); ctx.stroke(); ctx.setLineDash([]);
-      ctx.beginPath(); ctx.arc(width - 4, lastY, 4.5, 0, Math.PI * 2); ctx.fillStyle = '#2563eb'; ctx.fill();
-    }
-
-    function startTradeEngineLoop() {
-      setInterval(() => {
-        if (!currentUser || currentUser.phone === '9529951116') return; // Only process trades for logged in active user
-        
-        const now = Date.now(); 
-        
-        trades.forEach(trade => {
-          // Verify that this specific client owns the trade so we don't have multiple DB writes for one trade
-          if (trade.status === 'ACTIVE' && now >= trade.expiryTime && trade.userPhone === currentUser.phone) {
-            
-            let isWin = false;
-            if (trade.type === 'CALL') {
-               isWin = currentPrice > trade.strikePrice;
-            } else {
-               isWin = currentPrice < trade.strikePrice;
-            }
-            
-            trade.closePrice = currentPrice;
-            trade.status = isWin ? 'WON' : 'LOST'; 
-            trade.payoutAmount = isWin ? Math.round(trade.amount * (1 + trade.payout / 100)) : 0;
-            
-            // Push trade outcome to DB
-            setDoc(publicDoc('trades', trade.id), trade, { merge: true });
-
-            if (isWin) {
-              const newBalance = currentUser.balance + trade.payoutAmount;
-              setDoc(publicDoc('users', currentUser.phone), { balance: newBalance }, { merge: true });
-              showToast('Trade Won! 🎉', `Profit of ₹${trade.payoutAmount} added to wallet.`, 'success'); 
-            } else {
-              showToast('Trade Lost', `You lost ₹${trade.amount} in ${trade.assetName}.`, 'error');
-            }
-          }
-        });
-        
-        renderActiveTradesList();
-      }, 1000);
-    }
+    window.setStakePreset = function(val) { document.getElementById('tradeStakeInput').value = val; window.calculateOrderReturns(); };
+    window.setDurationPreset = function(sec) {
+      window.selectedDuration = sec; document.querySelectorAll('.dur-btn').forEach(b => b.className = 'dur-btn py-2 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 text-slate-700');
+      document.getElementById(`dur-${sec}`).className = 'dur-btn py-2 text-xs font-bold rounded-xl border border-emerald-600 bg-emerald-50 text-emerald-800';
+    };
 
     window.placeTrade = function(type) {
-      if (!currentUser || currentUser.phone === '9529951116') return showToast('Error', 'Admins cannot trade.', 'error');
+      if (!window.currentUser || window.currentUser.phone === '9529951116') return window.showToast('Error', 'Admins cannot trade.', 'error');
       
       const stake = parseFloat(document.getElementById('tradeStakeInput').value) || 0;
-      if (stake < 10) return showToast('Error', 'Min stake is ₹10.', 'error');
-      if (currentUser.balance < stake) { showToast('Insufficient Balance', 'Please deposit funds to trade.', 'error'); return window.switchTab('deposit'); }
+      if (stake < 10) return window.showToast('Error', 'Min stake is ₹10.', 'error');
+      if (window.currentUser.balance < stake) { window.showToast('Insufficient Balance', 'Please deposit funds to trade.', 'error'); return window.switchTab('deposit'); }
 
       // Deduct balance securely
-      const newBal = currentUser.balance - stake;
-      setDoc(publicDoc('users', currentUser.phone), { balance: newBal }, { merge: true });
+      const newBal = window.currentUser.balance - stake;
+      window.saveData('users', window.currentUser.phone, { id: window.currentUser.phone, phone: window.currentUser.phone, balance: newBal });
+      window.currentUser.balance = newBal; // immediate local update
 
       const tradeId = 'TRD-' + Math.floor(100000 + Math.random() * 900000);
       const newTrade = { 
-         id: tradeId, 
-         userPhone: currentUser.phone, 
-         assetName: selectedAsset.name, 
-         amount: stake, 
-         type: type, 
-         strikePrice: currentPrice, 
-         closePrice: null, 
-         duration: selectedDuration, 
-         payout: selectedAsset.payout, 
-         status: 'ACTIVE', 
-         startTime: Date.now(), 
-         expiryTime: Date.now() + (selectedDuration * 1000) 
+         id: tradeId, userPhone: window.currentUser.phone, assetName: window.selectedAsset.name, 
+         amount: stake, type: type, strikePrice: window.currentPrice, closePrice: null, 
+         duration: window.selectedDuration, payout: window.selectedAsset.payout, status: 'ACTIVE', 
+         startTime: Date.now(), expiryTime: Date.now() + (window.selectedDuration * 1000) 
       };
 
-      setDoc(publicDoc('trades', tradeId), newTrade);
-      showToast('Order Executed', `${type} order placed on ${selectedAsset.name} for ₹${stake}.`, 'success'); 
+      window.saveData('trades', tradeId, newTrade);
+      window.showToast('Order Executed', `${type} order placed on ${window.selectedAsset.name} for ₹${stake}.`, 'success'); 
+      window.renderUI();
     };
 
-    function renderAssetPills() {
-      document.getElementById('assetPillsContainer').innerHTML = assetsCatalog.map(asset => `
-        <button type="button" onclick="selectAsset('${asset.id}')" class="px-3 py-1 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 whitespace-nowrap ${selectedAsset.id === asset.id ? 'bg-slate-900 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}">
-          <span>${asset.name}</span><span class="text-[10px] text-emerald-600 font-mono">+${asset.payout}%</span>
-        </button>`).join('');
-    }
-
-    window.selectAsset = function(id) {
-      selectedAsset = assetsCatalog.find(a => a.id === id);
-      document.getElementById('chartFeedLabel').innerText = `${selectedAsset.name} REALTIME ENGINE`;
-      document.getElementById('payoutRateLabel').innerText = `+${selectedAsset.payout}%`; document.getElementById('orderPayoutRate').innerText = `+${selectedAsset.payout}%`;
-      initChartData(); renderAssetPills(); calculateOrderReturns();
-    };
-
-    window.setStakePreset = function(val) { document.getElementById('tradeStakeInput').value = val; calculateOrderReturns(); };
-    window.setDurationPreset = function(sec) {
-      selectedDuration = sec; document.querySelectorAll('.dur-btn').forEach(b => b.className = 'dur-btn py-2 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 text-slate-700');
-      document.getElementById(`dur-${sec}`).className = 'dur-btn py-2 text-xs font-bold rounded-xl border border-emerald-600 bg-emerald-50 text-emerald-800';
-    };
-    
-    document.getElementById('tradeStakeInput')?.addEventListener('input', calculateOrderReturns);
-
-    function calculateOrderReturns() {
-      const stake = parseFloat(document.getElementById('tradeStakeInput').value) || 0; const profit = Math.round(stake * (selectedAsset.payout / 100));
-      document.getElementById('orderNetProfit').innerText = `+₹${profit}`; document.getElementById('orderTotalReturn').innerText = `₹${stake + profit}`;
-    }
-
-    function renderActiveTradesList() {
-      const container = document.getElementById('activeTradesList'); 
-      const active = trades.filter(t => t.userPhone === currentUser?.phone && t.status === 'ACTIVE');
-      if (active.length === 0) {
-        if(container) container.innerHTML = `<p class="text-xs text-slate-400 italic py-2">No active market positions.</p>`;
-        return;
-      }
-      if(container) {
-          container.innerHTML = active.map(t => {
-            const remaining = Math.max(0, Math.ceil((t.expiryTime - Date.now()) / 1000));
-            return `<div class="bg-slate-50 border border-slate-200 p-2.5 rounded-xl flex items-center justify-between text-xs mb-2">
-              <div class="flex items-center space-x-2"><span class="px-2 py-0.5 rounded text-[10px] font-extrabold ${t.type === 'CALL' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">${t.type}</span><span class="font-bold text-slate-800">${t.assetName}</span><span class="text-slate-500 font-mono">@ ₹${t.strikePrice}</span></div>
-              <div class="flex items-center space-x-3"><span class="font-mono text-emerald-700 font-bold">₹${t.amount}</span><span class="bg-white px-2 py-0.5 rounded-lg text-amber-700 font-mono font-extrabold animate-pulse border border-slate-200">${remaining}s</span></div>
-            </div>`;
-          }).join('');
-      }
-    }
-
-    // --- DEPOSIT & WITHDRAWAL ---
+    // --- Deposits & Withdrawals ---
     window.selectDepositPreset = function(amt) {
-      selectedDepositAmount = amt; document.getElementById('customDepositInput').value = '';
+      window.selectedDepositAmount = amt; document.getElementById('customDepositInput').value = '';
       document.querySelectorAll('.dep-preset-btn').forEach(btn => {
         if (parseInt(btn.getAttribute('data-amt')) === amt) { btn.className = 'dep-preset-btn py-2 text-xs font-bold rounded-xl border border-emerald-600 bg-emerald-50 text-emerald-800 transition transform scale-[1.02] shadow-sm'; } 
         else { btn.className = 'dep-preset-btn py-2 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100 transition'; }
@@ -1052,8 +833,8 @@
 
     window.proceedToDepositStep2 = function() {
       const customVal = parseFloat(document.getElementById('customDepositInput').value);
-      const effectiveAmt = customVal && customVal > 0 ? customVal : selectedDepositAmount;
-      if (effectiveAmt < 500) return showToast('Error', 'Minimum deposit limit is ₹500.', 'error');
+      const effectiveAmt = customVal && customVal > 0 ? customVal : window.selectedDepositAmount;
+      if (effectiveAmt < 500) return window.showToast('Error', 'Minimum deposit limit is ₹500.', 'error');
       
       document.getElementById('qrAmountDisplay').innerText = `₹${effectiveAmt}`;
       const uri = `upi://pay?pa=paytmqr6n4gde@ptys&pn=ForexaaaMerchant&am=${effectiveAmt}&cu=INR`;
@@ -1069,92 +850,78 @@
       document.getElementById('utrInput').value = '';
     };
 
-    window.copyUpiId = function() { navigator.clipboard.writeText('paytmqr6n4gde@ptys'); showToast('Copied', 'UPI ID copied to clipboard.', 'success'); };
+    window.copyUpiId = function() { navigator.clipboard.writeText('paytmqr6n4gde@ptys'); window.showToast('Copied', 'UPI ID copied to clipboard.', 'success'); };
 
     window.payViaApp = function(app) {
       const customVal = parseFloat(document.getElementById('customDepositInput').value);
-      const amt = customVal && customVal > 0 ? customVal : selectedDepositAmount;
+      const amt = customVal && customVal > 0 ? customVal : window.selectedDepositAmount;
       const upiId = 'paytmqr6n4gde@ptys';
       let url = `upi://pay?pa=${upiId}&pn=ForexaaaMerchant&am=${amt}&cu=INR`;
-      
       if(app === 'gpay') url = `gpay://upi/pay?pa=${upiId}&pn=ForexaaaMerchant&am=${amt}&cu=INR`;
       if(app === 'phonepe') url = `phonepe://pay?pa=${upiId}&pn=ForexaaaMerchant&am=${amt}&cu=INR`;
       if(app === 'paytm') url = `paytmmp://pay?pa=${upiId}&pn=ForexaaaMerchant&am=${amt}&cu=INR`;
-
       window.location.href = url;
-      showToast('Opening Payment App', 'Please complete the payment and return here to enter UTR.', 'success');
+      window.showToast('Opening Payment App', 'Please complete the payment and return here to enter UTR.', 'success');
     };
 
     window.handleDepositSubmit = function(e) {
-      e.preventDefault(); if (!currentUser) return window.switchTab('auth');
+      e.preventDefault(); if (!window.currentUser) return window.switchTab('auth');
       
       const customVal = parseFloat(document.getElementById('customDepositInput').value);
-      const amt = customVal && customVal > 0 ? customVal : selectedDepositAmount;
+      const amt = customVal && customVal > 0 ? customVal : window.selectedDepositAmount;
       const utr = document.getElementById('utrInput').value.trim();
-      
-      if (utr.length < 8) return showToast('Error', 'Invalid UTR Number.', 'error');
+      if (utr.length < 8) return window.showToast('Error', 'Invalid UTR Number.', 'error');
 
       const id = 'DEP-' + Math.floor(100000 + Math.random() * 900000);
-      const depositObj = { id, userPhone: currentUser.phone, userName: currentUser.name, amount: amt, utr: utr, status: 'PENDING', timestamp: new Date().toISOString() };
+      const depositObj = { id, userPhone: window.currentUser.phone, userName: window.currentUser.name, amount: amt, utr: utr, status: 'PENDING', timestamp: new Date().toISOString() };
       
-      setDoc(publicDoc('deposits', id), depositObj);
-      
+      window.saveData('deposits', id, depositObj);
       document.getElementById('utrInput').value = ''; 
       window.cancelDeposit();
-      showToast('Deposit Placed', 'Request sent to Admin.', 'success'); 
+      window.showToast('Deposit Placed', 'Request sent to Admin.', 'success'); 
       window.openHistoryModal('deposit');
     };
 
     window.handleWithdrawSubmit = function(e) {
-      e.preventDefault(); if (!currentUser) return;
+      e.preventDefault(); if (!window.currentUser) return;
       
       const amt = parseFloat(document.getElementById('withdrawAmountInput').value); const upi = document.getElementById('withdrawUpiInput').value.trim();
-      if (amt < 500) return showToast('Error', 'Minimum withdrawal is ₹500.', 'error');
-      if (amt > currentUser.balance) return showToast('Error', 'Insufficient balance.', 'error');
+      if (amt < 500) return window.showToast('Error', 'Minimum withdrawal is ₹500.', 'error');
+      if (amt > window.currentUser.balance) return window.showToast('Error', 'Insufficient balance.', 'error');
 
-      // Deduct first
-      const newBal = currentUser.balance - amt;
-      setDoc(publicDoc('users', currentUser.phone), { balance: newBal }, { merge: true });
+      const newBal = window.currentUser.balance - amt;
+      window.saveData('users', window.currentUser.phone, { id: window.currentUser.phone, phone: window.currentUser.phone, balance: newBal });
+      window.currentUser.balance = newBal; // local instant UI
 
       const id = 'WD-' + Math.floor(100000 + Math.random() * 900000);
-      const wdObj = { id, userPhone: currentUser.phone, userName: currentUser.name, amount: amt, targetUpi: upi, status: 'PENDING', timestamp: new Date().toISOString() };
+      const wdObj = { id, userPhone: window.currentUser.phone, userName: window.currentUser.name, amount: amt, targetUpi: upi, status: 'PENDING', timestamp: new Date().toISOString() };
       
-      setDoc(publicDoc('withdrawals', id), wdObj);
-      
+      window.saveData('withdrawals', id, wdObj);
       document.getElementById('withdrawAmountInput').value = ''; document.getElementById('withdrawUpiInput').value = '';
-      showToast('Withdrawal Placed', 'Payout request submitted.', 'success'); 
+      window.showToast('Withdrawal Placed', 'Payout request submitted.', 'success'); 
       window.openHistoryModal('withdraw');
     };
     
-    // --- HISTORY MODALS ---
+    // --- Modals ---
     window.openHistoryModal = function(type) {
        document.getElementById('historyModal').classList.remove('hidden');
        document.getElementById('historyModalTitle').innerHTML = `<i data-lucide="history" class="w-5 h-5 text-indigo-600"></i><span>${type === 'deposit' ? 'Deposit History' : 'Withdrawal History'}</span>`;
        
        const content = document.getElementById('historyModalContent');
-       let data = type === 'deposit' ? deposits.filter(d => d.userPhone === currentUser.phone) : withdrawals.filter(w => w.userPhone === currentUser.phone);
+       let data = type === 'deposit' ? window.deposits.filter(d => d.userPhone === window.currentUser.phone) : window.withdrawals.filter(w => w.userPhone === window.currentUser.phone);
        
        if(data.length === 0) {
           content.innerHTML = `<p class="text-center text-slate-500 text-xs py-4">No records found.</p>`;
-          lucide.createIcons();
-          return;
+          lucide.createIcons(); return;
        }
-
        content.innerHTML = data.map(item => {
           let statusColor = item.status === 'APPROVED' ? 'text-emerald-600 bg-emerald-50 border-emerald-200' : item.status === 'REJECTED' ? 'text-rose-600 bg-rose-50 border-rose-200' : 'text-amber-600 bg-amber-50 border-amber-200';
           let statusText = item.status === 'PENDING' ? 'Processing' : item.status;
           let detailText = type === 'deposit' ? `UTR: ${item.utr}` : `To: ${item.targetUpi}`;
-          
           return `
           <div class="border border-slate-200 rounded-xl p-3 flex justify-between items-center bg-white shadow-sm mb-2">
-             <div>
-                <div class="font-bold text-slate-800 text-sm">₹${item.amount}</div>
-                <div class="text-[10px] text-slate-500 font-mono mt-0.5">${new Date(item.timestamp).toLocaleString()}</div>
-                <div class="text-[10px] text-slate-500 mt-0.5">${detailText}</div>
-             </div>
-             <div class="px-2.5 py-1 rounded-lg text-[10px] font-bold border ${statusColor}">
-                ${statusText}
-             </div>
+             <div><div class="font-bold text-slate-800 text-sm">₹${item.amount}</div><div class="text-[10px] text-slate-500 font-mono mt-0.5">${new Date(item.timestamp).toLocaleString()}</div><div class="text-[10px] text-slate-500 mt-0.5">${detailText}</div></div>
+             <div class="px-2.5 py-1 rounded-lg text-[10px] font-bold border ${statusColor}">${statusText}</div>
           </div>`;
        }).join('');
        lucide.createIcons();
@@ -1162,60 +929,260 @@
     
     window.closeHistoryModal = function() { document.getElementById('historyModal').classList.add('hidden'); };
 
-    // --- ACCOUNT PAGE ---
-    window.openEditNameModal = function() {
-        document.getElementById('newNameInput').value = currentUser.name;
-        document.getElementById('editNameModal').classList.remove('hidden');
-    };
+    window.openEditNameModal = function() { document.getElementById('newNameInput').value = window.currentUser.name; document.getElementById('editNameModal').classList.remove('hidden'); };
     window.closeEditNameModal = function() { document.getElementById('editNameModal').classList.add('hidden'); };
-    
     window.saveNewName = function() {
         const newName = document.getElementById('newNameInput').value.trim();
         if(newName) {
-            setDoc(publicDoc('users', currentUser.phone), { name: newName }, { merge: true });
-            showToast('Success', 'Profile name updated on Cloud.', 'success');
-            window.closeEditNameModal();
-        } else {
-            showToast('Error', 'Name cannot be empty.', 'error');
-        }
+            window.saveData('users', window.currentUser.phone, { id: window.currentUser.phone, name: newName });
+            window.currentUser.name = newName;
+            window.showToast('Success', 'Profile name updated.', 'success'); window.closeEditNameModal(); window.renderUI();
+        } else window.showToast('Error', 'Name cannot be empty.', 'error');
     };
     
     window.saveBankDetails = function(e) {
       e.preventDefault();
       const details = { holder: document.getElementById('bankHolderInput').value, acc: document.getElementById('bankAccInput').value, ifsc: document.getElementById('bankIfscInput').value, upi: document.getElementById('bankUpiInput').value };
-      setDoc(publicDoc('users', currentUser.phone), { bankDetails: details }, { merge: true });
-      showToast('Success', 'Bank details securely saved to Cloud.', 'success');
+      window.saveData('users', window.currentUser.phone, { id: window.currentUser.phone, bankDetails: details });
+      window.currentUser.bankDetails = details;
+      window.showToast('Success', 'Bank details securely saved.', 'success');
     };
 
-    function renderAccountTab() {
-      if (!currentUser || currentUser.phone === '9529951116') return;
-      document.getElementById('accFullName').innerText = currentUser.name; 
-      document.getElementById('accPhone').innerText = '+91 ' + currentUser.phone;
-      document.getElementById('accInitials').innerText = currentUser.name.charAt(0).toUpperCase(); 
-      document.getElementById('accBalance').innerText = `₹${currentUser.balance.toLocaleString('en-IN')}`;
-      
-      if(currentUser.bankDetails) {
-        document.getElementById('bankHolderInput').value = currentUser.bankDetails.holder || ''; document.getElementById('bankAccInput').value = currentUser.bankDetails.acc || '';
-        document.getElementById('bankIfscInput').value = currentUser.bankDetails.ifsc || ''; document.getElementById('bankUpiInput').value = currentUser.bankDetails.upi || '';
+    // --- Support & Chat ---
+    window.toggleChatWindow = function() { document.getElementById('chatWindow').classList.toggle('hidden'); window.renderUserChatMessages(); };
+    window.toggleBotVisibility = function() { window.botEnabled = document.getElementById('adminBotToggle').checked; window.saveData('settings', 'global', { botEnabled: window.botEnabled }); };
+    
+    window.handleUserChatSend = function(e) {
+      e.preventDefault(); const input = document.getElementById('userChatInput'); const text = input.value.trim(); if (!text) return;
+      const uPhone = window.currentUser ? window.currentUser.phone : 'Guest';
+      const uName = window.currentUser ? window.currentUser.name : 'Guest User';
+      const msgId = 'MSG-' + Date.now();
+      const chatObj = { id: msgId, userPhone: uPhone, userName: uName, sender: 'USER', text, timestamp: Date.now(), timeString: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+      window.saveData('chats', msgId, chatObj);
+      input.value = ''; window.renderUserChatMessages(); window.renderAdminChatConsole();
+    };
+
+    window.selectAdminChatUser = function(phone) { window.adminSelectedChatPhone = phone; window.renderAdminChatConsole(); };
+    window.sendAdminChatReply = function() {
+      const text = document.getElementById('adminReplyInput').value.trim(); if (!text || !window.adminSelectedChatPhone) return;
+      const msgId = 'MSG-' + Date.now();
+      const chatObj = { id: msgId, userPhone: window.adminSelectedChatPhone, userName: 'Support', sender: 'ADMIN', text, timestamp: Date.now(), timeString: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+      window.saveData('chats', msgId, chatObj);
+      document.getElementById('adminReplyInput').value = ''; window.renderAdminChatConsole();
+    };
+
+    // --- Admin Functions ---
+    window.setAdminRigMode = function(mode) { window.saveData('settings', 'global', { adminRigMode: mode }); };
+    
+    window.approveDeposit = function(id) { 
+        const d = window.deposits.find(x => x.id === id); 
+        if(d) { 
+            window.saveData('deposits', id, { id: d.id, status: 'APPROVED' });
+            const u = window.users.find(x => x.phone === d.userPhone); 
+            if(u) window.saveData('users', u.phone, { id: u.phone, phone: u.phone, balance: u.balance + d.amount });
+            window.renderUI();
+        } 
+    };
+    window.rejectDeposit = function(id) { window.saveData('deposits', id, { id: id, status: 'REJECTED' }); window.renderUI(); };
+    window.approveWithdrawal = function(id) { window.saveData('withdrawals', id, { id: id, status: 'APPROVED' }); window.renderUI(); };
+    window.rejectWithdrawal = function(id) { 
+        const w = window.withdrawals.find(x => x.id === id); 
+        if(w && w.status === 'PENDING') { 
+            window.saveData('withdrawals', id, { id: id, status: 'REJECTED' });
+            const u = window.users.find(x => x.phone === w.userPhone); 
+            if(u) window.saveData('users', u.phone, { id: u.phone, phone: u.phone, balance: u.balance + w.amount });
+            window.renderUI();
+        } 
+    };
+    window.saveUserBalance = function(phone) { 
+      const amt = parseFloat(document.getElementById(`editBal_${phone}`).value); 
+      if(isNaN(amt)) return; 
+      window.saveData('users', phone, { id: phone, phone: phone, balance: Math.max(0, amt) });
+      window.editingUserPhone = null; window.renderAdminUsers(); window.renderUI();
+    };
+    window.setEditingUser = function(phone) { window.editingUserPhone = phone; window.renderAdminUsers(); };
+
+
+    // ==========================================
+    // 3. INTERNAL ENGINE FUNCTIONS (Not directly called by HTML)
+    // ==========================================
+    window.initChartData = function() {
+      let base = window.selectedAsset.price; window.priceHistory = []; window.candles = [];
+      for (let i = 0; i < 40; i++) {
+        const open = base; const delta = (Math.random() - 0.495) * window.selectedAsset.volatility * 8; const close = parseFloat((open + delta).toFixed(2));
+        const high = Math.max(open, close) + Math.abs(Math.random() * window.selectedAsset.volatility * 2.5); const low = Math.min(open, close) - Math.abs(Math.random() * window.selectedAsset.volatility * 2.5);
+        window.candles.push({ open, high, low, close }); window.priceHistory.push(close); base = close;
       }
-      
-      const txns = [...deposits.filter(d => d.userPhone === currentUser.phone).map(d => ({ ...d, type: 'Deposit', sortTime: new Date(d.timestamp).getTime() })), ...withdrawals.filter(w => w.userPhone === currentUser.phone).map(w => ({ ...w, type: 'Withdraw', sortTime: new Date(w.timestamp).getTime() }))].sort((a,b) => b.sortTime - a.sortTime);
-      const tbody = document.getElementById('accTransactionsBody');
-      if (txns.length === 0) tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-400">No financial transactions found.</td></tr>`;
-      else tbody.innerHTML = txns.map(t => {
-        let stColor = t.status==='APPROVED'?'text-emerald-600':t.status==='REJECTED'?'text-rose-600':'text-amber-600';
-        return `<tr class="hover:bg-slate-50"><td class="py-2.5 px-2"><span class="bg-slate-100 font-bold px-2 py-0.5 rounded text-[10px] ${t.type==='Deposit'?'text-emerald-700':'text-blue-700'}">${t.type}</span></td><td class="py-2.5 px-2 font-mono font-bold text-slate-800">₹${t.amount}</td><td class="py-2.5 px-2 text-[10px] text-slate-500">${new Date(t.timestamp).toLocaleDateString()}</td><td class="py-2.5 px-2 font-mono text-[10px]">${t.utr || t.targetUpi}</td><td class="py-2.5 px-2 font-bold text-[10px] ${stColor}">${t.status}</td></tr>`;
-      }).join('');
+      window.currentPrice = base;
     }
 
-    function renderTradeLogs() {
+    window.startPriceLoop = function() {
+      setInterval(() => {
+        if (window.candles.length === 0) return;
+        const lastCandle = { ...window.candles[window.candles.length - 1] };
+        let tickChange = (Math.random() - 0.49) * window.selectedAsset.volatility * 3.5;
+        
+        if (window.adminRigMode === 'UP') tickChange = Math.abs((Math.random() * window.selectedAsset.volatility * 4));
+        else if (window.adminRigMode === 'DOWN') tickChange = -Math.abs((Math.random() * window.selectedAsset.volatility * 4));
+        else if (window.adminRigMode === 'AUTO') {
+          if (window.currentUser && window.currentUser.phone !== '9529951116') {
+            const activeTrades = window.trades.filter(t => t.userPhone === window.currentUser.phone && t.status === 'ACTIVE');
+            if (activeTrades.length > 0) {
+              const hasCall = activeTrades.some(t => t.type === 'CALL');
+              const hasPut = activeTrades.some(t => t.type === 'PUT');
+              if (hasCall && !hasPut) tickChange = -Math.abs((Math.random() * window.selectedAsset.volatility * 5)); 
+              else if (hasPut && !hasCall) tickChange = Math.abs((Math.random() * window.selectedAsset.volatility * 5)); 
+            }
+          }
+        }
+
+        const nextPrice = parseFloat((lastCandle.close + tickChange).toFixed(2));
+        window.currentPrice = nextPrice;
+        lastCandle.close = nextPrice; lastCandle.high = Math.max(lastCandle.high, nextPrice); lastCandle.low = Math.min(lastCandle.low, nextPrice);
+        window.candles[window.candles.length - 1] = lastCandle;
+
+        if (Math.random() > 0.65 && window.candles.length < 50) { window.candles.push({ open: nextPrice, high: nextPrice, low: nextPrice, close: nextPrice }); }
+        if (window.candles.length > 40) window.candles.shift();
+        window.priceHistory = window.candles.map(c => c.close);
+
+        const priceEl = document.getElementById('livePriceDisplay');
+        if (priceEl) priceEl.innerText = `₹${window.currentPrice.toFixed(2)}`;
+        window.renderCanvasChart();
+      }, 1000);
+    }
+
+    window.resizeCanvas = function() {
+      const canvas = document.getElementById('tradingCanvas'); if (!canvas) return;
+      const rect = canvas.parentElement.getBoundingClientRect(); const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr; canvas.height = rect.height * dpr; canvas.getContext('2d').scale(dpr, dpr);
+      window.renderCanvasChart();
+    }
+
+    window.renderCanvasChart = function() {
+      const canvas = document.getElementById('tradingCanvas'); if (!canvas || window.priceHistory.length === 0) return;
+      const dpr = window.devicePixelRatio || 1; const width = canvas.width / dpr, height = canvas.height / dpr;
+      const ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, width, height);
+      const minPrice = Math.min(...window.priceHistory) * 0.9992, maxPrice = Math.max(...window.priceHistory) * 1.0008;
+      const priceRange = maxPrice - minPrice || 1;
+
+      ctx.strokeStyle = '#f1f5f9'; ctx.lineWidth = 1;
+      for (let y = 0; y < height; y += 35) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke(); }
+      for (let x = 0; x < width; x += 55) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke(); }
+
+      if (window.chartType === 'candlestick') {
+        const candleWidth = Math.max(5, (width / window.candles.length) - 4);
+        window.candles.forEach((candle, i) => {
+          const x = i * (width / window.candles.length) + candleWidth / 2;
+          const openY = height - ((candle.open - minPrice) / priceRange) * height, closeY = height - ((candle.close - minPrice) / priceRange) * height;
+          const highY = height - ((candle.high - minPrice) / priceRange) * height, lowY = height - ((candle.low - minPrice) / priceRange) * height;
+          const color = candle.close >= candle.open ? '#059669' : '#e11d48';
+          ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x + candleWidth / 2, highY); ctx.lineTo(x + candleWidth / 2, lowY); ctx.stroke();
+          ctx.fillStyle = color; ctx.fillRect(x, Math.min(openY, closeY), candleWidth, Math.max(Math.abs(closeY - openY), 2.5));
+        });
+      } else {
+        ctx.beginPath(); window.priceHistory.forEach((price, i) => {
+          const x = (i / (window.priceHistory.length - 1)) * width, y = height - ((price - minPrice) / priceRange) * height;
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        const isUp = window.priceHistory[window.priceHistory.length - 1] >= window.priceHistory[0]; ctx.strokeStyle = isUp ? '#059669' : '#e11d48'; ctx.lineWidth = 2.5; ctx.stroke();
+        const gradient = ctx.createLinearGradient(0, 0, 0, height); gradient.addColorStop(0, isUp ? 'rgba(5, 150, 105, 0.15)' : 'rgba(225, 29, 72, 0.15)'); gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.lineTo(width, height); ctx.lineTo(0, height); ctx.closePath(); ctx.fillStyle = gradient; ctx.fill();
+      }
+
+      window.trades.filter(t => t.userPhone === window.currentUser?.phone && t.status === 'ACTIVE').forEach(trade => {
+        const strikeY = height - ((trade.strikePrice - minPrice) / priceRange) * height;
+        ctx.strokeStyle = trade.type === 'CALL' ? '#059669' : '#e11d48'; ctx.lineWidth = 1.5; ctx.setLineDash([5, 3]);
+        ctx.beginPath(); ctx.moveTo(0, strikeY); ctx.lineTo(width, strikeY); ctx.stroke(); ctx.setLineDash([]);
+      });
+
+      const lastY = height - ((window.currentPrice - minPrice) / priceRange) * height;
+      ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(0, lastY); ctx.lineTo(width, lastY); ctx.stroke(); ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(width - 4, lastY, 4.5, 0, Math.PI * 2); ctx.fillStyle = '#2563eb'; ctx.fill();
+    }
+
+    window.startTradeEngineLoop = function() {
+      setInterval(() => {
+        if (!window.currentUser || window.currentUser.phone === '9529951116') return; 
+        const now = Date.now(); let UIchanged = false;
+        
+        window.trades.forEach(trade => {
+          if (trade.status === 'ACTIVE' && now >= trade.expiryTime && trade.userPhone === window.currentUser.phone) {
+            UIchanged = true;
+            let isWin = trade.type === 'CALL' ? window.currentPrice > trade.strikePrice : window.currentPrice < trade.strikePrice;
+            
+            trade.closePrice = window.currentPrice;
+            trade.status = isWin ? 'WON' : 'LOST'; 
+            trade.payoutAmount = isWin ? Math.round(trade.amount * (1 + trade.payout / 100)) : 0;
+            window.saveData('trades', trade.id, trade);
+
+            if (isWin) {
+              const newBalance = window.currentUser.balance + trade.payoutAmount;
+              window.saveData('users', window.currentUser.phone, { id: window.currentUser.phone, phone: window.currentUser.phone, balance: newBalance });
+              window.currentUser.balance = newBalance;
+              window.showToast('Trade Won! 🎉', `Profit of ₹${trade.payoutAmount} added to wallet.`, 'success'); 
+            } else {
+              window.showToast('Trade Lost', `You lost ₹${trade.amount} in ${trade.assetName}.`, 'error');
+            }
+          }
+        });
+        if(UIchanged) window.renderUI(); else window.renderActiveTradesList();
+      }, 1000);
+    }
+
+    window.renderAssetPills = function() {
+      document.getElementById('assetPillsContainer').innerHTML = window.assetsCatalog.map(asset => `
+        <button type="button" onclick="selectAsset('${asset.id}')" class="px-3 py-1 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 whitespace-nowrap ${window.selectedAsset.id === asset.id ? 'bg-slate-900 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}">
+          <span>${asset.name}</span><span class="text-[10px] text-emerald-600 font-mono">+${asset.payout}%</span>
+        </button>`).join('');
+    }
+
+    window.calculateOrderReturns = function() {
+      const stake = parseFloat(document.getElementById('tradeStakeInput')?.value) || 0; const profit = Math.round(stake * (window.selectedAsset.payout / 100));
+      const elProfit = document.getElementById('orderNetProfit'); if(elProfit) elProfit.innerText = `+₹${profit}`; 
+      const elTotal = document.getElementById('orderTotalReturn'); if(elTotal) elTotal.innerText = `₹${stake + profit}`;
+    }
+
+    window.renderActiveTradesList = function() {
+      const container = document.getElementById('activeTradesList'); 
+      const active = window.trades.filter(t => t.userPhone === window.currentUser?.phone && t.status === 'ACTIVE');
+      if (active.length === 0) { if(container) container.innerHTML = `<p class="text-xs text-slate-400 italic py-2">No active market positions.</p>`; return; }
+      if(container) {
+          container.innerHTML = active.map(t => {
+            const remaining = Math.max(0, Math.ceil((t.expiryTime - Date.now()) / 1000));
+            return `<div class="bg-slate-50 border border-slate-200 p-2.5 rounded-xl flex items-center justify-between text-xs mb-2">
+              <div class="flex items-center space-x-2"><span class="px-2 py-0.5 rounded text-[10px] font-extrabold ${t.type === 'CALL' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">${t.type}</span><span class="font-bold text-slate-800">${t.assetName}</span><span class="text-slate-500 font-mono">@ ₹${t.strikePrice}</span></div>
+              <div class="flex items-center space-x-3"><span class="font-mono text-emerald-700 font-bold">₹${t.amount}</span><span class="bg-white px-2 py-0.5 rounded-lg text-amber-700 font-mono font-extrabold animate-pulse border border-slate-200">${remaining}s</span></div>
+            </div>`;
+          }).join('');
+      }
+    }
+
+    window.renderAccountTab = function() {
+      if (!window.currentUser || window.currentUser.phone === '9529951116') return;
+      document.getElementById('accFullName').innerText = window.currentUser.name; 
+      document.getElementById('accPhone').innerText = '+91 ' + window.currentUser.phone;
+      document.getElementById('accInitials').innerText = window.currentUser.name.charAt(0).toUpperCase(); 
+      document.getElementById('accBalance').innerText = `₹${window.currentUser.balance.toLocaleString('en-IN')}`;
+      
+      if(window.currentUser.bankDetails) {
+        document.getElementById('bankHolderInput').value = window.currentUser.bankDetails.holder || ''; document.getElementById('bankAccInput').value = window.currentUser.bankDetails.acc || '';
+        document.getElementById('bankIfscInput').value = window.currentUser.bankDetails.ifsc || ''; document.getElementById('bankUpiInput').value = window.currentUser.bankDetails.upi || '';
+      }
+      
+      const txns = [...window.deposits.filter(d => d.userPhone === window.currentUser.phone).map(d => ({ ...d, type: 'Deposit', sortTime: new Date(d.timestamp).getTime() })), ...window.withdrawals.filter(w => w.userPhone === window.currentUser.phone).map(w => ({ ...w, type: 'Withdraw', sortTime: new Date(w.timestamp).getTime() }))].sort((a,b) => b.sortTime - a.sortTime);
+      const tbody = document.getElementById('accTransactionsBody');
+      if (txns.length === 0) { if(tbody) tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-400">No financial transactions found.</td></tr>`; }
+      else { if(tbody) tbody.innerHTML = txns.map(t => {
+        let stColor = t.status==='APPROVED'?'text-emerald-600':t.status==='REJECTED'?'text-rose-600':'text-amber-600';
+        return `<tr class="hover:bg-slate-50"><td class="py-2.5 px-2"><span class="bg-slate-100 font-bold px-2 py-0.5 rounded text-[10px] ${t.type==='Deposit'?'text-emerald-700':'text-blue-700'}">${t.type}</span></td><td class="py-2.5 px-2 font-mono font-bold text-slate-800">₹${t.amount}</td><td class="py-2.5 px-2 text-[10px] text-slate-500">${new Date(t.timestamp).toLocaleDateString()}</td><td class="py-2.5 px-2 font-mono text-[10px]">${t.utr || t.targetUpi}</td><td class="py-2.5 px-2 font-bold text-[10px] ${stColor}">${t.status}</td></tr>`;
+      }).join(''); }
+    }
+
+    window.renderTradeLogs = function() {
       const tbody = document.getElementById('tradeLogsTableBody');
       if (!tbody) return;
-      const myTrades = trades.filter(t => t.userPhone === currentUser?.phone);
-      if (myTrades.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-400 text-xs">No trading history found.</td></tr>`;
-        return;
-      }
+      const myTrades = window.trades.filter(t => t.userPhone === window.currentUser?.phone);
+      if (myTrades.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-400 text-xs">No trading history found.</td></tr>`; return; }
       tbody.innerHTML = myTrades.map(t => {
         let statusColor = t.status === 'WON' ? 'text-emerald-600' : t.status === 'LOST' ? 'text-rose-600' : 'text-amber-600';
         return `<tr class="hover:bg-slate-50 border-b border-slate-50 last:border-0">
@@ -1229,194 +1196,192 @@
       }).join('');
     }
 
-    // --- SUPPORT CHATBOT ---
-    window.toggleChatWindow = function() { document.getElementById('chatWindow').classList.toggle('hidden'); renderUserChatMessages(); };
-    
-    window.toggleBotVisibility = function() {
-      botEnabled = document.getElementById('adminBotToggle').checked;
-      setDoc(publicDoc('settings', 'global'), { botEnabled: botEnabled }, { merge: true });
-    };
-    
-    function applyBotVisibility() { document.getElementById('chatbotWidgetContainer').style.display = botEnabled ? 'block' : 'none'; }
-
-    window.handleUserChatSend = function(e) {
-      e.preventDefault(); const input = document.getElementById('userChatInput'); const text = input.value.trim(); if (!text) return;
-      
-      const uPhone = currentUser ? currentUser.phone : 'Guest';
-      const uName = currentUser ? currentUser.name : 'Guest User';
-      const msgId = 'MSG-' + Date.now();
-
-      const chatObj = { id: msgId, userPhone: uPhone, userName: uName, sender: 'USER', text, timestamp: Date.now(), timeString: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
-      setDoc(publicDoc('chats', msgId), chatObj);
-      input.value = ''; 
-    };
-
-    function renderUserChatMessages() {
+    window.renderUserChatMessages = function() {
       const list = document.getElementById('userChatMessageList'); 
-      const uPhone = currentUser ? currentUser.phone : 'Guest';
-      const myMsgs = chatMessages.filter(m => m.userPhone === uPhone);
-
-      if (myMsgs.length === 0) { list.innerHTML = `<div class="bg-emerald-50 border border-emerald-200 text-emerald-800 p-2.5 rounded-xl font-medium">👋 Welcome to 24/7 Forexaaa Support! Ask us about your deposit or withdrawal query.</div>`; return; }
-      list.innerHTML = myMsgs.map(m => `<div class="flex flex-col ${m.sender === 'USER' ? 'items-end' : 'items-start'}"><div class="${m.sender === 'USER' ? 'bg-slate-900 text-white' : 'bg-emerald-100 text-emerald-900 border border-emerald-200'} px-3 py-2 rounded-xl max-w-[85%] font-medium leading-relaxed shadow-sm">${m.text}</div><span class="text-[9px] text-slate-400 mt-0.5 px-1">${m.timeString}</span></div>`).join('');
-      list.scrollTop = list.scrollHeight;
+      const uPhone = window.currentUser ? window.currentUser.phone : 'Guest';
+      const myMsgs = window.chatMessages.filter(m => m.userPhone === uPhone);
+      if (myMsgs.length === 0) { if(list) list.innerHTML = `<div class="bg-emerald-50 border border-emerald-200 text-emerald-800 p-2.5 rounded-xl font-medium">👋 Welcome to 24/7 Forexaaa Support! Ask us about your deposit kiva withdrawal.</div>`; return; }
+      if(list) { list.innerHTML = myMsgs.map(m => `<div class="flex flex-col ${m.sender === 'USER' ? 'items-end' : 'items-start'}"><div class="${m.sender === 'USER' ? 'bg-slate-900 text-white' : 'bg-emerald-100 text-emerald-900 border border-emerald-200'} px-3 py-2 rounded-xl max-w-[85%] font-medium leading-relaxed shadow-sm">${m.text}</div><span class="text-[9px] text-slate-400 mt-0.5 px-1">${m.timeString}</span></div>`).join(''); list.scrollTop = list.scrollHeight; }
     }
 
-    function renderAdminChatConsole() {
-      if (currentUser?.role !== 'ADMIN') return;
-      const userListEl = document.getElementById('adminChatUserList'); const chatPhoneSet = [...new Set(chatMessages.map(m => m.userPhone))];
-      if (chatPhoneSet.length === 0) { userListEl.innerHTML = `<p class="text-slate-400 italic text-center py-4">No support queries.</p>`; return; }
-      userListEl.innerHTML = chatPhoneSet.map(phone => {
-        const lastMsg = chatMessages.filter(m => m.userPhone === phone).slice(-1)[0];
-        return `<div onclick="window.selectAdminChatUser('${phone}')" class="p-2 mb-1 rounded-lg cursor-pointer transition border ${adminSelectedChatPhone === phone ? 'bg-emerald-100 border-emerald-300 font-bold' : 'bg-white border-slate-200 hover:bg-slate-100'}"><div class="text-slate-900 font-semibold">${lastMsg ? lastMsg.userName : phone}</div><div class="text-[10px] text-slate-500 font-mono">${phone}</div></div>`;
+    window.renderAdminChatConsole = function() {
+      if (window.currentUser?.role !== 'ADMIN') return;
+      const userListEl = document.getElementById('adminChatUserList'); const chatPhoneSet = [...new Set(window.chatMessages.map(m => m.userPhone))];
+      if (chatPhoneSet.length === 0) { if(userListEl) userListEl.innerHTML = `<p class="text-slate-400 italic text-center py-4">No support queries.</p>`; return; }
+      if(userListEl) userListEl.innerHTML = chatPhoneSet.map(phone => {
+        const lastMsg = window.chatMessages.filter(m => m.userPhone === phone).slice(-1)[0];
+        return `<div onclick="window.selectAdminChatUser('${phone}')" class="p-2 mb-1 rounded-lg cursor-pointer transition border ${window.adminSelectedChatPhone === phone ? 'bg-emerald-100 border-emerald-300 font-bold' : 'bg-white border-slate-200 hover:bg-slate-100'}"><div class="text-slate-900 font-semibold">${lastMsg ? lastMsg.userName : phone}</div><div class="text-[10px] text-slate-500 font-mono">${phone}</div></div>`;
       }).join('');
       
       const msgBox = document.getElementById('adminChatMessagesBox');
-      if (!adminSelectedChatPhone) { msgBox.innerHTML = `<p class="text-slate-400 italic text-center py-8">Select user to reply.</p>`; return; }
-      msgBox.innerHTML = chatMessages.filter(m => m.userPhone === adminSelectedChatPhone).map(m => `<div class="flex flex-col mb-1 ${m.sender === 'ADMIN' ? 'items-end' : 'items-start'}"><div class="${m.sender === 'ADMIN' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-800 border border-slate-200'} px-3 py-1.5 rounded-xl max-w-[80%]">${m.text}</div><span class="text-[9px] text-slate-400 mt-0.5">${m.sender === 'ADMIN' ? 'Support' : m.userName} (${m.timeString})</span></div>`).join('');
-      msgBox.scrollTop = msgBox.scrollHeight;
+      if (!window.adminSelectedChatPhone) { if(msgBox) msgBox.innerHTML = `<p class="text-slate-400 italic text-center py-8">Select user to reply.</p>`; return; }
+      if(msgBox) { msgBox.innerHTML = window.chatMessages.filter(m => m.userPhone === window.adminSelectedChatPhone).map(m => `<div class="flex flex-col mb-1 ${m.sender === 'ADMIN' ? 'items-end' : 'items-start'}"><div class="${m.sender === 'ADMIN' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-800 border border-slate-200'} px-3 py-1.5 rounded-xl max-w-[80%]">${m.text}</div><span class="text-[9px] text-slate-400 mt-0.5">${m.sender === 'ADMIN' ? 'Support' : m.userName} (${m.timeString})</span></div>`).join(''); msgBox.scrollTop = msgBox.scrollHeight; }
     }
-    
-    window.selectAdminChatUser = function(phone) {
-        adminSelectedChatPhone = phone;
-        renderAdminChatConsole();
-    };
 
-    window.sendAdminChatReply = function() {
-      const text = document.getElementById('adminReplyInput').value.trim(); if (!text || !adminSelectedChatPhone) return;
-      
-      const msgId = 'MSG-' + Date.now();
-      const chatObj = { id: msgId, userPhone: adminSelectedChatPhone, userName: 'Support', sender: 'ADMIN', text, timestamp: Date.now(), timeString: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
-      
-      setDoc(publicDoc('chats', msgId), chatObj);
-      document.getElementById('adminReplyInput').value = ''; 
-    };
+    window.renderAdminUsers = function() {
+      const searchInput = document.getElementById('adminUserSearchInput'); if(!searchInput) return;
+      const search = searchInput.value.toLowerCase() || '';
+      const tbody = document.getElementById('adminUserTableBody');
+      if(tbody) { tbody.innerHTML = window.users.filter(u => u.name?.toLowerCase().includes(search) || u.phone?.includes(search)).map(u => `<tr class="hover:bg-slate-50"><td class="py-3 text-slate-900 font-bold">${u.name}</td><td class="py-3 font-mono">${u.phone}</td><td class="py-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${u.role === 'ADMIN' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100'}">${u.role}</span></td><td class="py-3 font-bold text-emerald-600">₹${u.balance?.toLocaleString('en-IN')}</td><td class="py-3">${window.editingUserPhone === u.phone ? `<input type="number" id="editBal_${u.phone}" value="${u.balance}" class="w-16 border rounded text-xs px-1 py-0.5 mr-1"><button onclick="window.saveUserBalance('${u.phone}')" class="bg-emerald-600 text-white px-2 py-0.5 rounded text-[10px]">Save</button>` : `<button onclick="window.setEditingUser('${u.phone}')" class="bg-slate-200 px-2 py-1 rounded text-[10px] font-bold">Edit</button>`}</td></tr>`).join('') || `<tr><td colspan="5" class="py-4 text-center text-slate-400">No users found.</td></tr>`; }
+    }
 
-    // --- AUTHENTICATION ---
-    window.toggleAuthMode = function(mode) {
-      authMode = mode;
-      document.getElementById('authTitle').innerText = mode === 'login' ? 'Sign In Securely' : 'Create New Account';
-      document.getElementById('authNameGroup').className = mode === 'register' ? 'block' : 'hidden';
-      document.getElementById('authSubmitBtn').innerText = mode === 'login' ? 'Access Terminal' : 'Create Account';
-      document.getElementById('authToggleText').innerHTML = mode === 'login' ? `Don't have an account? <button type="button" onclick="toggleAuthMode('register')" class="text-emerald-600 font-bold hover:underline">Register</button>` : `Already registered? <button type="button" onclick="toggleAuthMode('login')" class="text-emerald-600 font-bold hover:underline">Sign In</button>`;
-    };
-
-    window.handleAuthSubmit = function(e) {
-      e.preventDefault();
-      const phone = document.getElementById('authPhoneInput').value.trim();
-      const pass = document.getElementById('authPasswordInput').value.trim();
-      const name = document.getElementById('authNameInput').value.trim();
-      
-      document.getElementById('authErrorBox').classList.add('hidden');
-
-      if (phone === '9529951116' && pass === 'Ritesh555') {
-        currentUser = { name: 'Master Admin', phone, role: 'ADMIN', balance: 9999999 };
-        localStorage.setItem('fx_session_phone', phone);
-        window.switchTab('admin'); showToast('Admin Verified', 'Welcome to Master Console', 'success'); return;
-      }
-
-      if (authMode === 'register') {
-        if (!name) return showToast('Error', 'Name required', 'error');
-        if (users.find(u => u.phone === phone)) return showToast('Error', 'Phone already registered.', 'error');
-        
-        const newUser = { name, phone, password: pass, role: 'USER', balance: 0 };
-        setDoc(publicDoc('users', phone), newUser);
-        currentUser = newUser;
-        localStorage.setItem('fx_session_phone', phone);
-        showToast('Registered', 'Account created successfully!', 'success'); window.switchTab('deposit');
-      } else {
-        const u = users.find(x => x.phone === phone && x.password === pass);
-        if (u) {
-          currentUser = u; 
-          localStorage.setItem('fx_session_phone', phone);
-          showToast('Welcome Back', 'Logged in securely.', 'success'); window.switchTab('trade');
-        } else {
-          showToast('Login Failed', 'Invalid credentials.', 'error');
-        }
-      }
-      renderUI();
-    };
-
-    window.handleLogout = function() { currentUser = null; localStorage.removeItem('fx_session_phone'); showToast('Logged Out', 'Signed out safely.', 'success'); window.switchTab('auth'); };
-
-    // --- ADMIN PANEL ACTIONS ---
-    window.setAdminRigMode = function(mode) {
-      setDoc(publicDoc('settings', 'global'), { adminRigMode: mode }, { merge: true });
-    };
-    
-    window.approveDeposit = function(id) { 
-        const d = deposits.find(x => x.id === id); 
-        if(d) { 
-            setDoc(publicDoc('deposits', id), { status: 'APPROVED' }, { merge: true });
-            const u = users.find(x => x.phone === d.userPhone); 
-            if(u) {
-                setDoc(publicDoc('users', u.phone), { balance: u.balance + d.amount }, { merge: true });
-            }
-        } 
-    };
-    window.rejectDeposit = function(id) { setDoc(publicDoc('deposits', id), { status: 'REJECTED' }, { merge: true }); };
-    
-    window.approveWithdrawal = function(id) { setDoc(publicDoc('withdrawals', id), { status: 'APPROVED' }, { merge: true }); };
-    window.rejectWithdrawal = function(id) { 
-        const w = withdrawals.find(x => x.id === id); 
-        if(w && w.status === 'PENDING') { 
-            setDoc(publicDoc('withdrawals', id), { status: 'REJECTED' }, { merge: true });
-            const u = users.find(x => x.phone === w.userPhone); 
-            if(u) {
-                 // return funds
-                setDoc(publicDoc('users', u.phone), { balance: u.balance + w.amount }, { merge: true });
-            }
-        } 
-    };
-    
-    window.saveUserBalance = function(phone) { 
-      const amt = parseFloat(document.getElementById(`editBal_${phone}`).value); 
-      if(isNaN(amt)) return; 
-      
-      setDoc(publicDoc('users', phone), { balance: Math.max(0, amt) }, { merge: true });
-      editingUserPhone = null; 
-    };
-
-    window.setEditingUser = function(phone) {
-        editingUserPhone = phone;
-        renderAdminUsers();
-    };
-    
-    window.renderAdminUsers = renderAdminUsers;
-
-    function renderUI() {
-      if (!currentUser) return;
+    window.renderUI = function() {
+      if (!window.currentUser) return;
       const hl = document.getElementById('headerLeftUserBadge'), hc = document.getElementById('headerAuthContainer');
-      hl.innerHTML = `<div class="bg-slate-100 border border-slate-200/80 px-2.5 py-1 rounded-xl"><span class="text-[9px] text-slate-400 block font-bold leading-none">Wallet</span><span class="text-xs font-extrabold text-emerald-700 font-mono">₹${currentUser.balance.toLocaleString('en-IN')}</span></div>`;
-      hc.innerHTML = `<button type="button" onclick="handleLogout()" class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-rose-600 rounded-xl transition shadow-xs"><i data-lucide="log-out" class="w-4 h-4"></i></button>`;
-      document.getElementById('nav-admin').classList.toggle('hidden', currentUser.role !== 'ADMIN');
+      if(hl) hl.innerHTML = `<div class="bg-slate-100 border border-slate-200/80 px-2.5 py-1 rounded-xl"><span class="text-[9px] text-slate-400 block font-bold leading-none">Wallet</span><span class="text-xs font-extrabold text-emerald-700 font-mono">₹${window.currentUser.balance.toLocaleString('en-IN')}</span></div>`;
+      if(hc) hc.innerHTML = `<button type="button" onclick="handleLogout()" class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-rose-600 rounded-xl transition shadow-xs"><i data-lucide="log-out" class="w-4 h-4"></i></button>`;
+      
+      const adminNav = document.getElementById('nav-admin');
+      if(adminNav) adminNav.classList.toggle('hidden', window.currentUser.role !== 'ADMIN');
       
       const wdBal = document.getElementById('withdrawAvailBalance');
-      if(wdBal) wdBal.innerText = `₹${currentUser.balance.toLocaleString('en-IN')}`;
+      if(wdBal) wdBal.innerText = `₹${window.currentUser.balance.toLocaleString('en-IN')}`;
 
-      renderTradeLogs(); 
-      renderAccountTab();
+      window.renderTradeLogs(); 
+      window.renderAccountTab();
       
-      if(currentUser.role === 'ADMIN') {
-        document.getElementById('adminTotalUsersCount').innerText = users.length;
-        document.getElementById('adminPendingDepositsCount').innerText = deposits.filter(d => d.status === 'PENDING').length;
-        document.getElementById('adminPendingWithdrawalsCount').innerText = withdrawals.filter(w => w.status === 'PENDING').length;
+      if(window.currentUser.role === 'ADMIN') {
+        const uCount = document.getElementById('adminTotalUsersCount'); if(uCount) uCount.innerText = window.users.length;
+        const dCount = document.getElementById('adminPendingDepositsCount'); if(dCount) dCount.innerText = window.deposits.filter(d => d.status === 'PENDING').length;
+        const wCount = document.getElementById('adminPendingWithdrawalsCount'); if(wCount) wCount.innerText = window.withdrawals.filter(w => w.status === 'PENDING').length;
         
-        document.getElementById('adminPendingDepositsList').innerHTML = deposits.filter(d => d.status === 'PENDING').map(d => `<div class="bg-slate-50 border border-slate-200 p-3 rounded-xl flex justify-between items-center text-xs mb-2"><div><b>${d.userName}</b> (${d.userPhone})<br><span class="text-emerald-600 font-bold">₹${d.amount}</span><br>UTR: ${d.utr}</div><div><button onclick="approveDeposit('${d.id}')" class="px-2 py-1 bg-emerald-600 text-white rounded font-bold mr-1">OK</button><button onclick="rejectDeposit('${d.id}')" class="px-2 py-1 bg-rose-100 text-rose-600 rounded font-bold">X</button></div></div>`).join('') || '<p class="text-xs text-slate-400">None</p>';
-        document.getElementById('adminPendingWithdrawalsList').innerHTML = withdrawals.filter(w => w.status === 'PENDING').map(w => `<div class="bg-slate-50 border border-slate-200 p-3 rounded-xl flex justify-between items-center text-xs mb-2"><div><b>${w.userName}</b> (${w.userPhone})<br><span class="text-blue-600 font-bold">₹${w.amount}</span><br>To: ${w.targetUpi}</div><div><button onclick="approveWithdrawal('${w.id}')" class="px-2 py-1 bg-blue-600 text-white rounded font-bold mr-1">OK</button><button onclick="rejectWithdrawal('${w.id}')" class="px-2 py-1 bg-rose-100 text-rose-600 rounded font-bold">X</button></div></div>`).join('') || '<p class="text-xs text-slate-400">None</p>';
+        const dList = document.getElementById('adminPendingDepositsList');
+        if(dList) dList.innerHTML = window.deposits.filter(d => d.status === 'PENDING').map(d => `<div class="bg-slate-50 border border-slate-200 p-3 rounded-xl flex justify-between items-center text-xs mb-2"><div><b>${d.userName}</b> (${d.userPhone})<br><span class="text-emerald-600 font-bold">₹${d.amount}</span><br>UTR: ${d.utr}</div><div><button onclick="window.approveDeposit('${d.id}')" class="px-2 py-1 bg-emerald-600 text-white rounded font-bold mr-1">OK</button><button onclick="window.rejectDeposit('${d.id}')" class="px-2 py-1 bg-rose-100 text-rose-600 rounded font-bold">X</button></div></div>`).join('') || '<p class="text-xs text-slate-400">None</p>';
         
-        renderAdminUsers(); 
-        renderAdminChatConsole();
+        const wList = document.getElementById('adminPendingWithdrawalsList');
+        if(wList) wList.innerHTML = window.withdrawals.filter(w => w.status === 'PENDING').map(w => `<div class="bg-slate-50 border border-slate-200 p-3 rounded-xl flex justify-between items-center text-xs mb-2"><div><b>${w.userName}</b> (${w.userPhone})<br><span class="text-blue-600 font-bold">₹${w.amount}</span><br>To: ${w.targetUpi}</div><div><button onclick="window.approveWithdrawal('${w.id}')" class="px-2 py-1 bg-blue-600 text-white rounded font-bold mr-1">OK</button><button onclick="window.rejectWithdrawal('${w.id}')" class="px-2 py-1 bg-rose-100 text-rose-600 rounded font-bold">X</button></div></div>`).join('') || '<p class="text-xs text-slate-400">None</p>';
+        
+        window.renderAdminUsers(); 
+        window.renderAdminChatConsole();
       }
-      calculateOrderReturns(); lucide.createIcons();
+      window.calculateOrderReturns(); lucide.createIcons();
     }
-    
-    function renderAdminUsers() {
-      const searchInput = document.getElementById('adminUserSearchInput');
-      if(!searchInput) return;
-      const search = searchInput.value.toLowerCase() || '';
-      document.getElementById('adminUserTableBody').innerHTML = users.filter(u => u.name?.toLowerCase().includes(search) || u.phone?.includes(search)).map(u => `<tr class="hover:bg-slate-50"><td class="py-3 text-slate-900 font-bold">${u.name}</td><td class="py-3 font-mono">${u.phone}</td><td class="py-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${u.role === 'ADMIN' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100'}">${u.role}</span></td><td class="py-3 font-bold text-emerald-600">₹${u.balance?.toLocaleString('en-IN')}</td><td class="py-3">${editingUserPhone === u.phone ? `<input type="number" id="editBal_${u.phone}" value="${u.balance}" class="w-16 border rounded text-xs px-1 py-0.5 mr-1"><button onclick="saveUserBalance('${u.phone}')" class="bg-emerald-600 text-white px-2 py-0.5 rounded text-[10px]">Save</button>` : `<button onclick="window.setEditingUser('${u.phone}')" class="bg-slate-200 px-2 py-1 rounded text-[10px] font-bold">Edit</button>`}</td></tr>`).join('') || `<tr><td colspan="5" class="py-4 text-center text-slate-400">No users found.</td></tr>`;
-    }
+
+
+    // ==========================================
+    // 4. FIREBASE & LOCAL HYBRID SYNC ENGINE
+    // ==========================================
+    window.app = null; window.auth = null; window.db = null; window.useFirebase = false;
+    window.appId = typeof __app_id !== 'undefined' ? __app_id : 'forexaaa-default-app';
+
+    // Safely try to boot Firebase
+    try {
+        if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+            const cfg = JSON.parse(__firebase_config);
+            if(cfg && Object.keys(cfg).length > 0 && cfg.projectId) {
+                window.app = initializeApp(cfg);
+                window.auth = getAuth(window.app);
+                window.db = getFirestore(window.app);
+                window.useFirebase = true;
+            }
+        }
+    } catch(e) { console.warn("Firebase config check bypassed. Running in offline/local mode."); }
+
+    window.saveData = function(collectionName, docId, data) {
+        // 1. Try Firebase Live Cloud
+        if (window.useFirebase && window.db) {
+            setDoc(doc(window.db, 'artifacts', window.appId, 'public', 'data', collectionName, docId.toString()), data, { merge: true }).catch(console.warn);
+        }
+        
+        // 2. ALWAYS Save to Local Cache (Bulletproof Backup)
+        const key = 'fx_' + collectionName;
+        let list = [];
+        try { list = JSON.parse(localStorage.getItem(key)) || []; } catch(e){}
+        
+        if (collectionName === 'settings') {
+            localStorage.setItem(key, JSON.stringify({...list, ...data}));
+        } else {
+            const idx = list.findIndex(x => x.id === docId || x.phone === docId);
+            if (idx >= 0) list[idx] = { ...list[idx], ...data };
+            else list.unshift({ id: docId, ...data });
+            localStorage.setItem(key, JSON.stringify(list));
+        }
+    };
+
+    window.loadLocalData = function() {
+        try {
+            window.users = JSON.parse(localStorage.getItem('fx_users')) || [];
+            window.deposits = JSON.parse(localStorage.getItem('fx_deposits')) || [];
+            window.withdrawals = JSON.parse(localStorage.getItem('fx_withdrawals')) || [];
+            window.trades = JSON.parse(localStorage.getItem('fx_trades')) || [];
+            window.chatMessages = JSON.parse(localStorage.getItem('fx_chats')) || [];
+            const g = JSON.parse(localStorage.getItem('fx_settings_global'));
+            if(g) { window.botEnabled = g.botEnabled ?? true; window.adminRigMode = g.adminRigMode ?? 'AUTO'; }
+        } catch(e) {}
+    };
+
+    // ==========================================
+    // 5. BOOT SEQUENCE (ON PAGE LOAD)
+    // ==========================================
+    window.addEventListener('DOMContentLoaded', () => {
+        lucide.createIcons();
+        
+        // Step 1: Load Local cache immediately (Ensures zero delay UI)
+        window.loadLocalData(); 
+        
+        // Step 2: Boot logic loops
+        window.initChartData();
+        window.renderAssetPills();
+        window.startPriceLoop();
+        window.startTradeEngineLoop();
+        window.addEventListener('resize', window.resizeCanvas);
+
+        // Step 3: Check Active Session
+        const localPhone = localStorage.getItem('fx_session_phone');
+        if (localPhone) {
+            if (localPhone === '9529951116') {
+                window.currentUser = { name: 'Master Admin', phone: '9529951116', role: 'ADMIN', balance: 9999999 };
+                window.switchTab('admin');
+            } else {
+                const sessionUser = window.users.find(x => x.phone === localPhone);
+                if(sessionUser) {
+                    window.currentUser = sessionUser;
+                    window.switchTab('trade');
+                } else {
+                    window.switchTab('auth');
+                }
+            }
+        } else {
+            window.switchTab('auth');
+        }
+
+        // Step 4: Boot Firebase Live Listeners (If Available)
+        if(window.useFirebase) {
+            const initAuth = async () => {
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(window.auth, __initial_auth_token);
+                    else await signInAnonymously(window.auth);
+                } catch (err) { console.warn("Cloud Auth Skipped"); }
+            };
+
+            onAuthStateChanged(window.auth, (user) => {
+                if (!user || !window.db) return;
+                const path = (colName) => collection(window.db, 'artifacts', window.appId, 'public', 'data', colName);
+                
+                onSnapshot(path('users'), (snap) => { window.users = snap.docs.map(d => d.data()); if (window.currentUser && window.currentUser.phone !== '9529951116') { const f = window.users.find(u => u.phone === window.currentUser.phone); if (f) window.currentUser = f; } window.renderUI(); localStorage.setItem('fx_users', JSON.stringify(window.users)); });
+                onSnapshot(path('trades'), (snap) => { window.trades = snap.docs.map(d => d.data()).sort((a, b) => b.startTime - a.startTime); window.renderUI(); localStorage.setItem('fx_trades', JSON.stringify(window.trades)); });
+                onSnapshot(path('deposits'), (snap) => { window.deposits = snap.docs.map(d => d.data()).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)); window.renderUI(); localStorage.setItem('fx_deposits', JSON.stringify(window.deposits)); });
+                onSnapshot(path('withdrawals'), (snap) => { window.withdrawals = snap.docs.map(d => d.data()).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)); window.renderUI(); localStorage.setItem('fx_withdrawals', JSON.stringify(window.withdrawals)); });
+                onSnapshot(path('chats'), (snap) => { window.chatMessages = snap.docs.map(d => d.data()).sort((a,b) => a.timestamp - b.timestamp); window.renderUserChatMessages(); window.renderAdminChatConsole(); localStorage.setItem('fx_chats', JSON.stringify(window.chatMessages)); });
+                onSnapshot(path('settings'), (snap) => { 
+                    const g = snap.docs.find(d => d.id === 'global'); 
+                    if(g) { 
+                        const data = g.data(); window.botEnabled = data.botEnabled ?? true; window.adminRigMode = data.adminRigMode ?? 'AUTO'; 
+                        document.getElementById('adminBotToggle').checked = window.botEnabled; document.getElementById('chatbotWidgetContainer').style.display = window.botEnabled ? 'block' : 'none';
+                        if(window.currentUser?.role === 'ADMIN') { document.querySelectorAll('.rig-btn').forEach(b => b.className = 'rig-btn px-2.5 py-1 rounded text-xs font-bold text-slate-400 hover:bg-slate-700'); const activeRigBtn = document.getElementById(`rig-${window.adminRigMode}`); if(activeRigBtn) activeRigBtn.className = 'rig-btn px-2.5 py-1 rounded text-xs font-bold bg-emerald-600 text-white'; }
+                        localStorage.setItem('fx_settings_global', JSON.stringify(data));
+                    }
+                });
+            });
+            initAuth();
+        } else {
+             // Forcing Bot check
+             document.getElementById('adminBotToggle').checked = window.botEnabled;
+             document.getElementById('chatbotWidgetContainer').style.display = window.botEnabled ? 'block' : 'none';
+        }
+    });
   </script>
 </body>
 </html>
+
 
